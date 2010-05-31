@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="hello">Hallo Welt, browser!</string>
+	<string name="new_WebID">Neue WebID</string>
+	<string name="add_to_WebID">Zur WebID hinzufügen</string>
+</resources>

@@ -1,0 +1,5 @@
+syntax: glob
+
+androjena
+mssw/bin/
+msswTest/bin/

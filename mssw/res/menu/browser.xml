@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:id="@+id/itemHello" android:title="@string/hello"></item>
+	<item android:id="@+id/itemNew" android:title="@string/new_WebID"></item>
+	<item android:id="@+id/itemAdd" android:title="@string/add_to_WebID"></item>
+</menu>

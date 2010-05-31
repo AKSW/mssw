@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="hello">Hello World, browser!</string>
+	<string name="app_name">mssw</string>
+	<string name="browser_name">FOAF-Browser</string>
+	<string name="new_WebID">New WebID</string>
+	<string name="add_to_WebID">Add to your WebID</string>
+</resources>
