@@ -1,5 +1,6 @@
 syntax: glob
 
+.metadata/
 androjena
 mssw/bin/
 msswTest/bin/
