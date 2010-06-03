@@ -4,7 +4,6 @@
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/androjena"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/msw"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/slf4j.android"/>
 	<classpathentry kind="lib" path="/home/natanael/Dokumente/bachelorarbeit/mssw/libs/icu4j-3.4.4.jar"/>
 	<classpathentry kind="lib" path="/home/natanael/Dokumente/bachelorarbeit/mssw/libs/iri-0.7.jar"/>

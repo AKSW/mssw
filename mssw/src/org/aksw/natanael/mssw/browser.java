@@ -2,6 +2,12 @@ package org.aksw.natanael.mssw;
 
 import java.util.ArrayList;
 
+import org.aksw.natanael.msw.TripleProvider;
+
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+
 import android.app.Activity;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -26,7 +32,9 @@ public class browser extends Activity {
 		myListView.setAdapter(aa);
 
 		// Make the query.
-		Cursor cursor = managedQuery(ContactsContract.Contacts.CONTENT_URI,
+
+		/*
+		Cursor cursor = managedQuery(TripleProvider.CONTENT_URI,
 				null, // Which columns to return
 				null, // Which rows to return (all rows)
 				null, // Selection arguments (none)
@@ -34,8 +42,9 @@ public class browser extends Activity {
 		);
 
 		startManagingCursor(cursor);
-		int nameIdx = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME);
-		int accoIdx = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID);
+		
+		int nameIdx = cursor.getColumnIndexOrThrow(TripleProvider.DISPLAY_NAME);
+		//int accoIdx = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID);
 
 		if (cursor.moveToFirst()) {
 			do {
@@ -44,7 +53,17 @@ public class browser extends Activity {
 		}
 
 		stopManagingCursor(cursor);
-
+		*/
+		
+		TripleProvider tp = new TripleProvider();
+		Resource res = tp.getResource("http://comiles.eu/~natanael/foaf.rdf#me");
+		StmtIterator stmtIt = res.listProperties();
+		Statement stmt;
+		while (stmtIt.hasNext()) {
+			stmt = stmtIt.next();
+			items.add(stmt.toString());
+		}
+		
 		aa.notifyDataSetChanged();
 	}
 
