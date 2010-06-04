@@ -39,8 +39,8 @@ public class mswtests extends Activity {
 
 		String personURI    = "http://somewhere/JohnSmith";
 		String fullName     = "John Smith";
-		String text = ""; 
 
+		myTextView.setText("");
 		
 		//ModelMaker caches = ModelFactory.createMemModelMaker();
 		
@@ -60,9 +60,7 @@ public class mswtests extends Activity {
 
 		// add the property
 		johnSmith.addProperty(foaf_name, fullName);
-		
-		myTextView.append(personURI);
-		
+				
 
 		Resource res = model.getResource(uri);
 		//Resource res = model.getResource(personURI);
@@ -78,9 +76,7 @@ public class mswtests extends Activity {
 			stmt = stmtIt.next();
 			items.add(stmt.toString());
 		}
-		
-		//myTextView.setText(text);
-		
+				
 		aa.notifyDataSetChanged();
 	}
 }
