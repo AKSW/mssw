@@ -2,5 +2,6 @@ syntax: glob
 
 .metadata/
 androjena
-mssw/bin/
-msswTest/bin/
+mssw/bin/*
+msswTest/bin/*
+libs-src/

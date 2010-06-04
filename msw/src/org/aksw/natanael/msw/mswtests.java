@@ -64,8 +64,8 @@ public class mswtests extends Activity {
 		myTextView.append(personURI);
 		
 
-		//Resource res = model.getResource(uri);
-		Resource res = model.getResource(personURI);
+		Resource res = model.getResource(uri);
+		//Resource res = model.getResource(personURI);
 		
 		String resString = res.toString();
 		
