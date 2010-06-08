@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="org.aksw.natanael.mssw"
+      package="org.aksw.mssw"
       android:versionCode="1" android:versionName="0.1">
     <application android:icon="@drawable/icon" android:label="@string/app_name">
         <activity android:name=".browser"

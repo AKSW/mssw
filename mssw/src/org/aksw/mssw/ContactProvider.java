@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.aksw.natanael.mssw;
+package org.aksw.mssw;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;

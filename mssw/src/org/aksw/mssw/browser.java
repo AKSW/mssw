@@ -1,8 +1,8 @@
-package org.aksw.natanael.mssw;
+package org.aksw.mssw;
 
 import java.util.ArrayList;
 
-import org.aksw.natanael.msw.TripleProvider;
+import org.aksw.msw.TripleProvider;
 
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;

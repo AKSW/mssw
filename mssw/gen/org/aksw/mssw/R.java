@@ -5,7 +5,7 @@
  * should not be modified by hand.
  */
 
-package org.aksw.natanael.mssw;
+package org.aksw.mssw;
 
 public final class R {
     public static final class attr {
