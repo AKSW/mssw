@@ -3,20 +3,23 @@
 <ScrollView android:id="@+id/ScrollView01"
 	android:layout_width="fill_parent" android:layout_height="fill_parent"
 	xmlns:android="http://schemas.android.com/apk/res/android">
-	
+
 	<LinearLayout android:id="@+id/LinearLayout01"
-		android:layout_width="fill_parent" android:layout_height="wrap_content"
-		android:orientation="vertical">
+		android:layout_width="fill_parent" android:layout_height="fill_parent"
+		android:orientation="vertical" android:layout_weight="1">
+
+		<EditText android:id="@+id/entry" android:layout_width="fill_parent"
+			android:layout_height="wrap_content" android:text="http://" />
+
+		<Button android:text="Reload" android:id="@+id/Button01"
+			android:layout_width="fill_parent" android:layout_height="wrap_content"></Button>
 
 		<TextView android:id="@+id/TextView01" android:layout_width="wrap_content"
 			android:layout_height="wrap_content" android:text="lol1">
 		</TextView>
 
 		<ListView android:id="@+id/ListView01" android:layout_width="fill_parent"
-			android:layout_height="fill_parent">
+			android:layout_height="fill_parent" android:layout_weight="1">
 		</ListView>
-		
-		<Button android:text="Reload" android:id="@+id/Button01"
-			android:layout_width="fill_parent" android:layout_height="wrap_content"></Button>
 	</LinearLayout>
 </ScrollView>

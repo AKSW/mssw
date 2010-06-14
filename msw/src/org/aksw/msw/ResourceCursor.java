@@ -3,361 +3,152 @@
  */
 package org.aksw.msw;
 
-import android.content.ContentResolver;
-import android.database.CharArrayBuffer;
-import android.database.ContentObserver;
-import android.database.Cursor;
-import android.database.DataSetObserver;
-import android.net.Uri;
-import android.os.Bundle;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.rdf.model.impl.StmtIteratorImpl;
+
+import android.database.AbstractCursor;
+import android.util.Log;
 
 /**
  * @author natanael
- *
+ * 
  */
-public class ResourceCursor implements Cursor {
+public class ResourceCursor extends AbstractCursor {
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#close()
-	 */
-	@Override
-	public void close() {
-		// TODO Auto-generated method stub
+	private static final String TAG = "ResourceCursor";
 
+	private ArrayList<Statement> subject;
+
+	public ResourceCursor(Resource subject) {
+		this.subject = new ArrayList<Statement>(subject.listProperties()
+				.toList());
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#copyStringToBuffer(int, android.database.CharArrayBuffer)
-	 */
-	@Override
-	public void copyStringToBuffer(int arg0, CharArrayBuffer arg1) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#deactivate()
-	 */
-	@Override
-	public void deactivate() {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getBlob(int)
-	 */
-	@Override
-	public byte[] getBlob(int columnIndex) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getColumnCount()
-	 */
-	@Override
-	public int getColumnCount() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getColumnIndex(java.lang.String)
-	 */
-	@Override
-	public int getColumnIndex(String columnName) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getColumnIndexOrThrow(java.lang.String)
-	 */
-	@Override
-	public int getColumnIndexOrThrow(String columnName)
-			throws IllegalArgumentException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getColumnName(int)
-	 */
-	@Override
-	public String getColumnName(int columnIndex) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getColumnNames()
-	 */
 	@Override
 	public String[] getColumnNames() {
-		// TODO Auto-generated method stub
-		return null;
+
+		try {
+			ArrayList<String> cols = new ArrayList<String>();
+			StmtIterator it = new StmtIteratorImpl(subject.iterator());
+			while (it.hasNext()) {
+				String prop = it.next().getPredicate().getURI();
+				cols.add(prop);
+				Log.v(TAG, "Adding <" + prop + "> to column List.");
+			}
+
+			return cols.toArray(new String[0]);
+		} catch (Exception e) {
+			Log.v(TAG, "An Exception occured", e);
+			return null;
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getCount()
-	 */
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
-		return 0;
+
+		return 1;
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getDouble(int)
-	 */
 	@Override
-	public double getDouble(int columnIndex) {
+	public double getDouble(int column) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getExtras()
-	 */
 	@Override
-	public Bundle getExtras() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getFloat(int)
-	 */
-	@Override
-	public float getFloat(int columnIndex) {
+	public float getFloat(int column) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getInt(int)
-	 */
 	@Override
-	public int getInt(int columnIndex) {
+	public int getInt(int column) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getLong(int)
-	 */
 	@Override
-	public long getLong(int columnIndex) {
+	public long getLong(int column) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getPosition()
-	 */
 	@Override
-	public int getPosition() {
+	public short getShort(int column) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getShort(int)
-	 */
 	@Override
-	public short getShort(int columnIndex) {
+	public String getString(int column) {
 		// TODO Auto-generated method stub
-		return 0;
+		Statement stmt = subject.get(column);
+		try {
+			return stmt.getString();
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getString(int)
-	 */
-	@Override
-	public String getString(int columnIndex) {
+	public Resource getObject(int column) {
 		// TODO Auto-generated method stub
-		return null;
+		Statement stmt = subject.get(column);
+		try {
+			return (Resource) stmt.getObject();
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#getWantsAllOnMoveCalls()
-	 */
+	public String getUri(int column) {
+		Statement stmt = subject.get(column);
+		try {
+			if (stmt.getObject().isURIResource()) {
+				Resource obj = (Resource) stmt.getObject();
+				return obj.getURI();
+			} else {
+				return null;
+			}
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	public static final int UNDEFINED = 0;
+	public static final int LITERAL = 10;
+	public static final int RESOURCE = 0; // 20, unused
+	public static final int BLANK_NODE = 21;
+	public static final int NAMED_RESOURCE = 22;
+
+	public int getType(int column) {
+		Statement stmt = subject.get(column);
+		if (stmt.getObject().isLiteral()) {
+			return LITERAL;
+		} else if (stmt.getObject().isAnon()) {
+			return BLANK_NODE;
+		} else if (stmt.getObject().isURIResource()) {
+			return NAMED_RESOURCE;
+		} else if (stmt.getObject().isResource()) {
+			// is impossible, because a resource either has a name or is
+			// anonymous
+			return RESOURCE;
+		} else {
+			return 0;
+		}
+
+	}
+
 	@Override
-	public boolean getWantsAllOnMoveCalls() {
+	public boolean isNull(int column) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#isAfterLast()
-	 */
-	@Override
-	public boolean isAfterLast() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#isBeforeFirst()
-	 */
-	@Override
-	public boolean isBeforeFirst() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#isClosed()
-	 */
-	@Override
-	public boolean isClosed() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#isFirst()
-	 */
-	@Override
-	public boolean isFirst() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#isLast()
-	 */
-	@Override
-	public boolean isLast() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#isNull(int)
-	 */
-	@Override
-	public boolean isNull(int columnIndex) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#move(int)
-	 */
-	@Override
-	public boolean move(int offset) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#moveToFirst()
-	 */
-	@Override
-	public boolean moveToFirst() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#moveToLast()
-	 */
-	@Override
-	public boolean moveToLast() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#moveToNext()
-	 */
-	@Override
-	public boolean moveToNext() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#moveToPosition(int)
-	 */
-	@Override
-	public boolean moveToPosition(int position) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#moveToPrevious()
-	 */
-	@Override
-	public boolean moveToPrevious() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#registerContentObserver(android.database.ContentObserver)
-	 */
-	@Override
-	public void registerContentObserver(ContentObserver observer) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#registerDataSetObserver(android.database.DataSetObserver)
-	 */
-	@Override
-	public void registerDataSetObserver(DataSetObserver observer) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#requery()
-	 */
-	@Override
-	public boolean requery() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#respond(android.os.Bundle)
-	 */
-	@Override
-	public Bundle respond(Bundle extras) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#setNotificationUri(android.content.ContentResolver, android.net.Uri)
-	 */
-	@Override
-	public void setNotificationUri(ContentResolver cr, Uri uri) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#unregisterContentObserver(android.database.ContentObserver)
-	 */
-	@Override
-	public void unregisterContentObserver(ContentObserver observer) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/* (non-Javadoc)
-	 * @see android.database.Cursor#unregisterDataSetObserver(android.database.DataSetObserver)
-	 */
-	@Override
-	public void unregisterDataSetObserver(DataSetObserver observer) {
-		// TODO Auto-generated method stub
-
 	}
 
 }
