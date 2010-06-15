@@ -15,16 +15,23 @@ public final class R {
         public static final int icon_old=0x7f020001;
     }
     public static final class id {
+        public static final int Import=0x7f060002;
         public static final int LinearLayout01=0x7f060000;
-        public static final int ListView01=0x7f060001;
-        public static final int TabHost01=0x7f060002;
-        public static final int itemAdd=0x7f060005;
-        public static final int itemHello=0x7f060003;
-        public static final int itemNew=0x7f060004;
+        public static final int Load=0x7f060003;
+        public static final int Properties=0x7f060005;
+        public static final int Status=0x7f060004;
+        public static final int TabHost01=0x7f060006;
+        public static final int UriInput=0x7f060001;
+        public static final int icon=0x7f060007;
+        public static final int itemAdd=0x7f06000b;
+        public static final int itemHello=0x7f060009;
+        public static final int itemNew=0x7f06000a;
+        public static final int secondLine=0x7f060008;
     }
     public static final class layout {
         public static final int browser=0x7f030000;
         public static final int profile_viewer=0x7f030001;
+        public static final int properties_row=0x7f030002;
     }
     public static final class menu {
         public static final int browser=0x7f050000;
