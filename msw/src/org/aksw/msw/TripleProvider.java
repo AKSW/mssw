@@ -47,6 +47,8 @@ public class TripleProvider extends ContentProvider {
 	 * content://org.aksw.msw.tripleprovider/resource/tmp/_uri_ returns all
 	 * triples with the given _uri_ as subject if it is not in the triplestore
 	 * import it with Linked Data into the cache model
+	 * content://org.aksw.msw.tripleprovider/resource/offline/_uri_ returns all
+	 * triples with the given _uri_ as subject from the triplestore
 	 * content://org.aksw.msw.tripleprovider/resource/inverse/_uri_ returns all
 	 * triples with the given _uri_ as object
 	 * content://org.aksw.msw.tripleprovider/class/
@@ -61,6 +63,7 @@ public class TripleProvider extends ContentProvider {
 	private static final int RESOURCE = 10;
 	private static final int RESOURCE_SAVE = 11;
 	private static final int RESOURCE_TMP = 12;
+	private static final int RESOURCE_OFFLINE = 13;
 	private static final int RESOURCE_INV = 15;
 
 	private static final int CLASS = 20;
@@ -74,10 +77,11 @@ public class TripleProvider extends ContentProvider {
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
 	static {
-		uriMatcher.addURI(AUTHORITY, "resource/*", RESOURCE);
 		uriMatcher.addURI(AUTHORITY, "resource/tmp/*", RESOURCE_TMP);
 		uriMatcher.addURI(AUTHORITY, "resource/save/*", RESOURCE_SAVE);
+		uriMatcher.addURI(AUTHORITY, "resource/offline/*", RESOURCE_OFFLINE);
 		uriMatcher.addURI(AUTHORITY, "resource/inverse/*", RESOURCE_INV);
+		uriMatcher.addURI(AUTHORITY, "resource/*", RESOURCE);
 		uriMatcher.addURI(AUTHORITY, "class/*", CLASS);
 		uriMatcher.addURI(AUTHORITY, "class/", CLASS_OVERVIEW);
 		uriMatcher.addURI(AUTHORITY, "type/*", TYPE);
@@ -104,7 +108,7 @@ public class TripleProvider extends ContentProvider {
 	private Model cache;
 
 	// ---------------------------- methods --------------------
-	
+
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
 		// TODO Auto-generated method stub
@@ -124,6 +128,7 @@ public class TripleProvider extends ContentProvider {
 		case RESOURCE:
 		case RESOURCE_TMP:
 		case RESOURCE_SAVE:
+		case RESOURCE_OFFLINE:
 		case CLASS:
 		case TYPE:
 			return mimeTypeResItm;
@@ -177,38 +182,40 @@ public class TripleProvider extends ContentProvider {
 		// TODO Auto-generated method stub
 		Log.v(TAG, "Starting query");
 
-		Resource res;
-		ResourceCursor rc;
-		String resourceUri = null;
+		Resource res = null;
 
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
+		
 		Log.v(TAG, "path(1): " + path.get(1) + ".");
+		if (path.size() > 1) {
+			Log.v(TAG, "path(2): " + path.get(2) + ".");
+		}
 
 		int match = uriMatcher.match(uri);
+		
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
+		
 		switch (match) {
 		case RESOURCE:
-			if(path.size() > 1) {
-				resourceUri = path.get(1);
+			if (path.size() > 1) {
+				Log.v(TAG, "getResource: <" + path.get(1) + ">");
+				res = getResource(path.get(1), match);
 			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <" + uri + ">");
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
 			}
-		case RESOURCE_TMP:
-			if (resourceUri == null && path.size() > 2) {
-				resourceUri = path.get(2);
-			}
-
-			Log.v(TAG, "getResource: <" + resourceUri + ">");
-			res = getResource(resourceUri);
 			break;
+		case RESOURCE_TMP:
 		case RESOURCE_SAVE:
-			if(path.size() > 2) {
-				resourceUri = path.get(2);
+		case RESOURCE_OFFLINE:
+			if (path.size() > 2) {
+				Log.v(TAG, "getResource: <" + path.get(2) + ">");
+				res = getResource(path.get(2), match);
 			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <" + uri + ">");
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
 			}
 
-			res = getResource(resourceUri);
 			break;
 		/**
 		 * The following cases are not implemented at the moment
@@ -221,14 +228,20 @@ public class TripleProvider extends ContentProvider {
 		case TYPE_OVERVIEW:
 		case SPARQL:
 		default:
-			Log.v(TAG, "Return null because unimplemented URI was queried: (" + match + ")");
+			Log.v(TAG, "Return null because unimplemented URI was queried: ("
+					+ match + ")");
 			return null;
 		}
 
-		rc = new ResourceCursor(res);
-		
-		Log.v(TAG, "Cursor created");
-		
+		ResourceCursor rc;
+		if (res != null) {
+			rc = new ResourceCursor(res);
+			Log.v(TAG, "Cursor created");
+		} else {
+			Log.v(TAG, "Return null because I couldn't get a Resource.");
+			return null;
+		}
+
 		return rc;
 	}
 
@@ -241,14 +254,39 @@ public class TripleProvider extends ContentProvider {
 
 	// ---------------------------- private --------------------
 
+	/**
+	 * r - read permission
+	 * w - write permission (means can request to model to import missing data from the web)
+	 * 				cache 	model
+	 * TMP-Mode		 rw		 r-
+	 * SAV-Mode		 r-		 rw
+	 * OFF-Mode		 --		 r- 
+	 */
+	
+	private static final int TMP = RESOURCE_TMP;
+	private static final int SAV = RESOURCE_SAVE;
+	private static final int OFF = RESOURCE_OFFLINE;
+
+	private Resource getResource(String uri, int mode) {
+		switch (mode) {
+		case TMP:
+			return cacheResource(uri);
+		case SAV:
+			return importResource(uri);
+		case OFF:
+			return queryResource(uri);
+		default:
+			return null;
+		}
+	}
+
 	/*
 	 * public TripleProvider(){ ModelMaker models =
 	 * ModelFactory.createFileModelMaker(""); ModelMaker caches =
 	 * ModelFactory.createMemModelMaker(); cache = caches.openModel("cache");
 	 * model = models.openModel("model"); }
 	 */
-
-	public Resource getResource(String uri) {
+	private Resource queryResource(String uri) {
 		Model tmp = model.union(cache);
 
 		Resource res = tmp.getResource(uri);
@@ -265,7 +303,7 @@ public class TripleProvider extends ContentProvider {
 		return res;
 	}
 
-	private void importResource(String uri) {
+	private Resource importResource(String uri) {
 		/**
 		 * vielleicht named-graphes verwenden
 		 */
@@ -275,10 +313,10 @@ public class TripleProvider extends ContentProvider {
 		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
 				(RDFNode) null);
 		cache.union(tmp.query(selector));
-
+		return cache.getResource(uri);
 	}
 
-	public Resource cacheResource(String uri) {
+	private Resource cacheResource(String uri) {
 		cache.read(uri);
 		/*
 		 * Model tmp = ModelFactory.createDefaultModel(); tmp.read(uri);
