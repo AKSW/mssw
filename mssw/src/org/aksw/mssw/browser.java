@@ -4,7 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
-import org.aksw.msw.TripleProvider;
+//import org.aksw.msw.TripleProvider;
 
 import android.app.Activity;
 import android.database.Cursor;
@@ -25,6 +25,9 @@ public class browser extends Activity {
 	/** Called when the activity is first created. */
 
 	private static final String TAG = "msswBrowser";
+	
+	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
+	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
 	private final ArrayList<String> items = new ArrayList<String>();
 
@@ -33,8 +36,9 @@ public class browser extends Activity {
 	private ListView properties;
 	private TextView status;
 	private EditText uriInput;
-	private Button importButton;
 	private Button loadTmpButton;
+	private Button importButton;
+	private Button readLocalButton;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -53,31 +57,38 @@ public class browser extends Activity {
 
 		this.importButton = (Button) this.findViewById(R.id.Import);
 		this.loadTmpButton = (Button) this.findViewById(R.id.Load);
+		this.readLocalButton = (Button) this.findViewById(R.id.Offline);
 
 		this.loadTmpButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				loadRes(true);
+				loadRes("tmp");
 			}
-
 		});
 
 		this.importButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				loadRes();
+				loadRes("save");
 			}
+		});
+		
 
+		this.readLocalButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				loadRes("offline");
+			}
 		});
 
-		loadRes(true);
+		loadRes("tmp");
 	}
 
 	public void loadRes() {
-		loadRes(false);
+		loadRes("tmp");
 	}
 
-	public void loadRes(Boolean tmp) {
+	public void loadRes(String mode) {
 
 		aa.clear();
 
@@ -86,22 +97,13 @@ public class browser extends Activity {
 
 		if (uri.length() > 0) {
 
-			// String uri = "hm";
-			String enc = "UTF-8";
-
-			String persistence;
-			if (!tmp) {
-				persistence = "save";
-			} else {
-				persistence = "tmp";
-			}
-
-			status.setText("Loading (" + persistence + ") URI: <" + uri + ">.");
+			status.setText("Loading (" + mode + ") URI: <" + uri + ">.");
 
 			try {
+				String enc = "UTF-8";
 				Uri contentUri;
-				contentUri = Uri.parse(TripleProvider.CONTENT_URI
-						+ "/resource/" + persistence + "/"
+				contentUri = Uri.parse(CONTENT_URI
+						+ "/resource/" + mode + "/"
 						+ URLEncoder.encode(uri, enc));
 
 				// ResourceCursor rc = (ResourceCursor) managedQuery(contentUri,
@@ -133,7 +135,6 @@ public class browser extends Activity {
 		}
 
 		aa.notifyDataSetChanged();
-
 	}
 
 	@Override

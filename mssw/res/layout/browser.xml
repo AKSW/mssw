@@ -9,9 +9,11 @@
 
 	<LinearLayout android:orientation="horizontal"
 		android:layout_width="fill_parent" android:layout_height="wrap_content">
+		<Button android:text="Cache" android:id="@+id/Load"
+			android:layout_width="fill_parent" android:layout_weight="1" android:layout_height="wrap_content"></Button>
 		<Button android:text="Import" android:id="@+id/Import"
 			android:layout_width="fill_parent" android:layout_weight="1" android:layout_height="wrap_content"></Button>
-		<Button android:text="Load (tmp)" android:id="@+id/Load"
+		<Button android:text="Read local" android:id="@+id/Offline"
 			android:layout_width="fill_parent" android:layout_weight="1" android:layout_height="wrap_content"></Button>
 	</LinearLayout>
 

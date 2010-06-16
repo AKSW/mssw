@@ -34,8 +34,7 @@ public class TripleProvider extends ContentProvider {
 	private static final String TAG = "TripleProvider";
 	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
-	public static final String DISPLAY_NAME = "";
-	public static final String LOG_TAG = "test";
+	public static final String DISPLAY_NAME = "TripleProvider";
 
 	/**
 	 * content://org.aksw.msw.tripleprovider returns nothing, because the whole
@@ -391,10 +390,10 @@ public class TripleProvider extends ContentProvider {
 		StmtIterator si = res.listProperties();
 
 		if (!si.hasNext()) {
-			Log.v(LOG_TAG, "The resource <" + uri + "> has no properties in the given model.");
+			Log.v(TAG, "The resource <" + uri + "> has no properties in the given model.");
 			return false;
 		} else {
-			Log.v(LOG_TAG, "The resource <" + uri + "> has at leased one property in the given model.");
+			Log.v(TAG, "The resource <" + uri + "> has at leased one property in the given model.");
 			return true;
 		}
 		
