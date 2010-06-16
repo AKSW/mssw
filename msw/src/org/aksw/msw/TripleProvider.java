@@ -280,55 +280,124 @@ public class TripleProvider extends ContentProvider {
 		}
 	}
 
-	/*
-	 * public TripleProvider(){ ModelMaker models =
-	 * ModelFactory.createFileModelMaker(""); ModelMaker caches =
-	 * ModelFactory.createMemModelMaker(); cache = caches.openModel("cache");
-	 * model = models.openModel("model"); }
+	/**
+	 * Read this resource from the model.
+	 * @param uri the URI of the resource you want to get
+	 * @return a jena-Resource-Object, or null if this resource is not available
 	 */
 	private Resource queryResource(String uri) {
-		Model tmp = model.union(cache);
-
-		Resource res = tmp.getResource(uri);
-
-		StmtIterator si;
-
-		si = res.listProperties();
-
-		Log.v(LOG_TAG, "1. Resource in getResource " + si.toString());
-		if (!si.hasNext()) {
-			res = cacheResource(uri);
-			Log.v(LOG_TAG, "2. Resource in getResource " + si.toString());
+		// maybe it is better if this method would query the union of model and
+		// cache, but I don't know. The future will tell me, what's right.
+		return queryResource(uri, model);
+	}
+	
+	private Resource queryResource(String uri, Model model) {
+		// 1. check if resource exists
+		if (resourceExists(uri, model)) {
+			// 2a. get and return resource
+			return model.getResource(uri);
+		} else {
+			// 2b. or null if resource doesn't exist
+			return null;
 		}
-		return res;
 	}
 
 	private Resource importResource(String uri) {
-		/**
-		 * vielleicht named-graphes verwenden
-		 */
-		Model tmp = ModelFactory.createDefaultModel();
-		tmp.read(uri);
-		Resource subj = new ResourceImpl(uri);
-		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
-				(RDFNode) null);
-		cache.union(tmp.query(selector));
-		return cache.getResource(uri);
+		// 1. check if resource exists in model
+		if (!resourceExists(uri, model)) {
+			// 2. if not 1, then check if resource exists in cache
+			if (resourceExists(uri, cache)) {
+				// 3a. if 2 import resource from cache to model
+				Resource subj = new ResourceImpl(uri);
+				SimpleSelector selector = new SimpleSelector(subj, (Property) null,
+						(RDFNode) null);
+				
+				model.add(cache.query(selector));
+			} else {
+				// 3b. if not 2, then import resource to model from the web (Linked Data)
+				Model tmp = ModelFactory.createDefaultModel();
+				tmp.read(uri);
+				
+				Resource subj = new ResourceImpl(uri);
+				SimpleSelector selector = new SimpleSelector(subj, (Property) null,
+						(RDFNode) null);
+				
+				// on every update of a resource from the web I should add some
+				// information about the last update, for versioning and sync
+
+				//Property lastUpdate = cache.createProperty(PROPNAMESPACE, "lastUpdate");
+				//tmp.getResource(uri).addProperty(lastUpdate, "heute");
+				
+				model.add(tmp.query(selector));
+			}
+		} else {
+			// 2b. the resource exists in model, so we can query it
+		}
+
+		// 4. return resource from model
+		return queryResource(uri, model);
 	}
 
 	private Resource cacheResource(String uri) {
-		cache.read(uri);
-		/*
-		 * Model tmp = ModelFactory.createDefaultModel(); tmp.read(uri);
-		 * Resource subj = new ResourceImpl(uri); SimpleSelector selector = new
-		 * SimpleSelector(subj, (Property)null, (RDFNode)null);
-		 * cache.union(tmp.query(selector));
-		 */
+		// 1. check if resource exists in model
+		// 2. if not 1, then check if resource exists in cache
+		// 3. if not 2, then import resource to cache
+		// 4. return resource from cache
 
-		Property lastUpdate = cache.createProperty(PROPNAMESPACE, "lastUpdate");
-		cache.getResource(uri).addProperty(lastUpdate, "heute");
+		// 1. check if resource exists in model
+		if (!resourceExists(uri, model)) {
+			// 2. if not 1, then check if resource exists in cache
+			if (!resourceExists(uri, cache)) {
+				// 3b. if not 2, then import resource to cache from the web (Linked Data)
+				Model tmp = ModelFactory.createDefaultModel();
+				tmp.read(uri);
+				
+				Resource subj = new ResourceImpl(uri);
+				SimpleSelector selector = new SimpleSelector(subj, (Property) null,
+						(RDFNode) null);
+				
+				// on every update of a resource from the web I should add some
+				// information about the last update, for versioning and sync
 
-		return cache.getResource(uri);
+				//Property lastUpdate = cache.createProperty(PROPNAMESPACE, "lastUpdate");
+				//tmp.getResource(uri).addProperty(lastUpdate, "heute");
+				
+				cache.add(tmp.query(selector));
+			}
+		} else {
+			// 2b. the resource exists in model, so we can query it
+			return queryResource(uri, model);
+		}
+
+		// 4. return resource from cache
+		return queryResource(uri, cache);
+	}
+	
+	/**
+	 * Check whether a triple with the given uri as subject exists in the model
+	 * or not. This method should be replaced by a better jena-method or
+	 * SPARQL-ASK, but i couldn't find this untill now
+	 * 
+	 * @param uri
+	 *            the uri of the subject-resource
+	 * @param model
+	 *            the model in which you want to check for the resource
+	 * @return whether the resource occures as subject in a triple or not
+	 */
+	private boolean resourceExists(String uri, Model model) {
+
+		Resource res = model.getResource(uri);
+
+		StmtIterator si = res.listProperties();
+
+		if (!si.hasNext()) {
+			Log.v(LOG_TAG, "The resource <" + uri + "> has no properties in the given model.");
+			return false;
+		} else {
+			Log.v(LOG_TAG, "The resource <" + uri + "> has at leased one property in the given model.");
+			return true;
+		}
+		
 	}
 
 }
