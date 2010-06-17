@@ -3,17 +3,21 @@ package org.aksw.mssw;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 
 //import org.aksw.msw.TripleProvider;
 
 import android.app.Activity;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -29,9 +33,9 @@ public class browser extends Activity {
 	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
-	private final ArrayList<String> items = new ArrayList<String>();
+	private final ArrayList<Property> items = new ArrayList<Property>();
 
-	private ArrayAdapter<String> aa;
+	private PropertiesAdapter aa;
 
 	private ListView properties;
 	private TextView status;
@@ -45,7 +49,9 @@ public class browser extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.browser);
 
-		aa = new ArrayAdapter<String>(this,
+		
+		
+		aa = new PropertiesAdapter(this,
 				android.R.layout.simple_list_item_1, items);
 
 		properties = (ListView) findViewById(R.id.Properties);
@@ -114,12 +120,19 @@ public class browser extends Activity {
 						+ ">.");
 
 				Cursor rc = managedQuery(contentUri, null, null, null, null);
+				if(!rc.isFirst()) {
+					rc.moveToFirst();
+				}
 
 				if (rc != null) {
-					String[] cNames = rc.getColumnNames();
+					String[] predicates = rc.getColumnNames();
 
-					for (String name : cNames) {
-						items.add(name);
+					for (int i = 0; i < predicates.length; i++) {
+						Property prop = new Property();
+						prop.setPredicat(predicates[i]);
+						prop.setObject(rc.getString(i));
+						items.add(prop);
+						Log.v(TAG, "Added new Triple ?s <" + predicates[i] + "> '" + rc.getString(i) + "' to List.");
 					}
 				} else {
 					status.setText("Error with Query.");
@@ -128,7 +141,7 @@ public class browser extends Activity {
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-				items.add("error retriving Data from Contentprovider");
+				status.append("Error retriving Data from Contentprovider.");
 			}
 		} else {
 			status.append("No URI inserted.");
@@ -142,6 +155,65 @@ public class browser extends Activity {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.browser, menu);
 		return true;
+	}
+	
+	private class PropertiesAdapter extends ArrayAdapter<Property> {
+
+		private ArrayList<Property> items;
+
+		public PropertiesAdapter(Context context, int textViewResourceId,
+				ArrayList<Property> objects) {
+			super(context, textViewResourceId, objects);
+			this.items = objects;
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			View v = convertView;
+			if (v == null) {
+				LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+				v = vi.inflate(R.layout.properties_row, null);
+			}
+			Property p = items.get(position);
+			if (p != null) {
+				TextView fl = (TextView) v.findViewById(R.id.firstLine);
+				TextView sl = (TextView) v.findViewById(R.id.secondLine);
+				if (fl != null) {
+					fl.setText("o: " + p.getObject());
+					Log.v(TAG,"TextView firstLine found and filled with '" + p.getObject() + "'.");
+				} else {
+					Log.v(TAG,"TextView firstLine not found.");
+				}
+				if (sl != null) {
+					sl.setText("p: " + p.getPredicat());
+					Log.v(TAG,"TextView secondLine found and filled with '" + p.getPredicat() + "'.");
+				} else {
+					Log.v(TAG,"TextView secondLine not found.");
+				}
+			}
+			return v;
+		}
+
+	}
+
+	private class Property {
+		private String predicat;
+		private String object;
+		
+		public void setPredicat(String predicat) {
+			this.predicat = predicat;
+		}
+		public String getPredicat() {
+			return predicat;
+		}
+		public void setObject(String object) {
+			this.object = object;
+		}
+		public String getObject() {
+			return object;
+		}
+		
+		
 	}
 
 }

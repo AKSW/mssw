@@ -29,7 +29,7 @@ public class ResourceCursor extends AbstractCursor {
 		this.subject = new ArrayList<Statement>(subject.listProperties()
 				.toList());
 	}
-
+	
 	@Override
 	public String[] getColumnNames() {
 
@@ -91,11 +91,23 @@ public class ResourceCursor extends AbstractCursor {
 		// TODO Auto-generated method stub
 		Statement stmt = subject.get(column);
 		try {
-			return stmt.getString();
+			int type = getType(column);
+			switch(type) {
+			case LITERAL:
+				return stmt.getString();
+			case NAMED_RESOURCE:
+				Resource res = (Resource) stmt.getObject();
+				return res.getURI();
+			default:
+				return "BlankNode or Nothing";
+			}
 		} catch (Exception e) {
+			Log.v(TAG, "The statement in column " + column + " thrwe an exception.", e);
 			return null;
 		}
 	}
+	
+	//---- my methods ----
 
 	public Resource getObject(int column) {
 		// TODO Auto-generated method stub

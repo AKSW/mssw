@@ -23,16 +23,18 @@ public final class R {
         public static final int Status=0x7f060005;
         public static final int TabHost01=0x7f060007;
         public static final int UriInput=0x7f060001;
+        public static final int firstLine=0x7f060009;
         public static final int icon=0x7f060008;
-        public static final int itemAdd=0x7f06000c;
-        public static final int itemHello=0x7f06000a;
-        public static final int itemNew=0x7f06000b;
-        public static final int secondLine=0x7f060009;
+        public static final int itemAdd=0x7f06000d;
+        public static final int itemHello=0x7f06000b;
+        public static final int itemNew=0x7f06000c;
+        public static final int secondLine=0x7f06000a;
     }
     public static final class layout {
         public static final int browser=0x7f030000;
         public static final int profile_viewer=0x7f030001;
         public static final int properties_row=0x7f030002;
+        public static final int properties_row1=0x7f030003;
     }
     public static final class menu {
         public static final int browser=0x7f050000;
