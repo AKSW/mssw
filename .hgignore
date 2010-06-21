@@ -5,3 +5,6 @@ androjena
 bin/
 libs-src/
 code-resources/
+
+syntax: regexp
+^dist
