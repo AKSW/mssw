@@ -2,6 +2,7 @@ package org.aksw.msw;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import android.content.ContentProvider;
@@ -21,6 +22,7 @@ import com.hp.hpl.jena.rdf.model.SimpleSelector;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.PropertyImpl;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
+import com.hp.hpl.jena.shared.JenaException;
 
 /**
  * The triple Provider is a simple Android ContentProvider, which stores and
@@ -154,7 +156,7 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		ModelMaker models = ModelFactory.createFileModelMaker("");
+		ModelMaker models = ModelFactory.createFileModelMaker("/Android/data/org.aksw.msw/files/models/");
 		ModelMaker caches = ModelFactory.createMemModelMaker();
 		cache = caches.openModel("cache");
 		model = models.openModel("model");
@@ -315,19 +317,26 @@ public class TripleProvider extends ContentProvider {
 			} else {
 				// 3b. if not 2, then import resource to model from the web (Linked Data)
 				Model tmp = ModelFactory.createDefaultModel();
-				tmp.read(uri);
-				
-				Resource subj = new ResourceImpl(uri);
-				SimpleSelector selector = new SimpleSelector(subj, (Property) null,
-						(RDFNode) null);
-				
-				// on every update of a resource from the web I should add some
-				// information about the last update, for versioning and sync
+				try {
+					tmp.read(uri);
 
-				//Property lastUpdate = cache.createProperty(PROPNAMESPACE, "lastUpdate");
-				//tmp.getResource(uri).addProperty(lastUpdate, "heute");
-				
-				model.add(tmp.query(selector));
+					Resource subj = new ResourceImpl(uri);
+					SimpleSelector selector = new SimpleSelector(subj,
+							(Property) null, (RDFNode) null);
+
+					// on every update of a resource from the web I should add
+					// some
+					// information about the last update, for versioning and
+					// sync
+
+					// Property lastUpdate = cache.createProperty(PROPNAMESPACE,
+					// "lastUpdate");
+					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
+
+					model.add(tmp.query(selector));
+				} catch (JenaException e) {
+					Log.v(TAG, "An Exception occured whyle querying uri <" + uri + ">", e);
+				}
 			}
 		} else {
 			// 2b. the resource exists in model, so we can query it
@@ -349,19 +358,26 @@ public class TripleProvider extends ContentProvider {
 			if (!resourceExists(uri, cache)) {
 				// 3b. if not 2, then import resource to cache from the web (Linked Data)
 				Model tmp = ModelFactory.createDefaultModel();
-				tmp.read(uri);
-				
-				Resource subj = new ResourceImpl(uri);
-				SimpleSelector selector = new SimpleSelector(subj, (Property) null,
-						(RDFNode) null);
-				
-				// on every update of a resource from the web I should add some
-				// information about the last update, for versioning and sync
+				try {
+					tmp.read(uri);
 
-				//Property lastUpdate = cache.createProperty(PROPNAMESPACE, "lastUpdate");
-				//tmp.getResource(uri).addProperty(lastUpdate, "heute");
-				
-				cache.add(tmp.query(selector));
+					Resource subj = new ResourceImpl(uri);
+					SimpleSelector selector = new SimpleSelector(subj,
+							(Property) null, (RDFNode) null);
+
+					// on every update of a resource from the web I should add
+					// some
+					// information about the last update, for versioning and
+					// sync
+
+					// Property lastUpdate = cache.createProperty(PROPNAMESPACE,
+					// "lastUpdate");
+					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
+
+					cache.add(tmp.query(selector));
+				} catch (JenaException e) {
+					Log.v(TAG, "An Exception occured whyle querying uri <" + uri + ">", e);
+				}
 			}
 		} else {
 			// 2b. the resource exists in model, so we can query it

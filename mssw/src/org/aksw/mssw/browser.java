@@ -3,10 +3,6 @@ package org.aksw.mssw;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.List;
-
-//import org.aksw.msw.TripleProvider;
-
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
@@ -120,11 +116,12 @@ public class browser extends Activity {
 						+ ">.");
 
 				Cursor rc = managedQuery(contentUri, null, null, null, null);
-				if(!rc.isFirst()) {
-					rc.moveToFirst();
-				}
 
 				if (rc != null) {
+					if (!rc.isFirst()) {
+						rc.moveToFirst();
+					}
+
 					String[] predicates = rc.getColumnNames();
 
 					for (int i = 0; i < predicates.length; i++) {
