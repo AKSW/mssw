@@ -426,14 +426,14 @@ public class TripleProvider extends ContentProvider {
 	private boolean initModels() {
 		String state = Environment.getExternalStorageState();
 
-		//String path = "/Android/data/org.aksw.msw/files/models/";
+		String path = "/Android/data/org.aksw.msw/files/models/";
 
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
 		    // We can read and write the media
 			File storage = Environment.getExternalStorageDirectory();
 			storage.getAbsolutePath();
 			if (storage.isDirectory()) {
-				File modelsPath = new File(storage, "models");
+				File modelsPath = new File(storage, path);
 				modelsPath.mkdirs();
 				ModelMaker models = ModelFactory.createFileModelMaker(modelsPath.getAbsolutePath());
 				ModelMaker caches = ModelFactory.createMemModelMaker();
