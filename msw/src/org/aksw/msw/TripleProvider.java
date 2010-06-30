@@ -1,5 +1,6 @@
 package org.aksw.msw;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
@@ -10,6 +11,7 @@ import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Environment;
 import android.util.Log;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -37,7 +39,7 @@ public class TripleProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	public static final String DISPLAY_NAME = "TripleProvider";
-
+	
 	/**
 	 * content://org.aksw.msw.tripleprovider returns nothing, because the whole
 	 * web is to much. content://org.aksw.msw.tripleprovider/resource/_uri_
@@ -156,12 +158,14 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		ModelMaker models = ModelFactory.createFileModelMaker("/Android/data/org.aksw.msw/files/models/");
-		ModelMaker caches = ModelFactory.createMemModelMaker();
-		cache = caches.openModel("cache");
-		model = models.openModel("model");
-		Log.v(TAG, "Created TripleProvider");
-		return true;
+
+		if(initModels()) {
+			Log.v(TAG, "Created TripleProvider");
+			return true;
+		} else {
+			Log.e(TAG, "The models couln't be initiated.");
+			return false;
+		}
 	}
 
 	/**
@@ -314,6 +318,7 @@ public class TripleProvider extends ContentProvider {
 						(RDFNode) null);
 				
 				model.add(cache.query(selector));
+				model.commit();
 			} else {
 				// 3b. if not 2, then import resource to model from the web (Linked Data)
 				Model tmp = ModelFactory.createDefaultModel();
@@ -334,6 +339,8 @@ public class TripleProvider extends ContentProvider {
 					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
 
 					model.add(tmp.query(selector));
+					tmp.close();
+					model.commit();
 				} catch (JenaException e) {
 					Log.v(TAG, "An Exception occured whyle querying uri <" + uri + ">", e);
 				}
@@ -375,6 +382,7 @@ public class TripleProvider extends ContentProvider {
 					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
 
 					cache.add(tmp.query(selector));
+					tmp.close();
 				} catch (JenaException e) {
 					Log.v(TAG, "An Exception occured whyle querying uri <" + uri + ">", e);
 				}
@@ -411,6 +419,39 @@ public class TripleProvider extends ContentProvider {
 		} else {
 			Log.v(TAG, "The resource <" + uri + "> has at leased one property in the given model.");
 			return true;
+		}
+
+	}
+	
+	private boolean initModels() {
+		String state = Environment.getExternalStorageState();
+
+		//String path = "/Android/data/org.aksw.msw/files/models/";
+
+		if (Environment.MEDIA_MOUNTED.equals(state)) {
+		    // We can read and write the media
+			File storage = Environment.getExternalStorageDirectory();
+			storage.getAbsolutePath();
+			if (storage.isDirectory()) {
+				File modelsPath = new File(storage, "models");
+				modelsPath.mkdirs();
+				ModelMaker models = ModelFactory.createFileModelMaker(modelsPath.getAbsolutePath());
+				ModelMaker caches = ModelFactory.createMemModelMaker();
+				cache = caches.openModel("cache");
+				model = models.openModel("model");
+				
+				return true;
+			} else {
+				return false;
+			}
+
+		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+		    // We can only read the media
+			return false;
+		} else {
+		    // Something else is wrong. It may be one of many other states, but all we need
+		    //  to know is we can neither read nor write
+			return false;
 		}
 		
 	}
