@@ -83,7 +83,7 @@ public class browser extends Activity {
 			}
 		});
 
-		loadRes("tmp");
+		loadRes("offline");
 	}
 
 	public void loadRes() {
@@ -132,7 +132,11 @@ public class browser extends Activity {
 						Log.v(TAG, "Added new Triple ?s <" + predicates[i] + "> '" + rc.getString(i) + "' to List.");
 					}
 				} else {
-					status.setText("Error with Query.");
+					if(mode == "offline") {
+						status.setText("No resource found, try to cache or import this resource.");
+					} else {
+						status.setText("No resource found.");
+					}
 				}
 
 			} catch (UnsupportedEncodingException e) {

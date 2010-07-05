@@ -439,6 +439,7 @@ public class TripleProvider extends ContentProvider {
 				ModelMaker caches = ModelFactory.createMemModelMaker();
 				cache = caches.openModel("cache");
 				model = models.openModel("model");
+				model.begin();
 				
 				return true;
 			} else {
