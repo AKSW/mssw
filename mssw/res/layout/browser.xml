@@ -5,7 +5,7 @@
 	android:orientation="vertical" xmlns:android="http://schemas.android.com/apk/res/android">
 
 	<EditText android:id="@+id/UriInput" android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:text="http://people.comiles.eu/example" />
+		android:layout_height="wrap_content" android:text="http://people.comiles.eu/example" android:inputType="textUri"/>
 
 	<LinearLayout android:orientation="horizontal"
 		android:layout_width="fill_parent" android:layout_height="wrap_content">

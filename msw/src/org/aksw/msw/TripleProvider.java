@@ -167,6 +167,11 @@ public class TripleProvider extends ContentProvider {
 			return false;
 		}
 	}
+	
+	@Override
+	public void onLowMemory() {
+		Log.v(TAG, "TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
+	}
 
 	/**
 	 * @see android.content.ContentProvider#query(android.net.Uri,
@@ -397,20 +402,32 @@ public class TripleProvider extends ContentProvider {
 	}
 	
 	/**
-	 * Check whether a triple with the given uri as subject exists in the model
-	 * or not. This method should be replaced by a better jena-method or
-	 * SPARQL-ASK, but i couldn't find this untill now
+	 * Check whether a triple with the given uri exists as subject or object in the model
+	 * or not.
 	 * 
 	 * @param uri
 	 *            the uri of the subject-resource
 	 * @param model
 	 *            the model in which you want to check for the resource
+	 * @param asObject check also if the resource exists in a tripel as object
 	 * @return whether the resource occures as subject in a triple or not
 	 */
-	private boolean resourceExists(String uri, Model model) {
+	private boolean resourceExists(String uri, Model model, boolean asObject) {
 
 		Resource res = model.getResource(uri);
+		
+		if (model.contains(res, null, (RDFNode)null)) {
+			Log.v(TAG, "The resource <" + uri + "> does exist as Subject in the given model.");
+			return true;
+		} else if (asObject && model.contains(null, null, res)) {
+			Log.v(TAG, "The resource <" + uri + "> does exist as Object in the given model.");
+			return true;
+		} else {
+			Log.v(TAG, "The resource <" + uri + "> doesn't exist in the given model.");
+			return false;
+		}
 
+		/*
 		StmtIterator si = res.listProperties();
 
 		if (!si.hasNext()) {
@@ -420,7 +437,23 @@ public class TripleProvider extends ContentProvider {
 			Log.v(TAG, "The resource <" + uri + "> has at leased one property in the given model.");
 			return true;
 		}
+		*/
 
+	}
+	
+	/**
+	 * Check whether a triple with the given uri as subject exists in the model
+	 * or not.
+	 * The asObject parameter is defaulted to false.
+	 * 
+	 * @param uri
+	 *            the uri of the subject-resource
+	 * @param model
+	 *            the model in which you want to check for the resource
+	 * @return whether the resource occures as subject in a triple or not
+	 */
+	private boolean resourceExists(String uri, Model model) {
+		return this.resourceExists(uri, model, false);
 	}
 	
 	private boolean initModels() {

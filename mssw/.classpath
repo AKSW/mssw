@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="/home/natanael/Dokumente/bachelorarbeit/mssw/libs/iri-0.7.jar"/>
 	<classpathentry kind="lib" path="/home/natanael/Dokumente/bachelorarbeit/mssw/libs/icu4j-3.4.4.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/msw"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/androjena"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
