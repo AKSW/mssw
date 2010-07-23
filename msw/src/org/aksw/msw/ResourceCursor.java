@@ -3,6 +3,7 @@
  */
 package org.aksw.msw;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,11 +24,23 @@ public class ResourceCursor extends AbstractCursor {
 
 	private static final String TAG = "ResourceCursor";
 
-	private ArrayList<Statement> subject;
+	private ArrayList<Statement> properties;
+	private Resource[] subject;
 
 	public ResourceCursor(Resource subject) {
-		this.subject = new ArrayList<Statement>(subject.listProperties()
+		this.subject = new Resource[1];
+		this.subject[0] = subject;
+		
+		// the cursor iterates the properties of a resource at the moment.
+		// maybe it should hold a list of resources in the future.
+		this.properties = new ArrayList<Statement>(subject.listProperties()
 				.toList());
+	}
+	
+	public ResourceCursor(Resource[] subject) {
+		this.subject = subject;
+		//this.subject = new ArrayList<Statement>(subject.listProperties()
+		//		.toList());
 	}
 	
 	@Override
@@ -35,7 +48,7 @@ public class ResourceCursor extends AbstractCursor {
 
 		try {
 			ArrayList<String> cols = new ArrayList<String>();
-			StmtIterator it = new StmtIteratorImpl(subject.iterator());
+			StmtIterator it = new StmtIteratorImpl(this.properties.iterator());
 			while (it.hasNext()) {
 				String prop = it.next().getPredicate().getURI();
 				cols.add(prop);
@@ -52,7 +65,6 @@ public class ResourceCursor extends AbstractCursor {
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
-
 		return 1;
 	}
 

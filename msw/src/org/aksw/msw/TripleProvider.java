@@ -120,11 +120,13 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public String getType(Uri uri) {
-		// TODO Auto-generated method stub
 
-		String mimeTypeResItm = "vnd.android.cursor.item/vnd.aksw.msw.resource";
-		String mimeTypeResDir = "vnd.android.cursor.dir/vnd.aksw.msw.resource";
-		String mimeTypeTriple = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
+		//String mimeTypeResItm = "vnd.android.cursor.item/vnd.aksw.msw.resource";
+		//String mimeTypeResDir = "vnd.android.cursor.dir/vnd.aksw.msw.resource";
+		//String mimeTypeTriple = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
+		String mimeTypeResItm = "vnd.android.cursor.item/vnd.com.hp.hpl.jena.rdf.model.resource";
+		String mimeTypeResDir = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.resource";
+		String mimeTypeTriple = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.statement";
 
 		int match = uriMatcher.match(uri);
 		switch (match) {
@@ -194,6 +196,7 @@ public class TripleProvider extends ContentProvider {
 
 		Resource res = null;
 
+		// Debugoutput
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
 		
 		Log.v(TAG, "path(1): " + path.get(1) + ".");
@@ -202,7 +205,8 @@ public class TripleProvider extends ContentProvider {
 		}
 
 		int match = uriMatcher.match(uri);
-		
+
+		// Debugoutput		
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
 		
 		switch (match) {
@@ -259,7 +263,8 @@ public class TripleProvider extends ContentProvider {
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
 		// TODO Auto-generated method stub
-		return 0;
+		throw new UnsupportedOperationException("The TripleProvider is not capable of updating Resources, sorry.");
+		//return 0;
 	}
 
 	// ---------------------------- private --------------------
