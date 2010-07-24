@@ -26,8 +26,8 @@ public class browser extends Activity {
 
 	private static final String TAG = "msswBrowser";
 	
-	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
-	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
+	private static final String CONTENT_AUTHORITY = "org.aksw.msw.tripleprovider";
+	private static final Uri CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
 	private final ArrayList<Property> items = new ArrayList<Property>();
 

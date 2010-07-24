@@ -3,11 +3,14 @@
  */
 package org.aksw.mssw;
 
+import java.net.URLEncoder;
+
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 
 /**
  * @author natanael
@@ -18,6 +21,10 @@ public class FoafProvider extends ContentProvider {
 	private static final String TAG = "FoafProvider";
 	public static final String AUTHORITY = "org.aksw.mssw.foafprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
+	
+	private static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
+	private static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://" + TRIPLE_AUTHORITY);
+	
 	public static final String DISPLAY_NAME = "FoafProvider";
 	
 	/**
@@ -63,6 +70,7 @@ public class FoafProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "config/", CONFIG);
 	}
 
+	private String me;
 	
 	
 	/* (non-Javadoc)
@@ -119,6 +127,16 @@ public class FoafProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 		// TODO Auto-generated method stub
+		
+		String config_uri = "http://" + AUTHORITY + "/config/me"; 
+		
+		String enc = "UTF-8";
+		Uri contentUri;
+		contentUri = Uri.parse(TRIPLE_CONTENT_URI
+				+ "/resource/" + URLEncoder.encode(config_uri, enc) + "/");
+
+		Cursor rc = managedQuery(contentUri, null, null, null, null);
+		
 		return false;
 	}
 
@@ -139,6 +157,21 @@ public class FoafProvider extends ContentProvider {
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
 		// TODO Auto-generated method stub
+		int match = uriMatcher.match(uri);
+		switch (match) {
+		case ME:
+		case PERSON:
+		case CONFIG_ME:
+		case ME_FRIEND_ADD:
+			return mimeTypeResItm;
+		case WORLD:
+		case ME_FRIENDS:
+		case PERSON_FRIENDS:
+		case CONFIG:
+			return mimeTypeResDir;
+		default:
+			return null;
+		}
 		return 0;
 	}
 
