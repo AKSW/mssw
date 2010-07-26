@@ -3,11 +3,20 @@
  */
 package org.aksw.mssw;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 
+import android.app.Application;
+import android.app.Service;
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.ContextWrapper;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.UriMatcher;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
@@ -42,7 +51,7 @@ public class FoafProvider extends ContentProvider {
 	 * 		returns a list of resources of my friends of a specific person
 	 * content://org.aksw.mssw.foafprovider/config
 	 * 		get the current configuration
-	 * content://org.aksw.mssw.foafprovider/config/me
+	 * content://org.aksw.mssw.foafprovider/config/me/_uri_
 	 * 		set my own webid
 	 */
 
@@ -66,7 +75,7 @@ public class FoafProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "me", ME);
 		uriMatcher.addURI(AUTHORITY, "person/friends", PERSON_FRIENDS);
 		uriMatcher.addURI(AUTHORITY, "person/*", PERSON);
-		uriMatcher.addURI(AUTHORITY, "config/me", CONFIG_ME);
+		uriMatcher.addURI(AUTHORITY, "config/me/*", CONFIG_ME);
 		uriMatcher.addURI(AUTHORITY, "config/", CONFIG);
 	}
 
@@ -127,17 +136,23 @@ public class FoafProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 		// TODO Auto-generated method stub
-		
-		String config_uri = "http://" + AUTHORITY + "/config/me"; 
-		
-		String enc = "UTF-8";
-		Uri contentUri;
-		contentUri = Uri.parse(TRIPLE_CONTENT_URI
-				+ "/resource/" + URLEncoder.encode(config_uri, enc) + "/");
 
-		Cursor rc = managedQuery(contentUri, null, null, null, null);
+		SharedPreferences sharedPreferences = this.getConfiguration();
+
+		this.me = sharedPreferences.getString("me", null);
+		if (this.me == null) {
+			Log.i(TAG, "No URI for \"me\" specified in FoafProvider, please set a URI in configuration.");
+		} else {
+			Log.v(TAG, "URI for \"me\" is: " + this.me);
+		}
 		
-		return false;
+		/*
+		sharedPreferences = null;
+		contentResolver = null;
+		appContext = null;
+		*/
+		
+		return true;
 	}
 
 	/* (non-Javadoc)
@@ -159,20 +174,32 @@ public class FoafProvider extends ContentProvider {
 		// TODO Auto-generated method stub
 		int match = uriMatcher.match(uri);
 		switch (match) {
+		case CONFIG:
+			ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
+			SharedPreferences sharedPreferences = this.getConfiguration();
+			Editor editor = sharedPreferences.edit();
+			editor.putString("me", path.get(2));
+			editor.commit();
+			return 1;
 		case ME:
 		case PERSON:
 		case CONFIG_ME:
 		case ME_FRIEND_ADD:
-			return mimeTypeResItm;
 		case WORLD:
 		case ME_FRIENDS:
 		case PERSON_FRIENDS:
-		case CONFIG:
-			return mimeTypeResDir;
 		default:
-			return null;
+			return 0;
 		}
-		return 0;
 	}
 
+	private SharedPreferences getConfiguration() {
+		Application appContext = new Application();
+//		ContentResolver contentResolver = appContext.getContentResolver();
+
+		SharedPreferences sharedPreferences = appContext.getSharedPreferences(
+				AUTHORITY, Context.MODE_PRIVATE);
+
+		return sharedPreferences;
+	}
 }

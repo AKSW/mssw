@@ -27,7 +27,9 @@ public class browser extends Activity {
 	private static final String TAG = "msswBrowser";
 	
 	private static final String CONTENT_AUTHORITY = "org.aksw.msw.tripleprovider";
+	private static final String FOAF_CONTENT_AUTHORITY = "org.aksw.msw.foafprovider";
 	private static final Uri CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
+	private static final Uri FOAF_CONTENT_URI = Uri.parse("content://" + FOAF_CONTENT_AUTHORITY);
 
 	private final ArrayList<Property> items = new ArrayList<Property>();
 
@@ -103,6 +105,16 @@ public class browser extends Activity {
 
 			try {
 				String enc = "UTF-8";
+				
+			
+			Uri foafContentUri;
+			foafContentUri = Uri.parse(FOAF_CONTENT_URI
+					+ "/config/me/"
+					+ URLEncoder.encode("http://comiles.eu/~natanael/foaf.rdf#me", enc));
+			getContentResolver().update(foafContentUri, null, null, null);
+			//Cursor frc = managedQuery(foafContentUri, null, null, null, null);
+			
+				
 				Uri contentUri;
 				contentUri = Uri.parse(CONTENT_URI
 						+ "/resource/" + mode + "/"

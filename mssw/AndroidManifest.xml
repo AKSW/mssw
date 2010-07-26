@@ -10,7 +10,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+		<provider android:authorities="org.aksw.mssw.foafprovider"
+			android:name="FoafProvider" />
     </application>
 
 
