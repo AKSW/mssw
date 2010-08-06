@@ -1,0 +1,10 @@
+syntax: glob
+
+.metadata/
+androjena
+bin/
+libs-src/
+code-resources/
+
+syntax: regexp
+^dist
