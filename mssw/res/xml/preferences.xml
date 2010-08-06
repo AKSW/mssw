@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+  <PreferenceCategory android:title="Your WebID">
+  <EditTextPreference android:key="me" android:title="Your WebID" android:defaultValue="http://people.comiles.eu/example" android:summary="Insert the URI of your WebID don't forget the scheme e.g. 'http://'.">
+  </EditTextPreference>
+  </PreferenceCategory>
+</PreferenceScreen>

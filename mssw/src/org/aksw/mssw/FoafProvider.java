@@ -7,18 +7,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
-import android.app.Application;
-import android.app.Service;
+import com.hp.hpl.jena.rdf.model.Resource;
+
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.ContextWrapper;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.UriMatcher;
-import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
@@ -64,9 +64,6 @@ public class FoafProvider extends ContentProvider {
 	private static final int PERSON = 20;
 	private static final int PERSON_FRIENDS = 21;
 
-	private static final int CONFIG = 30;
-	private static final int CONFIG_ME = 31;
-
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
 	static {
@@ -75,12 +72,12 @@ public class FoafProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "me", ME);
 		uriMatcher.addURI(AUTHORITY, "person/friends", PERSON_FRIENDS);
 		uriMatcher.addURI(AUTHORITY, "person/*", PERSON);
-		uriMatcher.addURI(AUTHORITY, "config/me/*", CONFIG_ME);
-		uriMatcher.addURI(AUTHORITY, "config/", CONFIG);
 	}
 
 	private String me;
 	
+	private static Context context;
+	private static SharedPreferences sharedPreferences;
 	
 	/* (non-Javadoc)
 	 * @see android.content.ContentProvider#delete(android.net.Uri, java.lang.String, java.lang.String[])
@@ -108,13 +105,11 @@ public class FoafProvider extends ContentProvider {
 		switch (match) {
 		case ME:
 		case PERSON:
-		case CONFIG_ME:
 		case ME_FRIEND_ADD:
 			return mimeTypeResItm;
 		case WORLD:
 		case ME_FRIENDS:
 		case PERSON_FRIENDS:
-		case CONFIG:
 			return mimeTypeResDir;
 		default:
 			return null;
@@ -135,9 +130,10 @@ public class FoafProvider extends ContentProvider {
 	 */
 	@Override
 	public boolean onCreate() {
-		// TODO Auto-generated method stub
 
-		SharedPreferences sharedPreferences = this.getConfiguration();
+		if (sharedPreferences == null) {
+			getConfiguration();
+		}
 
 		this.me = sharedPreferences.getString("me", null);
 		if (this.me == null) {
@@ -145,12 +141,6 @@ public class FoafProvider extends ContentProvider {
 		} else {
 			Log.v(TAG, "URI for \"me\" is: " + this.me);
 		}
-		
-		/*
-		sharedPreferences = null;
-		contentResolver = null;
-		appContext = null;
-		*/
 		
 		return true;
 	}
@@ -162,7 +152,62 @@ public class FoafProvider extends ContentProvider {
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
 		// TODO Auto-generated method stub
-		return null;
+
+		Log.v(TAG, "Starting query");
+		
+		Resource res = null;
+
+		// Debugoutput
+		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
+		
+		Log.v(TAG, "path(1/" + path.size() + "): " + path.get(1) + ".");
+		if (path.size() > 2) {
+			Log.v(TAG, "path(2/" + path.size() + "): " + path.get(2) + ".");
+		}
+		
+		int match = uriMatcher.match(uri);
+
+		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
+		
+		switch (match) {
+		case ME:
+		case PERSON:
+			if (path.size() > 1) {
+				Log.v(TAG, "getResource: <" + path.get(1) + ">");
+
+				if (context == null) {
+					context = getContext();
+				}
+				ContentResolver contentResolver = context.getContentResolver();
+				try {
+					String enc = "UTF-8";
+					
+					Uri contentUri;
+					contentUri = Uri.parse(TRIPLE_CONTENT_URI
+							+ "/person/"
+							+ URLEncoder.encode(path.get(1), enc));
+					
+					Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+							+ ">.");
+					
+				return contentResolver.query(contentUri, null, null, null, null);
+				
+				} catch(UnsupportedEncodingException e) {
+					Log.e(TAG, "Problem with encoding uri for the query.", e);
+				}
+				
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				return null;
+			}
+		case ME_FRIEND_ADD:
+		case WORLD:
+		case ME_FRIENDS:
+		case PERSON_FRIENDS:
+		default:
+			return null;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -171,19 +216,16 @@ public class FoafProvider extends ContentProvider {
 	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
-		// TODO Auto-generated method stub
+		
+		if (context == null) {
+			context = getContext();
+		}
+		ContentResolver contentResolver = context.getContentResolver();
+		
 		int match = uriMatcher.match(uri);
 		switch (match) {
-		case CONFIG:
-			ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
-			SharedPreferences sharedPreferences = this.getConfiguration();
-			Editor editor = sharedPreferences.edit();
-			editor.putString("me", path.get(2));
-			editor.commit();
-			return 1;
 		case ME:
 		case PERSON:
-		case CONFIG_ME:
 		case ME_FRIEND_ADD:
 		case WORLD:
 		case ME_FRIENDS:
@@ -193,13 +235,13 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 
-	private SharedPreferences getConfiguration() {
-		Application appContext = new Application();
-//		ContentResolver contentResolver = appContext.getContentResolver();
+	private void getConfiguration() {
 
-		SharedPreferences sharedPreferences = appContext.getSharedPreferences(
-				AUTHORITY, Context.MODE_PRIVATE);
-
-		return sharedPreferences;
+		if (context == null) {
+			context = getContext();
+		}
+		
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+		
 	}
 }

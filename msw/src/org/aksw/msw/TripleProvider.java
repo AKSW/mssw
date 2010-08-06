@@ -172,6 +172,7 @@ public class TripleProvider extends ContentProvider {
 	
 	@Override
 	public void onLowMemory() {
+		super.onLowMemory();
 		Log.v(TAG, "TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
 	}
 
@@ -199,14 +200,20 @@ public class TripleProvider extends ContentProvider {
 		// Debugoutput
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
 		
-		Log.v(TAG, "path(1): " + path.get(1) + ".");
+		Log.v(TAG, "path.size() = " + path.size() + ".");
+		if (path.size() > 0) {
+			Log.v(TAG, "path(0/" + path.size() + "): " + path.get(0) + ".");
+		}
 		if (path.size() > 1) {
-			Log.v(TAG, "path(2): " + path.get(2) + ".");
+			Log.v(TAG, "path(1/" + path.size() + "): " + path.get(1) + ".");
+		}
+		if (path.size() > 2) {
+			Log.v(TAG, "path(2/" + path.size() + "): " + path.get(2) + ".");
 		}
 
 		int match = uriMatcher.match(uri);
 
-		// Debugoutput		
+		// Debugoutput
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
 		
 		switch (match) {

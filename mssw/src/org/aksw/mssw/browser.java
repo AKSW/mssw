@@ -5,13 +5,18 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.MenuItem.OnMenuItemClickListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
@@ -26,10 +31,10 @@ public class browser extends Activity {
 
 	private static final String TAG = "msswBrowser";
 	
-	private static final String CONTENT_AUTHORITY = "org.aksw.msw.tripleprovider";
-	private static final String FOAF_CONTENT_AUTHORITY = "org.aksw.msw.foafprovider";
+	//private static final String CONTENT_AUTHORITY = "org.aksw.msw.tripleprovider";
+	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.foafprovider";
+	//private static final Uri CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 	private static final Uri CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
-	private static final Uri FOAF_CONTENT_URI = Uri.parse("content://" + FOAF_CONTENT_AUTHORITY);
 
 	private final ArrayList<Property> items = new ArrayList<Property>();
 
@@ -46,8 +51,6 @@ public class browser extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.browser);
-
-		
 		
 		aa = new PropertiesAdapter(this,
 				android.R.layout.simple_list_item_1, items);
@@ -56,8 +59,11 @@ public class browser extends Activity {
 		status = (TextView) findViewById(R.id.Status);
 		uriInput = (EditText) findViewById(R.id.UriInput);
 
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+		
 		properties.setAdapter(aa);
 		status.setText("");
+		uriInput.setText(sharedPreferences.getString("me", "noPref"));
 
 		this.importButton = (Button) this.findViewById(R.id.Import);
 		this.loadTmpButton = (Button) this.findViewById(R.id.Load);
@@ -76,7 +82,6 @@ public class browser extends Activity {
 				loadRes("save");
 			}
 		});
-		
 
 		this.readLocalButton.setOnClickListener(new OnClickListener() {
 			@Override
@@ -98,6 +103,7 @@ public class browser extends Activity {
 
 		// String uri = "http://comiles.eu/~natanael/foaf.rdf#me";
 		String uri = uriInput.getText().toString();
+		
 
 		if (uri.length() > 0) {
 
@@ -106,18 +112,9 @@ public class browser extends Activity {
 			try {
 				String enc = "UTF-8";
 				
-			
-			Uri foafContentUri;
-			foafContentUri = Uri.parse(FOAF_CONTENT_URI
-					+ "/config/me/"
-					+ URLEncoder.encode("http://comiles.eu/~natanael/foaf.rdf#me", enc));
-			getContentResolver().update(foafContentUri, null, null, null);
-			//Cursor frc = managedQuery(foafContentUri, null, null, null, null);
-			
-				
 				Uri contentUri;
 				contentUri = Uri.parse(CONTENT_URI
-						+ "/resource/" + mode + "/"
+						+ "/person/"
 						+ URLEncoder.encode(uri, enc));
 
 				// ResourceCursor rc = (ResourceCursor) managedQuery(contentUri,
@@ -152,8 +149,7 @@ public class browser extends Activity {
 				}
 
 			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Log.e(TAG, "Problem with encoding uri for the query.", e);
 				status.append("Error retriving Data from Contentprovider.");
 			}
 		} else {
@@ -165,10 +161,25 @@ public class browser extends Activity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.browser, menu);
 		return true;
 	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	  switch (item.getItemId()) {
+	  case R.id.itemPref:
+		Intent i = new Intent(this, MsswPreferenceActivity.class);
+		startActivity(i);
+	    return true;
+	  default:
+	    return super.onOptionsItemSelected(item);
+	  }
+	}
+	
+	/*----------------- private -------------------*/
 	
 	private class PropertiesAdapter extends ArrayAdapter<Property> {
 

@@ -3,4 +3,5 @@
 	<item android:id="@+id/itemHello" android:title="@string/hello"></item>
 	<item android:id="@+id/itemNew" android:title="@string/new_WebID"></item>
 	<item android:id="@+id/itemAdd" android:title="@string/add_to_WebID"></item>
+<item android:title="Preferences" android:id="@+id/itemPref"></item>
 </menu>
