@@ -184,7 +184,7 @@ public class FoafProvider extends ContentProvider {
 					
 					Uri contentUri;
 					contentUri = Uri.parse(TRIPLE_CONTENT_URI
-							+ "/person/"
+							+ "/resource/"
 							+ URLEncoder.encode(path.get(1), enc));
 					
 					Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()

@@ -298,7 +298,7 @@ public class TripleProvider extends ContentProvider {
 		case OFF:
 			return queryResource(uri);
 		default:
-			return null;
+			return cacheResource(uri);
 		}
 	}
 

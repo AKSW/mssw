@@ -101,7 +101,7 @@ public class ResourceCursor extends AbstractCursor {
 	@Override
 	public String getString(int column) {
 		// TODO Auto-generated method stub
-		Statement stmt = subject.get(column);
+		Statement stmt = properties.get(column);
 		try {
 			int type = getType(column);
 			switch(type) {
@@ -123,7 +123,7 @@ public class ResourceCursor extends AbstractCursor {
 
 	public Resource getObject(int column) {
 		// TODO Auto-generated method stub
-		Statement stmt = subject.get(column);
+		Statement stmt = properties.get(column);
 		try {
 			return (Resource) stmt.getObject();
 		} catch (Exception e) {
@@ -132,7 +132,7 @@ public class ResourceCursor extends AbstractCursor {
 	}
 
 	public String getUri(int column) {
-		Statement stmt = subject.get(column);
+		Statement stmt = properties.get(column);
 		try {
 			if (stmt.getObject().isURIResource()) {
 				Resource obj = (Resource) stmt.getObject();
@@ -152,7 +152,7 @@ public class ResourceCursor extends AbstractCursor {
 	public static final int NAMED_RESOURCE = 22;
 
 	public int getType(int column) {
-		Statement stmt = subject.get(column);
+		Statement stmt = properties.get(column);
 		if (stmt.getObject().isLiteral()) {
 			return LITERAL;
 		} else if (stmt.getObject().isAnon()) {

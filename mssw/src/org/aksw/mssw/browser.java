@@ -43,9 +43,7 @@ public class browser extends Activity {
 	private ListView properties;
 	private TextView status;
 	private EditText uriInput;
-	private Button loadTmpButton;
-	private Button importButton;
-	private Button readLocalButton;
+	private Button loadButton;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -65,28 +63,12 @@ public class browser extends Activity {
 		status.setText("");
 		uriInput.setText(sharedPreferences.getString("me", "noPref"));
 
-		this.importButton = (Button) this.findViewById(R.id.Import);
-		this.loadTmpButton = (Button) this.findViewById(R.id.Load);
-		this.readLocalButton = (Button) this.findViewById(R.id.Offline);
+		this.loadButton = (Button) this.findViewById(R.id.Load);
 
-		this.loadTmpButton.setOnClickListener(new OnClickListener() {
+		this.loadButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				loadRes("tmp");
-			}
-		});
-
-		this.importButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				loadRes("save");
-			}
-		});
-
-		this.readLocalButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				loadRes("offline");
 			}
 		});
 
