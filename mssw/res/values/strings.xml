@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
 	<string name="hello">Hello World, browser!</string>
-	<string name="app_name">mssw</string>
+	<string name="app_name">MSSW</string>
 	<string name="browser_name">FOAF-Browser</string>
 	<string name="new_WebID">New WebID</string>
+	<string name="add_WebID">Add WebID</string>
 	<string name="add_to_WebID">Add to your WebID</string>
+	<string name="add">Add</string>
+	<string name="preferences">Preferences</string>
+	<string name="me">Me</string>
+	<string name="contacts">contacts</string>
+	<string name="browse">browse</string>
+	<string name="search">search</string>
+	<string name="sync">synchronize</string>
 </resources>

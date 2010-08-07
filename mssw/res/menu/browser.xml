@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-	<item android:id="@+id/itemHello" android:title="@string/hello"></item>
-	<item android:id="@+id/itemNew" android:title="@string/new_WebID"></item>
-	<item android:id="@+id/itemAdd" android:title="@string/add_to_WebID"></item>
-<item android:title="Preferences" android:id="@+id/itemPref"></item>
+	<item android:id="@+id/itemAdd" android:title="@string/add_WebID"></item>
+	<item android:id="@+id/itemMe" android:title="@string/me"></item>
+	<item android:id="@+id/itemBrowse" android:title="@string/browse"></item>
+	<item android:id="@+id/itemPref" android:title="@string/preferences"></item>
 </menu>

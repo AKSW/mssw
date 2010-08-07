@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import android.app.Activity;
+import android.app.TabActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -24,9 +25,12 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TabHost;
+import android.widget.TabHost.OnTabChangeListener;
+import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 
-public class browser extends Activity {
+public class Browser extends TabActivity implements OnTabChangeListener {
 	/** Called when the activity is first created. */
 
 	private static final String TAG = "msswBrowser";
@@ -44,11 +48,34 @@ public class browser extends Activity {
 	private TextView status;
 	private EditText uriInput;
 	private Button loadButton;
+	
+	private TabHost tabHost;
+	private int lastManuallySelectedTab;
+	private ArrayList<String> tabnames = new ArrayList<String>();
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.browser);
+		
+		tabHost = getTabHost();
+		tabHost.setOnTabChangedListener(this);
+		
+		TabHost.TabSpec meCard = tabHost.newTabSpec("meCard");
+		TabHost.TabSpec contacts = tabHost.newTabSpec("Contacts");
+		TabHost.TabSpec browser = tabHost.newTabSpec("Browser");
+		
+		meCard.setIndicator(getString(R.string.me));
+		contacts.setIndicator(getString(R.string.contacts));
+		browser.setIndicator(getString(R.string.browse));
+		
+		meCard.setContent(R.id.browser_mecard);
+		contacts.setContent(R.id.browser_contacts);
+		browser.setContent(R.id.browser_browse);
+		
+		tabHost.addTab(meCard);
+		tabHost.addTab(contacts);
+		tabHost.addTab(browser);
 		
 		aa = new PropertiesAdapter(this,
 				android.R.layout.simple_list_item_1, items);
@@ -220,6 +247,27 @@ public class browser extends Activity {
 		}
 		
 		
+	}
+
+	@Override
+	public void onTabChanged(String tabId) {
+		// TODO Auto-generated method stub
+		// Because we're using Activities as our tab children, we trigger
+		// onWindowFocusChanged() to let them know when they're active. This may
+		// seem to duplicate the purpose of onResume(), but it's needed because
+		// onResume() can't reliably check if a keyguard is active.
+
+		Activity activity = getLocalActivityManager().getActivity(tabId);
+		if (activity != null) {
+			activity.onWindowFocusChanged(true);
+		}
+
+		// Remember this tab index. This function is also called, if the tab is
+		// set automatically
+		// in which case the setter (setCurrentTab) has to set this to its old
+		// value afterwards
+
+		lastManuallySelectedTab = tabHost.getCurrentTab();
 	}
 
 }
