@@ -3,13 +3,17 @@
 	<string name="hello">Hallo Welt, Browser!</string>
 	<string name="app_name">MSSW</string>
 	<string name="browser_name">FOAF-Browser</string>
+	<string name="your_webid">Deine WebID</string>
 	<string name="new_WebID">Neue WebID</string>
+	<string name="add_WebID">WebID hinzufügen</string>
 	<string name="add_to_WebID">Zur WebID hinzufügen</string>
 	<string name="add">Hinzufügen</string>
 	<string name="preferences">Einstellungen</string>
 	<string name="me">Ich</string>
 	<string name="contacts">Kontakte</string>
-	<string name="browse">durchstöbern</string>
-	<string name="search">suchen</string>
-	<string name="sync">synchronisieren</string>
+	<string name="browse">Durchstöbern</string>
+	<string name="search">Suchen</string>
+	<string name="sync">Synchronisieren</string>
+	<string name="load">Laden</string>
+	<string name="pref_your_webid_desc">Füge hier die URI deiner WebID ein. Vergiss dabei das Schema nicht \'http://\' o.ä.</string>
 </resources>

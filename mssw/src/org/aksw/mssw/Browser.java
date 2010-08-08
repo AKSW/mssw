@@ -1,7 +1,5 @@
 package org.aksw.mssw;
 
-import java.util.ArrayList;
-
 import android.app.Activity;
 import android.app.TabActivity;
 import android.content.Intent;
@@ -15,8 +13,6 @@ public class Browser extends TabActivity implements OnTabChangeListener {
 	private static final String TAG = "msswBrowser";
 	
 	private TabHost tabHost;
-	private int lastManuallySelectedTab;
-	private ArrayList<String> tabnames = new ArrayList<String>();
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -61,12 +57,12 @@ public class Browser extends TabActivity implements OnTabChangeListener {
 		// onWindowFocusChanged() to let them know when they're active. This may
 		// seem to duplicate the purpose of onResume(), but it's needed because
 		// onResume() can't reliably check if a keyguard is active.
-
+/*
 		Activity activity = getLocalActivityManager().getActivity(tabId);
 		if (activity != null) {
 			activity.onWindowFocusChanged(true);
 		}
-
+*/
 		// Remember this tab index. This function is also called, if the tab is
 		// set automatically
 		// in which case the setter (setCurrentTab) has to set this to its old

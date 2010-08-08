@@ -1,21 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent"
-  android:id="@+id/browser_mecard_view"
-  android:layout_height="fill_parent"
-  android:orientation="vertical">	
-	<EditText android:id="@+id/UriInput" 
-		android:layout_height="wrap_content"
-		android:layout_width="fill_parent"
-		android:text=""
-		android:inputType="textUri" />
-	<Button android:text="Load" android:id="@+id/Load"
-			  android:layout_height="wrap_content" android:layout_width="fill_parent" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent" android:id="@+id/browser_mecard_view"
+	android:layout_height="fill_parent" android:orientation="vertical">
+	<EditText android:id="@+id/UriInput" android:layout_height="wrap_content"
+		android:layout_width="fill_parent" android:text="" android:inputType="textUri" />
+	<Button android:text="@string/load" android:id="@+id/Load"
+		android:layout_height="wrap_content" android:layout_width="fill_parent" />
 	<TextView android:id="@+id/Status" android:layout_width="wrap_content"
-		android:layout_height="wrap_content" android:text="lol123123123123">
-	</TextView>
+		android:layout_height="wrap_content" />
 	<ListView android:id="@+id/Properties" android:layout_width="fill_parent"
-		android:layout_height="fill_parent" android:layout_weight="1" >
-	</ListView>
+		android:layout_height="fill_parent" android:layout_weight="1" />
 </LinearLayout>

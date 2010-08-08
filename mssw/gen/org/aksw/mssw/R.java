@@ -45,19 +45,22 @@ public final class R {
         public static final int browser=0x7f060000;
     }
     public static final class string {
-        public static final int add=0x7f050006;
-        public static final int add_WebID=0x7f050004;
-        public static final int add_to_WebID=0x7f050005;
+        public static final int add=0x7f050007;
+        public static final int add_WebID=0x7f050005;
+        public static final int add_to_WebID=0x7f050006;
         public static final int app_name=0x7f050001;
-        public static final int browse=0x7f05000a;
+        public static final int browse=0x7f05000b;
         public static final int browser_name=0x7f050002;
-        public static final int contacts=0x7f050009;
+        public static final int contacts=0x7f05000a;
         public static final int hello=0x7f050000;
-        public static final int me=0x7f050008;
-        public static final int new_WebID=0x7f050003;
-        public static final int preferences=0x7f050007;
-        public static final int search=0x7f05000b;
-        public static final int sync=0x7f05000c;
+        public static final int load=0x7f05000e;
+        public static final int me=0x7f050009;
+        public static final int new_WebID=0x7f050004;
+        public static final int pref_your_webid_desc=0x7f05000f;
+        public static final int preferences=0x7f050008;
+        public static final int search=0x7f05000c;
+        public static final int sync=0x7f05000d;
+        public static final int your_webid=0x7f050003;
     }
     public static final class xml {
         public static final int preferences=0x7f040000;
