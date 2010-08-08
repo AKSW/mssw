@@ -21,7 +21,8 @@ public class Browser extends TabActivity implements OnTabChangeListener {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.browser);
+		// important!! don't set the content because else no tab-content would be displayed. 
+		//setContentView(R.layout.browser);
 		
 		tabHost = getTabHost();
 		tabHost.setOnTabChangedListener(this);
