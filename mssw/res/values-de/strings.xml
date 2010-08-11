@@ -16,4 +16,5 @@
 	<string name="sync">Synchronisieren</string>
 	<string name="load">Laden</string>
 	<string name="pref_your_webid_desc">Füge hier die URI deiner WebID ein. Vergiss dabei das Schema nicht \'http://\' o.ä.</string>
+	<string name="no_contacts">Zu dieser WebID konnten keine Kontakte gefunden werden.</string>
 </resources>

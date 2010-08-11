@@ -6,4 +6,10 @@
 			android:summary="@string/pref_your_webid_desc">
 		</EditTextPreference>
 	</PreferenceCategory>
+	<PreferenceCategory android:title="@string/app_name">
+		<Preference android:key="sync" android:title="@string/sync"
+			android:defaultValue="http://people.comiles.eu/example"
+			android:summary="@string/pref_your_webid_desc">
+		</Preference>
+	</PreferenceCategory>
 </PreferenceScreen>

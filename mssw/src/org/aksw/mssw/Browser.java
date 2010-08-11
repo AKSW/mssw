@@ -1,8 +1,8 @@
 package org.aksw.mssw;
 
-import android.app.Activity;
 import android.app.TabActivity;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
@@ -18,32 +18,33 @@ public class Browser extends TabActivity implements OnTabChangeListener {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		// important!! don't set the content because else no tab-content would be displayed. 
-		//setContentView(R.layout.browser);
+		setContentView(R.layout.browser);
 		
 		tabHost = getTabHost();
 		tabHost.setOnTabChangedListener(this);
 
+		Resources res = getResources(); // Resource object to get Drawables
 		TabHost.TabSpec spec;	// Reusable TabSpec for each tab
 		Intent intent;			// Reusable Intent for each tab
 
 		/* This is bad, because I repeat very similar code tree times */
 		intent = new Intent().setClass(this, BrowserMeCard.class);
 		spec = tabHost.newTabSpec("meCard");
-		spec.setIndicator(getString(R.string.me));
+		spec.setIndicator(getString(R.string.me), res.getDrawable(android.R.drawable.ic_menu_myplaces));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
 		
 		/* This is bad, because I repeat very similar code tree times */
 		intent = new Intent().setClass(this, BrowserContacts.class);
 		spec = tabHost.newTabSpec("Contacts");
-		spec.setIndicator(getString(R.string.contacts));
+		spec.setIndicator(getString(R.string.contacts), res.getDrawable(android.R.drawable.ic_menu_help));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
 		
 		/* This is bad, because I repeat very similar code tree times */
 		intent = new Intent().setClass(this, BrowserBrowse.class);
 		spec = tabHost.newTabSpec("Browser");
-		spec.setIndicator(getString(R.string.browse));
+		spec.setIndicator(getString(R.string.browse), res.getDrawable(android.R.drawable.ic_menu_compass));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
 		

@@ -11,19 +11,20 @@
 		android:src="@drawable/icon" />
 
 
-	<TextView android:id="@+id/firstLine" android:layout_width="fill_parent"
-		android:layout_height="26dip" android:layout_toRightOf="@id/icon"
-		android:layout_alignParentTop="true" android:layout_alignParentRight="true"
-		 android:singleLine="true" android:ellipsize="marquee" 
-		android:text="My Application" />
-
 	<TextView android:id="@+id/secondLine" android:layout_width="fill_parent"
 		android:layout_height="26dip" android:layout_toRightOf="@id/icon"
 		android:layout_alignParentBottom="true"
 		android:layout_alignParentRight="true" android:singleLine="true"
 		android:ellipsize="marquee"
-		android:layout_above="@id/secondLine"
 		android:text="Simple application that shows how to use RelativeLayout" />
+		
+	<TextView android:id="@+id/firstLine" android:layout_width="fill_parent"
+		android:layout_height="26dip" android:layout_toRightOf="@id/icon"
+		android:layout_alignParentTop="true" android:layout_alignParentRight="true"
+		 android:singleLine="true" android:ellipsize="marquee" 
+		android:layout_above="@id/secondLine"
+		android:text="My Application" />
+
 
 
 </RelativeLayout>
