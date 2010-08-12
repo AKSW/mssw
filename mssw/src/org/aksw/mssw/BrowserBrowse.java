@@ -25,9 +25,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.TabHost.OnTabChangeListener;
 
-public class BrowserBrowse extends Activity implements OnTabChangeListener {
+public class BrowserBrowse extends Activity {
 
 	private static final String TAG = "msswBrowserMeCard";
 	
@@ -72,12 +71,6 @@ public class BrowserBrowse extends Activity implements OnTabChangeListener {
 		});
 
 		loadRes("offline");
-	}
-	
-	@Override
-	public void onTabChanged(String tabId) {
-		// TODO Auto-generated method stub
-		Log.v(TAG, "onTabChange id: " + tabId);
 	}
 
 	@Override

@@ -27,7 +27,8 @@ public final class R {
         public static final int itemAdd=0x7f070012;
         public static final int itemBrowse=0x7f070014;
         public static final int itemMe=0x7f070013;
-        public static final int itemPref=0x7f070015;
+        public static final int itemPref=0x7f070016;
+        public static final int itemSync=0x7f070015;
         public static final int mecard_birthday=0x7f070006;
         public static final int mecard_email=0x7f070007;
         public static final int mecard_name=0x7f070005;

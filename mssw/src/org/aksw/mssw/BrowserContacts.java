@@ -1,24 +1,72 @@
 package org.aksw.mssw;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 import android.app.ListActivity;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.TabHost.OnTabChangeListener;
+import android.widget.ImageView;
+import android.widget.TextView;
 
-public class BrowserContacts extends ListActivity implements OnTabChangeListener {
+public class BrowserContacts extends ListActivity {
+
+	private static final String TAG = "msswBrowserContacts";
+
+	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.foafprovider";
+	private static final Uri CONTENT_URI = Uri.parse("content://"
+			+ CONTENT_AUTHORITY);
+
+	private static final String DEFAULT_ME = "http://people.comiles.eu/example";
+
+	/**
+	 * should be replaced by something saved in the Application Context to use it also in MeCard
+	 * @deprecated
+	 */
+	private static String selectedWebID;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.browser_contacts);
-	}
-	
-	@Override
-	public void onTabChanged(String tabId) {
-		// TODO Auto-generated method stub
+		
 
+		/**
+		 * retrieve WebID first from savedInstanceState than from SharedPreferences
+		 */
+		if (selectedWebID == null) {
+			SharedPreferences sharedPreferences = PreferenceManager
+					.getDefaultSharedPreferences(getApplicationContext());
+			selectedWebID = sharedPreferences.getString("me", DEFAULT_ME);
+		}
+
+		try {
+			String enc = "UTF-8";
+
+			Uri contentUri = Uri.parse(CONTENT_URI + "/person/contacts/"
+					+ URLEncoder.encode(selectedWebID, enc));
+
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
+
+			Cursor rc = managedQuery(contentUri, null, null, null, null);
+
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG,
+					"Could not encode URI and so couldn't get Resource from "
+							+ CONTENT_AUTHORITY + ".", e);
+			TextView empty = (TextView) this.findViewById(android.R.id.empty);
+			empty.setText("Could not encode URI and so couldn't get Resource from "
+					+ CONTENT_AUTHORITY + ".");
+		}
 	}
 
 	@Override
@@ -45,6 +93,4 @@ public class BrowserContacts extends ListActivity implements OnTabChangeListener
 			return super.onOptionsItemSelected(item);
 		}
 	}
-
-	
 }

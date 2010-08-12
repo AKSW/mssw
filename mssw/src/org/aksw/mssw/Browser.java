@@ -4,6 +4,7 @@ import android.app.TabActivity;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 
@@ -27,21 +28,21 @@ public class Browser extends TabActivity implements OnTabChangeListener {
 		TabHost.TabSpec spec;	// Reusable TabSpec for each tab
 		Intent intent;			// Reusable Intent for each tab
 
-		/* This is bad, because I repeat very similar code tree times */
+		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserMeCard.class);
 		spec = tabHost.newTabSpec("meCard");
 		spec.setIndicator(getString(R.string.me), res.getDrawable(android.R.drawable.ic_menu_myplaces));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
 		
-		/* This is bad, because I repeat very similar code tree times */
+		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserContacts.class);
 		spec = tabHost.newTabSpec("Contacts");
 		spec.setIndicator(getString(R.string.contacts), res.getDrawable(android.R.drawable.ic_menu_help));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
 		
-		/* This is bad, because I repeat very similar code tree times */
+		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserBrowse.class);
 		spec = tabHost.newTabSpec("Browser");
 		spec.setIndicator(getString(R.string.browse), res.getDrawable(android.R.drawable.ic_menu_compass));
@@ -70,6 +71,8 @@ public class Browser extends TabActivity implements OnTabChangeListener {
 		// value afterwards
 
 	//	lastManuallySelectedTab = tabHost.getCurrentTab();
+		// TODO Auto-generated method stub
+		Log.v(TAG, "onTabChange id: " + tabId);
 	}
 
 }
