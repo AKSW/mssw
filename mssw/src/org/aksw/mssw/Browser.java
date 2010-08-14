@@ -25,8 +25,8 @@ public class Browser extends TabActivity implements OnTabChangeListener {
 		tabHost.setOnTabChangedListener(this);
 
 		Resources res = getResources(); // Resource object to get Drawables
-		TabHost.TabSpec spec;	// Reusable TabSpec for each tab
-		Intent intent;			// Reusable Intent for each tab
+		TabHost.TabSpec spec;			// Reusable TabSpec for each tab
+		Intent intent;					// Reusable Intent for each tab
 
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserMeCard.class);

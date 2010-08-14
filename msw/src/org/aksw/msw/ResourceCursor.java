@@ -1,20 +1,17 @@
 /**
  * 
  */
-package org.aksw.msw;
+package org.aksw.mssw;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.List;
 
-import com.hp.hpl.jena.rdf.model.Property;
+import android.database.AbstractCursor;
+import android.util.Log;
+
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.StmtIteratorImpl;
-
-import android.database.AbstractCursor;
-import android.util.Log;
 
 /**
  * @author natanael
@@ -24,21 +21,21 @@ public class ResourceCursor extends AbstractCursor {
 
 	private static final String TAG = "ResourceCursor";
 
-	private ArrayList<Statement> properties;
-	private Resource[] subject;
+	private ArrayList<Statement> properties[];
+	private Resource subject;
+	private Resource[] subjects;
 
 	public ResourceCursor(Resource subject) {
-		this.subject = new Resource[1];
-		this.subject[0] = subject;
+		this.subjects[0] = subject;
 		
 		// the cursor iterates the properties of a resource at the moment.
 		// maybe it should hold a list of resources in the future.
-		this.properties = new ArrayList<Statement>(subject.listProperties()
+		this.properties[0] = new ArrayList<Statement>(subject.listProperties()
 				.toList());
 	}
 	
 	public ResourceCursor(Resource[] subject) {
-		this.subject = subject;
+		this.subjects = subject;
 		//this.subject = new ArrayList<Statement>(subject.listProperties()
 		//		.toList());
 	}
@@ -114,7 +111,7 @@ public class ResourceCursor extends AbstractCursor {
 				return "BlankNode or Nothing";
 			}
 		} catch (Exception e) {
-			Log.v(TAG, "The statement in column " + column + " thrwe an exception.", e);
+			Log.v(TAG, "The statement in column " + column + " threw an exception.", e);
 			return null;
 		}
 	}

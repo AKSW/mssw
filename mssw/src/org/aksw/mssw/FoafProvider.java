@@ -7,14 +7,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
-import com.hp.hpl.jena.rdf.model.Resource;
-
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
@@ -22,46 +19,38 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
- * @author natanael
+ * @author Natanael Arndt <arndtn@gmx.de>
  * 
  */
 public class FoafProvider extends ContentProvider {
 
 	private static final String TAG = "FoafProvider";
+	public static final String DISPLAY_NAME = "FoafProvider";
 	public static final String AUTHORITY = "org.aksw.mssw.foafprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
+	/**
+	 * Static values for querying the TripleProvider
+	 */
 	private static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
 	private static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
 			+ TRIPLE_AUTHORITY);
 
-	public static final String DISPLAY_NAME = "FoafProvider";
-
 	/**
-	 * content://org.aksw.mssw.foafprovider returns nothing
-	 * content://org.aksw.mssw.foafprovider/me returns the resource representing
-	 * you content://org.aksw.mssw.foafprovider/me/friends returns a list of
-	 * resources of my friends
-	 * content://org.aksw.mssw.foafprovider/me/friend/add/_uri_ add friends to
-	 * the friends list content://org.aksw.mssw.foafprovider/person/_uri_
-	 * returns a specific person
-	 * content://org.aksw.mssw.foafprovider/person/_uri_/friends returns a list
-	 * of resources of my friends of a specific person
-	 * content://org.aksw.mssw.foafprovider/config get the current configuration
-	 * content://org.aksw.mssw.foafprovider/config/me/_uri_ set my own webid
+	 * Static values which represent the different pathes of the query uris
 	 */
-
 	private static final int WORLD = 1;
-
 	private static final int ME = 100;
 	private static final int ME_MECARD = 110;
 	private static final int ME_FRIENDS = 120;
 	private static final int ME_FRIEND_ADD = 121;
-
 	private static final int PERSON = 20;
 	private static final int PERSON_MECARD = 21;
 	private static final int PERSON_FRIENDS = 22;
 
+	/**
+	 * The UriMatcher, which parses the incoming querie-uris
+	 */
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
 	static {
@@ -74,26 +63,41 @@ public class FoafProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "person/*", PERSON);
 	}
 
+	/**
+	 * The WebID of the user
+	 */
 	private String me;
 
+	/**
+	 * The Application Context in wich the ContentProvider is running and the
+	 * SharedPreferences of all Applications in this Context
+	 */
 	private static Context context;
 	private static SharedPreferences sharedPreferences;
+	private static ContentResolver contentResolver;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.content.ContentProvider#delete(android.net.Uri,
-	 * java.lang.String, java.lang.String[])
+	/**
+	 * @see android.content.ContentProvider#onCreate()
 	 */
 	@Override
-	public int delete(Uri uri, String selection, String[] selectionArgs) {
-		// TODO Auto-generated method stub
-		return 0;
+	public boolean onCreate() {
+
+		if (sharedPreferences == null) {
+			getConfiguration();
+		}
+
+		this.me = sharedPreferences.getString("me", null);
+		if (this.me == null) {
+			Log.i(TAG,
+					"No URI for \"me\" specified in FoafProvider, please set a URI in configuration.");
+		} else {
+			Log.v(TAG, "URI for \"me\" is: " + this.me);
+		}
+
+		return true;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/**
 	 * @see android.content.ContentProvider#getType(android.net.Uri)
 	 */
 	@Override
@@ -126,62 +130,30 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.content.ContentProvider#insert(android.net.Uri,
-	 * android.content.ContentValues)
-	 */
-	@Override
-	public Uri insert(Uri uri, ContentValues values) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.content.ContentProvider#onCreate()
-	 */
-	@Override
-	public boolean onCreate() {
-
-		if (sharedPreferences == null) {
-			getConfiguration();
-		}
-
-		this.me = sharedPreferences.getString("me", null);
-		if (this.me == null) {
-			Log.i(TAG,
-					"No URI for \"me\" specified in FoafProvider, please set a URI in configuration.");
-		} else {
-			Log.v(TAG, "URI for \"me\" is: " + this.me);
-		}
-
-		return true;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
+	/**
 	 * @see android.content.ContentProvider#query(android.net.Uri,
-	 * java.lang.String[], java.lang.String, java.lang.String[],
-	 * java.lang.String)
+	 *      java.lang.String[], java.lang.String, java.lang.String[],
+	 *      java.lang.String)
 	 */
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
-		// TODO Auto-generated method stub
 
 		Log.v(TAG, "Starting query");
 
+		/**
+		 * The segments of the query-path
+		 */
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
 
-		Log.v(TAG, "path(1/" + path.size() + "): " + path.get(1) + ".");
-		if (path.size() > 2) {
-			Log.v(TAG, "path(2/" + path.size() + "): " + path.get(2) + ".");
+		for (int i = 0; i < path.size(); i++) {
+			Log.v(TAG, "path(" + i + "/" + path.size() + "): " + path.get(i)
+					+ ".");
 		}
 
+		/**
+		 * The determined URI-format
+		 */
 		int match = uriMatcher.match(uri);
 
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
@@ -192,24 +164,28 @@ public class FoafProvider extends ContentProvider {
 		case PERSON:
 			if (path.size() > 1) {
 				return getPerson(path.get(1));
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-				return null;
 			}
+			break;
 		case ME_MECARD:
 			return getMeCard();
 		case PERSON_MECARD:
-			return getMeCard(path.get(2));
+			if (path.size() > 2) {
+				return getMeCard(path.get(2));
+			}
+			break;
 		case ME_FRIENDS:
 			return getFriends();
 		case PERSON_FRIENDS:
-			return getFriends(path.get(2));
-		case WORLD:
-		case ME_FRIEND_ADD:
+			if (path.size() > 2) {
+				return getFriends(path.get(2));
+			}
+			break;
 		default:
 			return null;
 		}
+
+		Log.v(TAG, "Size of path (" + path.size() + ") to short. <" + uri + ">");
+		return null;
 	}
 
 	/*
@@ -228,15 +204,52 @@ public class FoafProvider extends ContentProvider {
 			Log.i(TAG,
 					"Adding new friends to your WebID is not yet implemented.");
 			// return 1;
-		case ME:
-		case PERSON:
-		case WORLD:
-		case ME_FRIENDS:
-		case PERSON_FRIENDS:
 		default:
 			return 0;
 		}
 	}
+
+	/*------------- private ----------------*/
+
+	private String[] relations = { "http://xmlns.com/foaf/0.1/knows",
+			"http://purl.org/vocab/relationship/acquaintanceOf",
+			"http://purl.org/vocab/relationship/ambivalentOf",
+			"http://purl.org/vocab/relationship/ancestorOf",
+			"http://purl.org/vocab/relationship/antagonistOf",
+			"http://purl.org/vocab/relationship/apprenticeTo",
+			"http://purl.org/vocab/relationship/childOf",
+			"http://purl.org/vocab/relationship/closeFriendOf",
+			"http://purl.org/vocab/relationship/collaboratesWith",
+			"http://purl.org/vocab/relationship/colleagueOf",
+			"http://purl.org/vocab/relationship/descendantOf",
+			"http://purl.org/vocab/relationship/employedBy",
+			"http://purl.org/vocab/relationship/employerOf",
+			"http://purl.org/vocab/relationship/enemyOf",
+			"http://purl.org/vocab/relationship/engagedTo",
+			"http://purl.org/vocab/relationship/friendOf",
+			"http://purl.org/vocab/relationship/grandchildOf",
+			"http://purl.org/vocab/relationship/grandparentOf",
+			"http://purl.org/vocab/relationship/hasMet",
+			"http://purl.org/vocab/relationship/influencedBy",
+			"http://purl.org/vocab/relationship/knowsByReputation",
+			"http://purl.org/vocab/relationship/knowsInPassing",
+			"http://purl.org/vocab/relationship/knowsOf",
+			"http://purl.org/vocab/relationship/lifePartnerOf",
+			"http://purl.org/vocab/relationship/livesWith",
+			"http://purl.org/vocab/relationship/lostContactWith",
+			"http://purl.org/vocab/relationship/mentorOf",
+			"http://purl.org/vocab/relationship/neighborOf",
+			"http://purl.org/vocab/relationship/parentOf",
+			"http://purl.org/vocab/relationship/participant",
+			"http://purl.org/vocab/relationship/participantIn",
+			"http://purl.org/vocab/relationship/Relationship",
+			"http://purl.org/vocab/relationship/siblingOf",
+			"http://purl.org/vocab/relationship/spouseOf",
+			"http://purl.org/vocab/relationship/worksWith",
+			"http://purl.org/vocab/relationship/wouldLikeToKnow" };
+
+	private String[] meCard = { "http://xmlns.com/foaf/0.1/name",
+			"http://xmlns.com/foaf/0.1/jabberID" };
 
 	private Cursor getMe() {
 		if (me == null) {
@@ -248,10 +261,6 @@ public class FoafProvider extends ContentProvider {
 	private Cursor getPerson(String uri) {
 		Log.v(TAG, "getPerson: <" + uri + ">");
 
-		if (context == null) {
-			context = getContext();
-		}
-		ContentResolver contentResolver = context.getContentResolver();
 		try {
 			String enc = "UTF-8";
 
@@ -261,8 +270,10 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
+			Cursor rc = getContentResolver().query(contentUri, null, null, null,
+					null);
 
-			return contentResolver.query(contentUri, null, null, null, null);
+			return rc;
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
 			return null;
@@ -277,10 +288,23 @@ public class FoafProvider extends ContentProvider {
 	}
 
 	private Cursor getMeCard(String uri) {
-		if (uri == null) {
-			return null;
-		} else {
+		Log.v(TAG, "getMeCard: <" + uri + ">");
 
+		try {
+			String enc = "UTF-8";
+
+			Uri contentUri;
+			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, enc));
+
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
+			Cursor rc = getContentResolver().query(contentUri, relations, "complement", null,
+					null);
+
+			return rc;
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Problem with encoding uri for the query.", e);
 			return null;
 		}
 	}
@@ -293,13 +317,28 @@ public class FoafProvider extends ContentProvider {
 	}
 
 	private Cursor getFriends(String uri) {
-		if (uri == null) {
-			return null;
-		} else {
+		Log.v(TAG, "getMeCard: <" + uri + ">");
 
+		try {
+			String enc = "UTF-8";
+
+			Uri contentUri;
+			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, enc));
+
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
+			Cursor rc = getContentResolver().query(contentUri, relations, null, null,
+					null);
+
+			return rc;
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Problem with encoding uri for the query.", e);
 			return null;
 		}
 	}
+	
+	/*---- private ----*/
 
 	private SharedPreferences getConfiguration() {
 
@@ -311,6 +350,42 @@ public class FoafProvider extends ContentProvider {
 				.getDefaultSharedPreferences(context);
 
 		return sharedPreferences;
+	}
 
+	private ContentResolver getContentResolver() {
+		if (contentResolver == null) {
+			if (context == null) {
+				context = getContext();
+			}
+			contentResolver = context.getContentResolver();
+		}
+
+		return contentResolver;
+	}
+
+	/*------------ the following methods are not supported by this ContentProvider -----------*/
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.content.ContentProvider#insert(android.net.Uri,
+	 * android.content.ContentValues)
+	 */
+	@Override
+	public Uri insert(Uri uri, ContentValues values) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.content.ContentProvider#delete(android.net.Uri,
+	 * java.lang.String, java.lang.String[])
+	 */
+	@Override
+	public int delete(Uri uri, String selection, String[] selectionArgs) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }

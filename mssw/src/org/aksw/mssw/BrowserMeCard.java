@@ -2,6 +2,7 @@ package org.aksw.mssw;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.zip.Inflater;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -16,6 +17,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 
 public class BrowserMeCard extends Activity {
@@ -36,6 +39,8 @@ public class BrowserMeCard extends Activity {
 
 	private TextView name;
 	private ImageView photo;
+	private TableLayout properties;
+	private TextView empty;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -44,6 +49,8 @@ public class BrowserMeCard extends Activity {
 		 * Load View for MeCard
 		 */
 		setContentView(R.layout.browser_mecard);
+		empty = (TextView) this.findViewById(android.R.id.empty);
+		empty.setText("");
 
 		/**
 		 * retrieve WebID first from savedInstanceState than from SharedPreferences
@@ -66,9 +73,26 @@ public class BrowserMeCard extends Activity {
 			Cursor rc = managedQuery(contentUri, null, null, null, null);
 
 			Resources res = getResources(); // Resource object to get Drawables
+			this.properties = (TableLayout) this.findViewById(R.id.mecard_properties);
+			
+			TableRow row;
+			TextView key;
+			TextView value;
+			Log.v(TAG, "Preparing Cursor Loop.");
+			for (rc.moveToFirst(); !rc.isLast(); rc.moveToNext()) {
+				Log.v(TAG, "Starting Cursor Loop.");
+				row = (TableRow) getLayoutInflater().inflate(
+						R.layout.mecard_properties, null);
+				key = (TextView) row.findViewById(R.id.key);
+				value = (TextView) row.findViewById(R.id.value);
+				
+				key.setText(rc.getString(rc.getColumnIndex("predicatReadable")));
+				value.setText(rc.getString(rc.getColumnIndex("objectReadable")));
+				this.properties.addView(row);
+			}
 
 			this.name = (TextView) this.findViewById(R.id.mecard_name);
-			this.name.setText("Natanael Arndt");
+			this.name.setText("Your Name");
 
 			this.photo = (ImageView) this.findViewById(R.id.mecard_picture);
 			this.photo.setImageDrawable(res.getDrawable(R.drawable.icon));
@@ -77,7 +101,6 @@ public class BrowserMeCard extends Activity {
 			Log.e(TAG,
 					"Could not encode URI and so couldn't get Resource from "
 							+ CONTENT_AUTHORITY + ".", e);
-			TextView empty = (TextView) this.findViewById(android.R.id.empty);
 			empty.setText("Could not encode URI and so couldn't get Resource from "
 					+ CONTENT_AUTHORITY + ".");
 		}

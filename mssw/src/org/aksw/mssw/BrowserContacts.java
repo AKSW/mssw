@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -15,7 +16,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.ResourceCursorAdapter;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 public class BrowserContacts extends ListActivity {
@@ -33,6 +38,8 @@ public class BrowserContacts extends ListActivity {
 	 * @deprecated
 	 */
 	private static String selectedWebID;
+	
+	private static ResourceCursorAdapter rca; 
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -51,13 +58,20 @@ public class BrowserContacts extends ListActivity {
 		try {
 			String enc = "UTF-8";
 
-			Uri contentUri = Uri.parse(CONTENT_URI + "/person/contacts/"
+			Uri contentUri = Uri.parse(CONTENT_URI + "/person/friends/"
 					+ URLEncoder.encode(selectedWebID, enc));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
 
 			Cursor rc = managedQuery(contentUri, null, null, null, null);
+			
+			String[] from = new String[]{"objectReadable", "predicatReadable"};
+			int[] to = {R.id.firstLine,R.id.secondLine};
+			rca = new SimpleCursorAdapter(getApplicationContext(), R.layout.contact_row, rc, from, to);
+			
+			ListView list = (ListView) this.findViewById(android.R.id.list);
+			list.setAdapter(rca);
 
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG,
