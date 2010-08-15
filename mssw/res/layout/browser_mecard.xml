@@ -5,34 +5,30 @@
 
 	<LinearLayout android:layout_width="fill_parent"
 		android:layout_height="fill_parent" android:orientation="vertical">
+
 		<RelativeLayout android:layout_width="fill_parent"
-			android:layout_height="wrap_content" android:layout_weight="1"
-			android:orientation="horizontal">
-			<LinearLayout android:layout_width="fill_parent"
-				android:layout_height="wrap_content" android:orientation="vertical" android:id="@+id/mecard_characteristics">
-				<TextView android:id="@+id/mecard_name"
-					android:layout_width="wrap_content" android:layout_height="wrap_content"
-					android:textStyle="bold" android:text="No Name"/>
-				<TextView android:id="@+id/mecard_birthday"
-					android:layout_width="wrap_content" android:layout_height="wrap_content" />
-				<TextView android:id="@+id/mecard_email"
-					android:layout_width="wrap_content" android:layout_height="wrap_content" />
-				<TextView android:id="@+id/mecard_phone"
-					android:layout_width="wrap_content" android:layout_height="wrap_content" />
-				<TextView android:id="@+id/mecard_town"
-					android:layout_width="wrap_content" android:layout_height="wrap_content" />
-				<TextView android:id="@+id/mecard_sex"
-					android:layout_width="wrap_content" android:layout_height="wrap_content" />
-			</LinearLayout>
-			<ImageView android:id="@+id/mecard_picture"
-				android:layout_width="128px" android:layout_height="128px"
-				android:layout_toRightOf="@id/mecard_characteristics"
-				 />
+			android:layout_height="?android:attr/listPreferredItemHeight"
+			android:padding="6dip" android:background="#888">
+
+			<ImageView android:id="@+id/icon" android:layout_width="wrap_content"
+				android:layout_height="fill_parent" android:layout_alignParentTop="true"
+				android:layout_alignParentBottom="true" android:layout_marginRight="6dip"
+				android:src="@drawable/icon" />
+
+			<TextView android:id="@+id/firstLine" android:layout_width="fill_parent"
+				android:layout_height="26dip" android:layout_toRightOf="@id/icon"
+				android:layout_centerVertical="true"
+				android:layout_alignParentRight="true" android:singleLine="true"
+				android:ellipsize="marquee" android:text="My Name"
+				android:textStyle="bold" android:textColor="#fff"
+				android:paddingLeft="6dip" />
+
 		</RelativeLayout>
+
 		<TextView android:id="@id/android:empty"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
 			android:text="@string/no_result" />
-		<TableLayout  android:id="@+id/mecard_properties"
+		<TableLayout android:id="@+id/mecard_properties"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
 			android:layout_weight="1" />
 	</LinearLayout>

@@ -45,8 +45,10 @@ public class FoafProvider extends ContentProvider {
 	private static final int ME_FRIENDS = 120;
 	private static final int ME_FRIEND_ADD = 121;
 	private static final int PERSON = 20;
-	private static final int PERSON_MECARD = 21;
-	private static final int PERSON_FRIENDS = 22;
+	private static final int PERSON_NAME = 21;
+	private static final int PERSON_PICTURE = 22;
+	private static final int PERSON_MECARD = 23;
+	private static final int PERSON_FRIENDS = 24;
 
 	/**
 	 * The UriMatcher, which parses the incoming querie-uris
@@ -60,6 +62,8 @@ public class FoafProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "me", ME);
 		uriMatcher.addURI(AUTHORITY, "person/friends/*", PERSON_FRIENDS);
 		uriMatcher.addURI(AUTHORITY, "person/mecard/*", PERSON_MECARD);
+		uriMatcher.addURI(AUTHORITY, "person/name/*", PERSON_NAME);
+		uriMatcher.addURI(AUTHORITY, "person/picture/*", PERSON_PICTURE);
 		uriMatcher.addURI(AUTHORITY, "person/*", PERSON);
 	}
 

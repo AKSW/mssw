@@ -90,12 +90,14 @@ public class BrowserMeCard extends Activity {
 				value.setText(rc.getString(rc.getColumnIndex("objectReadable")));
 				this.properties.addView(row);
 			}
-
+			
+			/*
 			this.name = (TextView) this.findViewById(R.id.mecard_name);
 			this.name.setText("Your Name");
 
 			this.photo = (ImageView) this.findViewById(R.id.mecard_picture);
 			this.photo.setImageDrawable(res.getDrawable(R.drawable.icon));
+			*/
 
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG,
