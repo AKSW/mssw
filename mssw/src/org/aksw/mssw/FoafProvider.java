@@ -44,11 +44,12 @@ public class FoafProvider extends ContentProvider {
 	private static final int ME_MECARD = 110;
 	private static final int ME_FRIENDS = 120;
 	private static final int ME_FRIEND_ADD = 121;
-	private static final int PERSON = 20;
-	private static final int PERSON_NAME = 21;
-	private static final int PERSON_PICTURE = 22;
-	private static final int PERSON_MECARD = 23;
-	private static final int PERSON_FRIENDS = 24;
+	private static final int PERSON = 200;
+	private static final int PERSON_NAME = 210;
+	private static final int PERSON_PICTURE = 220;
+	private static final int PERSON_MECARD = 230;
+	private static final int PERSON_MECARD_PROPS = 231; // without name and picture
+	private static final int PERSON_FRIENDS = 240;
 
 	/**
 	 * The UriMatcher, which parses the incoming querie-uris
@@ -61,6 +62,7 @@ public class FoafProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "me/mecard", ME_MECARD);
 		uriMatcher.addURI(AUTHORITY, "me", ME);
 		uriMatcher.addURI(AUTHORITY, "person/friends/*", PERSON_FRIENDS);
+	  //uriMatcher.addURI(AUTHORITY, "person/mecard/properties/*", PERSON_MECARD_PROPS);
 		uriMatcher.addURI(AUTHORITY, "person/mecard/*", PERSON_MECARD);
 		uriMatcher.addURI(AUTHORITY, "person/name/*", PERSON_NAME);
 		uriMatcher.addURI(AUTHORITY, "person/picture/*", PERSON_PICTURE);
@@ -73,7 +75,7 @@ public class FoafProvider extends ContentProvider {
 	private String me;
 
 	/**
-	 * The Application Context in wich the ContentProvider is running and the
+	 * The Application Context in which the ContentProvider is running and the
 	 * SharedPreferences of all Applications in this Context
 	 */
 	private static Context context;
@@ -184,6 +186,16 @@ public class FoafProvider extends ContentProvider {
 				return getFriends(path.get(2));
 			}
 			break;
+		case PERSON_NAME:
+			if (path.size() > 2) {
+				return getName(path.get(2));
+			}
+			break;
+		case PERSON_PICTURE:
+			if (path.size() > 2) {
+				return getPicture(path.get(2));
+			}
+			break;
 		default:
 			return null;
 		}
@@ -252,8 +264,10 @@ public class FoafProvider extends ContentProvider {
 			"http://purl.org/vocab/relationship/worksWith",
 			"http://purl.org/vocab/relationship/wouldLikeToKnow" };
 
-	private String[] meCard = { "http://xmlns.com/foaf/0.1/name",
-			"http://xmlns.com/foaf/0.1/jabberID" };
+	private String[] nameProps = { "http://xmlns.com/foaf/0.1/name",
+			"http://xmlns.com/foaf/0.1/givenName", "http://xmlns.com/foaf/0.1/familyName", "http://xmlns.com/foaf/0.1/nick" };
+	
+	private String[] pictureProps = { "http://xmlns.com/foaf/0.1/depiction" };
 
 	private Cursor getMe() {
 		if (me == null) {
@@ -313,6 +327,81 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 
+	private Cursor getName(String uri) {
+		Log.v(TAG, "getName: <" + uri + ">");
+
+		try {
+			String enc = "UTF-8";
+
+			Uri contentUri;
+			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, enc));
+
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
+			Cursor rc = getContentResolver().query(contentUri, nameProps, null, null,
+					null);
+			
+			rc.moveToFirst();
+			
+			String[] names = new String[nameProps.length];
+			String predicat = "";
+			String object = "";
+			String subject = rc.getString(rc.getColumnIndex("subject"));
+			
+			for(rc.moveToFirst(); !rc.isLast(); rc.moveToNext()) {
+				predicat = rc.getString(rc.getColumnIndex("predicat"));
+				object = rc.getString(rc.getColumnIndex("object"));
+				for (int i = 0; i < nameProps.length; i++) { 
+					if (nameProps[i].compareToIgnoreCase(predicat) == 0) {
+						names[i] = object;
+					}
+				}
+			}
+			
+			for (int i = 0; i < names.length; i++) { 
+				if (names[i].length() > 0) {
+					object = names[i];
+					predicat = nameProps[i];
+					if(i == 1) {
+						object = object + " " + names[i+1];
+					}
+					break;
+				}
+			}
+			
+			Cursor out = new PropertyCursor(subject, predicat, object);
+
+			return out;
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Problem with encoding uri for the query.", e);
+			return null;
+		}
+	}
+	
+
+	private Cursor getPicture(String uri) {
+		Log.v(TAG, "getName: <" + uri + ">");
+
+		try {
+			String enc = "UTF-8";
+
+			Uri contentUri;
+			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, enc));
+
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
+			Cursor rc = getContentResolver().query(contentUri, pictureProps, null, null,
+					null);
+
+			return rc;
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Problem with encoding uri for the query.", e);
+			return null;
+		}
+	}
+	
 	private Cursor getFriends() {
 		if (me == null) {
 			me = getConfiguration().getString("me", null);

@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableRow xmlns:android="http://schemas.android.com/apk/res/android"
-	android:layout_width="fill_parent" android:layout_height="wrap_content">
-	<TextView android:layout_column="1" android:text="predicat"
-		android:padding="3dip" android:id="@+id/key" />
-	<TextView android:text="object" android:gravity="left"
-		android:padding="3dip" android:id="@+id/value" />
-</TableRow>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent" android:layout_height="?android:attr/listPreferredItemHeight"
+	android:padding="6dip" android:orientation="vertical">
+
+	<TextView android:id="@+id/key" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:singleLine="true"
+		android:ellipsize="marquee" android:text="Key" android:textStyle="bold" />
+
+	<TextView android:id="@+id/value" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:singleLine="true"
+		android:ellipsize="marquee"	android:text="Value" android:textSize="18sp" />
+
+</LinearLayout>
