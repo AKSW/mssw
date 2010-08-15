@@ -1,8 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
 	<string name="hello">Hello World, browser!</string>
-	<string name="app_name">mssw</string>
+	<string name="app_name">MSSW</string>
 	<string name="browser_name">FOAF-Browser</string>
+	<string name="your_webid">Your WebID</string>
 	<string name="new_WebID">New WebID</string>
+	<string name="add_WebID">Add WebID</string>
 	<string name="add_to_WebID">Add to your WebID</string>
+	<string name="add">Add</string>
+	<string name="preferences">Preferences</string>
+	<string name="me">Me</string>
+	<string name="contacts">Contacts</string>
+	<string name="browse">Browse</string>
+	<string name="search">Search</string>
+	<string name="sync">Synchronize</string>
+	<string name="load">Load</string>
+	<string name="name">Name</string>
+	<string name="birthday">Birthday</string>
+	<string name="email">E-Mail</string>
+	<string name="phone">Phone</string>
+	<string name="town">Town</string>
+	<string name="sex">Sex</string>
+	<string name="pref_your_webid_desc">Insert the URI of your WebID don\'t forget the scheme e.g. \'http://\'.</string>
+	<string name="no_contacts">This WebID has no Contacts</string>
+	<string name="no_result">No WebIDs found</string>
 </resources>

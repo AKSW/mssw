@@ -1,23 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="org.aksw.mssw"
-      android:versionCode="1" android:versionName="0.1.2">
-    <application android:icon="@drawable/icon" android:label="@string/app_name">
-        <activity android:name=".browser"
-                  android:label="@string/browser_name">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity android:name=".MsswPreferenceActivity" android:label="MSSW Preferences" />
+	package="org.aksw.mssw" android:versionCode="1" android:versionName="0.1.2">
+	<application android:icon="@drawable/icon" android:label="@string/app_name">
+		<activity android:name=".Browser" android:label="@string/browser_name">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+		<activity android:name=".MsswPreferenceActivity"
+			android:label="MSSW Preferences">
+			<intent-filter>
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+		<activity android:name=".BrowserMeCard" android:label="MSSW Browser-MeCard"
+			android:theme="@android:style/Theme.NoTitleBar">
+			<intent-filter>
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+		<activity android:name=".BrowserContacts" android:label="MSSW Browser-Contacts"
+			android:theme="@android:style/Theme.NoTitleBar">
+			<intent-filter>
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+		<activity android:name=".BrowserBrowse" android:label="MSSW Browser-Browse"
+			android:theme="@android:style/Theme.NoTitleBar">
+			<intent-filter>
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
 		<provider android:authorities="org.aksw.mssw.foafprovider"
 			android:name="FoafProvider" />
-    </application>
+	</application>
 
 
-<uses-permission android:name="android.permission.READ_CONTACTS"></uses-permission>
-<uses-sdk android:minSdkVersion="3"></uses-sdk>
+	<uses-permission android:name="android.permission.READ_CONTACTS"></uses-permission>
+	<uses-sdk android:minSdkVersion="3"></uses-sdk>
 
-<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
 </manifest> 

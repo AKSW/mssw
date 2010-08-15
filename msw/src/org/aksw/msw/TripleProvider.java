@@ -1,9 +1,6 @@
 package org.aksw.msw;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import android.content.ContentProvider;
@@ -21,7 +18,6 @@ import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.SimpleSelector;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.PropertyImpl;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
 import com.hp.hpl.jena.shared.JenaException;
@@ -124,7 +120,7 @@ public class TripleProvider extends ContentProvider {
 		//String mimeTypeResItm = "vnd.android.cursor.item/vnd.aksw.msw.resource";
 		//String mimeTypeResDir = "vnd.android.cursor.dir/vnd.aksw.msw.resource";
 		//String mimeTypeTriple = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
-		String mimeTypeResItm = "vnd.android.cursor.item/vnd.com.hp.hpl.jena.rdf.model.resource";
+		String mimeTypeResItm = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
 		String mimeTypeResDir = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.resource";
 		String mimeTypeTriple = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.statement";
 
@@ -180,22 +176,28 @@ public class TripleProvider extends ContentProvider {
 	 * @see android.content.ContentProvider#query(android.net.Uri,
 	 *      java.lang.String[], java.lang.String, java.lang.String[],
 	 *      java.lang.String)
-	 * @param projection
-	 *            is not used in this provider
+	 * @param projection An array of property URIs. If empty return all properties.
 	 * @param selection
-	 *            specify a WHERE clause if you use spqrql, else it is ignorred
+	 *            specify a WHERE clause if you use spaqrql, else it is ignorred
 	 * @param selectionArgs
-	 *            some substitutions for the selection, i don't use this
+	 *            some substitutions for the selection, I don't use this
 	 * @param sortOrder
 	 *            specify the sort order like in sparql
 	 */
 	@Override
-	public ResourceCursor query(Uri uri, String[] projection, String selection,
+	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
 		// TODO Auto-generated method stub
 		Log.v(TAG, "Starting query");
 
 		Resource res = null;
+		String[] properties = projection;
+		boolean complement;
+		if (selection == null) {
+			complement = false;
+		} else {
+			complement = true;
+		}
 
 		// Debugoutput
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
@@ -236,7 +238,6 @@ public class TripleProvider extends ContentProvider {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
 			}
-
 			break;
 		/**
 		 * The following cases are not implemented at the moment
@@ -254,16 +255,14 @@ public class TripleProvider extends ContentProvider {
 			return null;
 		}
 
-		ResourceCursor rc;
 		if (res != null) {
-			rc = new ResourceCursor(res);
+			TripleCursor tc = new TripleCursor(res, properties, complement);
 			Log.v(TAG, "Cursor created");
+			return tc;
 		} else {
 			Log.v(TAG, "Return null because I couldn't get a Resource.");
 			return null;
 		}
-
-		return rc;
 	}
 
 	@Override
@@ -421,7 +420,7 @@ public class TripleProvider extends ContentProvider {
 	 *            the uri of the subject-resource
 	 * @param model
 	 *            the model in which you want to check for the resource
-	 * @param asObject check also if the resource exists in a tripel as object
+	 * @param asObject check also if the resource exists in a triple as object
 	 * @return whether the resource occures as subject in a triple or not
 	 */
 	private boolean resourceExists(String uri, Model model, boolean asObject) {
@@ -485,6 +484,16 @@ public class TripleProvider extends ContentProvider {
 				cache = caches.openModel("cache");
 				model = models.openModel("model");
 				model.begin();
+				
+				model.setNsPrefix("rel", "http://purl.org/vocab/relationship/");
+				model.setNsPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+				model.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+				model.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
+				
+				cache.setNsPrefix("rel", "http://purl.org/vocab/relationship/");
+				cache.setNsPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+				cache.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+				cache.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
 				
 				return true;
 			} else {

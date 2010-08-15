@@ -3,6 +3,7 @@ package org.aksw.mssw;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -16,7 +17,6 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MenuItem.OnMenuItemClickListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
@@ -26,10 +26,9 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class browser extends Activity {
-	/** Called when the activity is first created. */
+public class BrowserBrowse extends Activity {
 
-	private static final String TAG = "msswBrowser";
+	private static final String TAG = "msswBrowserMeCard";
 	
 	//private static final String CONTENT_AUTHORITY = "org.aksw.msw.tripleprovider";
 	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.foafprovider";
@@ -44,23 +43,22 @@ public class browser extends Activity {
 	private TextView status;
 	private EditText uriInput;
 	private Button loadButton;
-
-	@Override
+	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.browser);
-		
+		setContentView(R.layout.browser_browse);
+
 		aa = new PropertiesAdapter(this,
 				android.R.layout.simple_list_item_1, items);
 
-		properties = (ListView) findViewById(R.id.Properties);
+		properties = (ListView) findViewById(android.R.id.list);
 		status = (TextView) findViewById(R.id.Status);
 		uriInput = (EditText) findViewById(R.id.UriInput);
 
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		
 		properties.setAdapter(aa);
-		status.setText("");
+		status.setText("Activity ist erstmal da, soweit gut. Die Liste fehlt aber immernoch, das ist sehr doof und ich weiß nciht, wass ich machen soll.");
 		uriInput.setText(sharedPreferences.getString("me", "noPref"));
 
 		this.loadButton = (Button) this.findViewById(R.id.Load);
@@ -68,18 +66,46 @@ public class browser extends Activity {
 		this.loadButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				loadRes("tmp");
+				loadRes();
 			}
 		});
 
 		loadRes("offline");
 	}
 
-	public void loadRes() {
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.browser, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		Intent i;
+		switch (item.getItemId()) {
+		case R.id.itemPref:
+			i = new Intent(this, MsswPreferenceActivity.class);
+			startActivity(i);
+			return true;
+		case R.id.itemMe:
+			i = new Intent(this, BrowserMeCard.class);
+			startActivity(i);
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+	
+	/*----------------- private -------------------*/
+	
+
+	private void loadRes() {
 		loadRes("tmp");
 	}
 
-	public void loadRes(String mode) {
+	private void loadRes(String mode) {
 
 		aa.clear();
 
@@ -140,28 +166,6 @@ public class browser extends Activity {
 
 		aa.notifyDataSetChanged();
 	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		super.onCreateOptionsMenu(menu);
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.browser, menu);
-		return true;
-	}
-	
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-	  switch (item.getItemId()) {
-	  case R.id.itemPref:
-		Intent i = new Intent(this, MsswPreferenceActivity.class);
-		startActivity(i);
-	    return true;
-	  default:
-	    return super.onOptionsItemSelected(item);
-	  }
-	}
-	
-	/*----------------- private -------------------*/
 	
 	private class PropertiesAdapter extends ArrayAdapter<Property> {
 
