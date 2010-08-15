@@ -139,7 +139,7 @@ public class TripleCursor extends AbstractCursor {
 				Resource res = (Resource) node;
 				// TODO implement a method to search for rdfs:label, foaf:name
 				// or something like that
-				return res.getLocalName();
+				return TripleProvider.getLable(res);
 			} else {
 				// what could a object be, if it is neither literal, nor a
 				// resource?
