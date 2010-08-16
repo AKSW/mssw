@@ -5,14 +5,10 @@ import java.net.URLEncoder;
 
 import org.aksw.mssw.MsswPreferenceActivity;
 import org.aksw.mssw.R;
-import org.aksw.mssw.R.id;
-import org.aksw.mssw.R.layout;
-import org.aksw.mssw.R.menu;
 
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,12 +17,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 
 public class BrowserMeCard extends ListActivity {
@@ -46,8 +39,6 @@ public class BrowserMeCard extends ListActivity {
 	private static String selectedWebID;
 
 	private TextView name;
-	private ImageView photo;
-	private TableLayout properties;
 	private TextView empty;
 	
 	private static ResourceCursorAdapter rca; 
@@ -141,29 +132,6 @@ public class BrowserMeCard extends ListActivity {
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
-		}
-	}
-
-	/*----------------- private -------------------*/
-
-	private class Property {
-		private String predicat;
-		private String object;
-
-		public void setPredicat(String predicat) {
-			this.predicat = predicat;
-		}
-
-		public String getPredicat() {
-			return predicat;
-		}
-
-		public void setObject(String object) {
-			this.object = object;
-		}
-
-		public String getObject() {
-			return object;
 		}
 	}
 }

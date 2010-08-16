@@ -6,9 +6,6 @@ import java.util.ArrayList;
 
 import org.aksw.mssw.MsswPreferenceActivity;
 import org.aksw.mssw.R;
-import org.aksw.mssw.R.id;
-import org.aksw.mssw.R.layout;
-import org.aksw.mssw.R.menu;
 
 import android.app.Activity;
 import android.content.Context;

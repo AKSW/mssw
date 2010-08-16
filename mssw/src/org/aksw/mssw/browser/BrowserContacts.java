@@ -5,15 +5,10 @@ import java.net.URLEncoder;
 
 import org.aksw.mssw.MsswPreferenceActivity;
 import org.aksw.mssw.R;
-import org.aksw.mssw.R.id;
-import org.aksw.mssw.R.layout;
-import org.aksw.mssw.R.menu;
 
 import android.app.ListActivity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,8 +17,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;

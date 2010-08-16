@@ -49,7 +49,6 @@ public class FoafProvider extends ContentProvider {
 	private static final int PERSON_NAME = 210;
 	private static final int PERSON_PICTURE = 220;
 	private static final int PERSON_MECARD = 230;
-	private static final int PERSON_MECARD_PROPS = 231; // without name and picture
 	private static final int PERSON_FRIENDS = 240;
 
 	/**
@@ -63,7 +62,6 @@ public class FoafProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "me/mecard", ME_MECARD);
 		uriMatcher.addURI(AUTHORITY, "me", ME);
 		uriMatcher.addURI(AUTHORITY, "person/friends/*", PERSON_FRIENDS);
-	  //uriMatcher.addURI(AUTHORITY, "person/mecard/properties/*", PERSON_MECARD_PROPS);
 		uriMatcher.addURI(AUTHORITY, "person/mecard/*", PERSON_MECARD);
 		uriMatcher.addURI(AUTHORITY, "person/name/*", PERSON_NAME);
 		uriMatcher.addURI(AUTHORITY, "person/picture/*", PERSON_PICTURE);

@@ -1,14 +1,6 @@
 package org.aksw.mssw.content;
 
-import java.util.ArrayList;
-
-import com.hp.hpl.jena.rdf.model.Literal;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.Statement;
-
 import android.database.AbstractCursor;
-import android.database.Cursor;
 
 public class PropertyCursor extends AbstractCursor {
 	
