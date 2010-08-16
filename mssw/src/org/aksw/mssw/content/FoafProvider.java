@@ -27,7 +27,7 @@ public class FoafProvider extends ContentProvider {
 
 	private static final String TAG = "FoafProvider";
 	public static final String DISPLAY_NAME = "FoafProvider";
-	public static final String AUTHORITY = "org.aksw.mssw.foafprovider";
+	public static final String AUTHORITY = "org.aksw.mssw.content.foafprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
 	/**

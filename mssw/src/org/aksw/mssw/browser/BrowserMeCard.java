@@ -33,7 +33,7 @@ public class BrowserMeCard extends ListActivity {
 
 	private static final String TAG = "msswBrowserMeCard";
 
-	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.foafprovider";
+	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
 	private static final Uri CONTENT_URI = Uri.parse("content://"
 			+ CONTENT_AUTHORITY);
 
