@@ -1,4 +1,4 @@
-package org.aksw.mssw;
+package org.aksw.mssw.content;
 
 import java.util.ArrayList;
 

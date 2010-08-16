@@ -1,11 +1,12 @@
 /**
  * 
  */
-package org.aksw.mssw;
+package org.aksw.mssw.content;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;

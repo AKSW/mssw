@@ -1,4 +1,8 @@
-package org.aksw.mssw;
+package org.aksw.mssw.browser;
+
+import org.aksw.mssw.R;
+import org.aksw.mssw.R.layout;
+import org.aksw.mssw.R.string;
 
 import android.app.TabActivity;
 import android.content.Intent;

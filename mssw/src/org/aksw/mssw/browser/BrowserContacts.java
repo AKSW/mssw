@@ -1,7 +1,13 @@
-package org.aksw.mssw;
+package org.aksw.mssw.browser;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+
+import org.aksw.mssw.MsswPreferenceActivity;
+import org.aksw.mssw.R;
+import org.aksw.mssw.R.id;
+import org.aksw.mssw.R.layout;
+import org.aksw.mssw.R.menu;
 
 import android.app.ListActivity;
 import android.content.Context;

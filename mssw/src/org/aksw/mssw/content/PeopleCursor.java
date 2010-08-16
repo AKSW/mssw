@@ -1,27 +1,13 @@
-package org.aksw.mssw;
-
-import java.util.ArrayList;
-
-import com.hp.hpl.jena.rdf.model.Statement;
+package org.aksw.mssw.content;
 
 import android.database.AbstractCursor;
-import android.database.Cursor;
 
-public class PropertiesCursor extends AbstractCursor {
-	
-	private ArrayList<Statement> properties;
-	
-	public PropertiesCursor(Cursor cursor, String[] mask, boolean positiv) {
-		properties = new ArrayList<Statement>();
-
-	}
+public class PeopleCursor extends AbstractCursor {
 
 	@Override
 	public String[] getColumnNames() {
 		// TODO Auto-generated method stub
-		// TODO Auto-generated method stub
-		String[] names = {"subject", "predicat", "objectUri", "objectLiteral"};
-		return names;
+		return null;
 	}
 
 	@Override
@@ -31,7 +17,7 @@ public class PropertiesCursor extends AbstractCursor {
 	}
 
 	@Override
-	public double getDouble(int arg0) {
+	public double getDouble(int column) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
