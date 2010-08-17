@@ -165,34 +165,34 @@ public class FoafProvider extends ContentProvider {
 
 		switch (match) {
 		case ME:
-			return getMe();
+			return getMe(projection);
 		case PERSON:
 			if (path.size() > 1) {
-				return getPerson(path.get(1));
+				return getPerson(path.get(1), projection);
 			}
 			break;
 		case ME_MECARD:
-			return getMeCard();
+			return getMeCard(projection);
 		case PERSON_MECARD:
 			if (path.size() > 2) {
-				return getMeCard(path.get(2));
+				return getMeCard(path.get(2), projection);
 			}
 			break;
 		case ME_FRIENDS:
-			return getFriends();
+			return getFriends(projection);
 		case PERSON_FRIENDS:
 			if (path.size() > 2) {
-				return getFriends(path.get(2));
+				return getFriends(path.get(2), projection);
 			}
 			break;
 		case PERSON_NAME:
 			if (path.size() > 2) {
-				return getName(path.get(2));
+				return getName(path.get(2), projection);
 			}
 			break;
 		case PERSON_PICTURE:
 			if (path.size() > 2) {
-				return getPicture(path.get(2));
+				return getPicture(path.get(2), projection);
 			}
 			break;
 		default:
@@ -268,14 +268,14 @@ public class FoafProvider extends ContentProvider {
 	
 	private String[] pictureProps = { "http://xmlns.com/foaf/0.1/depiction" };
 
-	private Cursor getMe() {
+	private Cursor getMe(String[] projection) {
 		if (me == null) {
 			me = getConfiguration().getString("me", null);
 		}
-		return getPerson(me);
+		return getPerson(me, projection);
 	}
 
-	private Cursor getPerson(String uri) {
+	private Cursor getPerson(String uri, String[] projection) {
 		Log.v(TAG, "getPerson: <" + uri + ">");
 
 		try {
@@ -287,7 +287,7 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
-			Cursor rc = getContentResolver().query(contentUri, null, null, null,
+			Cursor rc = getContentResolver().query(contentUri, projection, null, null,
 					null);
 
 			return rc;
@@ -297,14 +297,14 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 
-	private Cursor getMeCard() {
+	private Cursor getMeCard(String[] projection) {
 		if (me == null) {
 			me = getConfiguration().getString("me", null);
 		}
-		return getMeCard(me);
+		return getMeCard(me, projection);
 	}
 
-	private Cursor getMeCard(String uri) {
+	private Cursor getMeCard(String uri, String[] projection) {
 		Log.v(TAG, "getMeCard: <" + uri + ">");
 
 		try {
@@ -316,7 +316,13 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
-			Cursor rc = getContentResolver().query(contentUri, relations, "complement", null,
+
+			String selection = null;
+			if (projection == null) {
+				projection = relations;
+				selection = "complement";
+			}
+			Cursor rc = getContentResolver().query(contentUri, projection, selection, null,
 					null);
 
 			return rc;
@@ -326,7 +332,7 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 
-	private Cursor getName(String uri) {
+	private Cursor getName(String uri, String[] projection) {
 		Log.v(TAG, "getName: <" + uri + ">");
 
 		try {
@@ -338,6 +344,10 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
+
+			if (projection != null) {
+				Log.i(TAG, "projection not supported for getName()");
+			}
 			Cursor rc = getContentResolver().query(contentUri, nameProps, null, null,
 					null);
 			
@@ -379,7 +389,7 @@ public class FoafProvider extends ContentProvider {
 	}
 	
 
-	private Cursor getPicture(String uri) {
+	private Cursor getPicture(String uri, String[] projection) {
 		Log.v(TAG, "getPicture: <" + uri + ">");
 
 		try {
@@ -391,6 +401,10 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
+			
+			if (projection != null) {
+				Log.i(TAG, "projection not supported for getPicture()");
+			}
 			Cursor rc = getContentResolver().query(contentUri, pictureProps, null, null,
 					null);
 
@@ -401,14 +415,14 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 	
-	private Cursor getFriends() {
+	private Cursor getFriends(String[] projection) {
 		if (me == null) {
 			me = getConfiguration().getString("me", null);
 		}
-		return getFriends(me);
+		return getFriends(me, projection);
 	}
 
-	private Cursor getFriends(String uri) {
+	private Cursor getFriends(String uri, String[] projection) {
 		Log.v(TAG, "getFriends: <" + uri + ">");
 
 		try {
@@ -420,6 +434,10 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
+			
+			if (projection == null) {
+				projection = relations;
+			}
 			Cursor rc = getContentResolver().query(contentUri, relations, null, null,
 					null);
 

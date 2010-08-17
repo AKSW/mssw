@@ -1,5 +1,7 @@
 package org.aksw.mssw.contact;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -25,14 +27,14 @@ public class ContactsSyncAdapterService extends Service {
 
 	private static String TAG = "MsswContactsSyncAdapterService";
 	private static SyncAdapter syncAdapter;
-	
+
 	private static Context context;
 	private static ContentResolver content;
 
 	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
 	private static final Uri CONTENT_URI = Uri.parse("content://"
 			+ CONTENT_AUTHORITY);
-	
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		if (syncAdapter == null) {
@@ -41,13 +43,12 @@ public class ContactsSyncAdapterService extends Service {
 		return syncAdapter.getSyncAdapterBinder();
 	}
 
-
-	public static void performSync(Context contextIn, Account account, Bundle extras,
-			String authority, ContentProviderClient provider,
+	public static void performSync(Context contextIn, Account account,
+			Bundle extras, String authority, ContentProviderClient provider,
 			SyncResult syncResult) throws OperationCanceledException {
 
 		Log.i(TAG, "perform Sync :-) " + account.toString());
-		
+
 		context = contextIn;
 
 		if (content == null) {
@@ -102,107 +103,95 @@ public class ContactsSyncAdapterService extends Service {
 		}
 	}
 
-	private static void addContact(Account account, String name) {
-		
-		Log.i(TAG, "Adding contact: " + name);
-/*		
-		ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
+	private static void addContact(Account account, String uri) {
 
-		ContentProviderOperation.Builder builder = ContentProviderOperation
-				.newInsert(RawContacts.CONTENT_URI);
-		builder.withValue(RawContacts.ACCOUNT_NAME, account.name);
-		builder.withValue(RawContacts.ACCOUNT_TYPE, account.type);
-		builder.withValue(RawContacts.SYNC1, name);
-		operationList.add(builder.build());
-
-		builder = ContentProviderOperation
-				.newInsert(ContactsContract.Data.CONTENT_URI);
-		builder.withValueBackReference(
-				ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID,
-				0);
-		builder.withValue(
-				ContactsContract.Data.MIMETYPE,
-				ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
-		builder.withValue(
-				ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
-				name);
-		operationList.add(builder.build());
-
-		builder = ContentProviderOperation
-				.newInsert(ContactsContract.Data.CONTENT_URI);
-		builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
-		builder.withValue(ContactsContract.Data.MIMETYPE,
-				"vnd.android.cursor.item/vnd.org.c99.SyncProviderDemo.profile");
-		builder.withValue(ContactsContract.Data.DATA1, name);
-		builder.withValue(ContactsContract.Data.DATA2,
-				"SyncProviderDemo Profile");
-		builder.withValue(ContactsContract.Data.DATA3, "View profile");
-		operationList.add(builder.build());
+		Log.i(TAG, "Adding contact: " + uri);
 
 		try {
-			content.applyBatch(ContactsContract.AUTHORITY, operationList);
+			String enc = "UTF-8";
+
+			Uri contentUri = Uri.parse(CONTENT_URI + "/person/"
+					+ URLEncoder.encode(uri, enc));
+
+			String[] projection = { "http://xmlns.com/foaf/0.1/name" };
+			Cursor rc = content.query(contentUri, projection, null, null, null);
+
+			if (rc != null) {
+				rc.moveToFirst();
+				String name = rc.getString(rc.getColumnIndex("object"));
+
+				ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
+
+				ContentProviderOperation.Builder builder = ContentProviderOperation
+						.newInsert(RawContacts.CONTENT_URI);
+				builder.withValue(RawContacts.ACCOUNT_NAME, account.name);
+				builder.withValue(RawContacts.ACCOUNT_TYPE, account.type);
+				builder.withValue(RawContacts.SYNC1, uri);
+				operationList.add(builder.build());
+
+				builder = ContentProviderOperation
+						.newInsert(ContactsContract.Data.CONTENT_URI);
+				builder.withValueBackReference(
+						ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID,
+						0);
+				builder.withValue(
+						ContactsContract.Data.MIMETYPE,
+						ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
+				builder.withValue(
+						ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
+						name);
+				operationList.add(builder.build());
+
+				content.applyBatch(ContactsContract.AUTHORITY, operationList);
+			} else {
+				Log.e(TAG,
+						"Contentprovider returned an empty Cursor, don't know what to do.");
+			}
+
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Problem with encoding uri for the query.", e);
 		} catch (Exception e) {
-			Log.e(TAG, "error:", e);
+			Log.e(TAG, "An other error occured.", e);
 		}
-		*/
+
 	}
 
 	private static void updateContact(
 			ArrayList<ContentProviderOperation> operationList, String uri,
 			long rawContactId) {
-		
+
 		Log.i(TAG, "updating contact: " + uri);
-/*		
-		Uri rawContactUri = ContentUris.withAppendedId(RawContacts.CONTENT_URI,
-				rawContactId);
-		Uri entityUri = Uri.withAppendedPath(rawContactUri,
-				Entity.CONTENT_DIRECTORY);
-		Cursor c = content.query(entityUri, new String[] {
-				RawContacts.SOURCE_ID, Entity.DATA_ID, Entity.MIMETYPE,
-				Entity.DATA1 }, null, null, null);
-		try {
-			while (c.moveToNext()) {
-				if (!c.isNull(1)) {
-					String mimeType = c.getString(2);
-
-					if (mimeType
-							.equals("vnd.android.cursor.item/vnd.org.c99.SyncProviderDemo.profile")) {
-						ContentProviderOperation.Builder builder = ContentProviderOperation
-								.newInsert(ContactsContract.StatusUpdates.CONTENT_URI);
-						builder.withValue(
-								ContactsContract.StatusUpdates.DATA_ID,
-								c.getLong(1));
-						builder.withValue(
-								ContactsContract.StatusUpdates.STATUS, status);
-						builder.withValue(
-								ContactsContract.StatusUpdates.STATUS_RES_PACKAGE,
-								"org.c99.SyncProviderDemo");
-						builder.withValue(
-								ContactsContract.StatusUpdates.STATUS_LABEL,
-								R.string.app_name);
-						builder.withValue(
-								ContactsContract.StatusUpdates.STATUS_ICON,
-								R.drawable.icon);
-						builder.withValue(
-								ContactsContract.StatusUpdates.STATUS_TIMESTAMP,
-								System.currentTimeMillis());
-						operationList.add(builder.build());
-
-						builder = ContentProviderOperation
-								.newUpdate(ContactsContract.Data.CONTENT_URI);
-						builder.withSelection(
-								BaseColumns._ID + " = '" + c.getLong(1) + "'",
-								null);
-						builder.withValue(ContactsContract.Data.DATA3, status);
-						operationList.add(builder.build());
-					}
-				}
-			}
-		} finally {
-			c.close();
-		}
-		*/
+		/*
+		 * Uri rawContactUri =
+		 * ContentUris.withAppendedId(RawContacts.CONTENT_URI, rawContactId);
+		 * Uri entityUri = Uri.withAppendedPath(rawContactUri,
+		 * Entity.CONTENT_DIRECTORY); Cursor c = content.query(entityUri, new
+		 * String[] { RawContacts.SOURCE_ID, Entity.DATA_ID, Entity.MIMETYPE,
+		 * Entity.DATA1 }, null, null, null); try { while (c.moveToNext()) { if
+		 * (!c.isNull(1)) { String mimeType = c.getString(2);
+		 * 
+		 * if (mimeType
+		 * .equals("vnd.android.cursor.item/vnd.org.c99.SyncProviderDemo.profile"
+		 * )) { ContentProviderOperation.Builder builder =
+		 * ContentProviderOperation
+		 * .newInsert(ContactsContract.StatusUpdates.CONTENT_URI);
+		 * builder.withValue( ContactsContract.StatusUpdates.DATA_ID,
+		 * c.getLong(1)); builder.withValue(
+		 * ContactsContract.StatusUpdates.STATUS, status); builder.withValue(
+		 * ContactsContract.StatusUpdates.STATUS_RES_PACKAGE,
+		 * "org.c99.SyncProviderDemo"); builder.withValue(
+		 * ContactsContract.StatusUpdates.STATUS_LABEL, R.string.app_name);
+		 * builder.withValue( ContactsContract.StatusUpdates.STATUS_ICON,
+		 * R.drawable.icon); builder.withValue(
+		 * ContactsContract.StatusUpdates.STATUS_TIMESTAMP,
+		 * System.currentTimeMillis()); operationList.add(builder.build());
+		 * 
+		 * builder = ContentProviderOperation
+		 * .newUpdate(ContactsContract.Data.CONTENT_URI); builder.withSelection(
+		 * BaseColumns._ID + " = '" + c.getLong(1) + "'", null);
+		 * builder.withValue(ContactsContract.Data.DATA3, status);
+		 * operationList.add(builder.build()); } } } } finally { c.close(); }
+		 */
 	}
 
-	
 }
