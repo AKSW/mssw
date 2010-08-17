@@ -16,11 +16,19 @@
 			android:label="MSSW Browser-Contacts" android:theme="@android:style/Theme.NoTitleBar" />
 		<activity android:name=".browser.BrowserBrowse"
 			android:label="MSSW Browser-Browse" android:theme="@android:style/Theme.NoTitleBar" />
-		<service android:name=".contact.AccountAuthenticatorService" android:exported="true">
+		<service android:name=".contact.AccountAuthenticatorService"
+			android:exported="true" android:process=":auth">
 			<intent-filter>
 				<action android:name="android.accounts.AccountAuthenticator" />
 			</intent-filter>
-			<meta-data android:name="android.accounts.AccountAuthenticator" android:resource="@xml/authenticator" />
+			<meta-data android:name="android.accounts.AccountAuthenticator"
+				android:resource="@xml/authenticator" />
+		</service>
+		<service android:name=".contact.ContactsSyncAdapterService"	android:exported="true" android:process=":contacts">
+			<intent-filter>
+				<action android:name="android.content.SyncAdapter" />
+			</intent-filter>
+			<meta-data android:name="android.content.SyncAdapter" android:resource="@xml/sync_contacts" />
 		</service>
 		<provider android:authorities="org.aksw.mssw.content.foafprovider"
 			android:name=".content.FoafProvider" />
