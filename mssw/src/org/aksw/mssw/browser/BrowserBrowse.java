@@ -33,9 +33,7 @@ public class BrowserBrowse extends Activity {
 
 	private static final String TAG = "msswBrowserMeCard";
 	
-	//private static final String CONTENT_AUTHORITY = "org.aksw.msw.tripleprovider";
 	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
-	//private static final Uri CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 	private static final Uri CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
 	private final ArrayList<Property> items = new ArrayList<Property>();

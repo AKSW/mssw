@@ -380,7 +380,7 @@ public class FoafProvider extends ContentProvider {
 	
 
 	private Cursor getPicture(String uri) {
-		Log.v(TAG, "getName: <" + uri + ">");
+		Log.v(TAG, "getPicture: <" + uri + ">");
 
 		try {
 			String enc = "UTF-8";
@@ -409,7 +409,7 @@ public class FoafProvider extends ContentProvider {
 	}
 
 	private Cursor getFriends(String uri) {
-		Log.v(TAG, "getMeCard: <" + uri + ">");
+		Log.v(TAG, "getFriends: <" + uri + ">");
 
 		try {
 			String enc = "UTF-8";
