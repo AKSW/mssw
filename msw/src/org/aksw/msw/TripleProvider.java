@@ -510,5 +510,13 @@ public class TripleProvider extends ContentProvider {
 		}
 		
 	}
+	
+	public static String getName(Resource person) {
+		return person.getLocalName();
+	}
+	
+	public static String getLable(Resource resource) {
+		return resource.getLocalName();
+	}
 
 }
