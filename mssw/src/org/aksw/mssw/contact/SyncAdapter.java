@@ -15,24 +15,13 @@
  ******************************************************************************/
 package org.aksw.mssw.contact;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import android.accounts.Account;
 import android.accounts.OperationCanceledException;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
-import android.content.ContentProviderOperation;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SyncResult;
-import android.database.CrossProcessCursor;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.BaseColumns;
-import android.provider.ContactsContract;
-import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
 public class SyncAdapter extends AbstractThreadedSyncAdapter {

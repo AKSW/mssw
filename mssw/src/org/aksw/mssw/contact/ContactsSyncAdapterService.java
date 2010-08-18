@@ -11,6 +11,7 @@ import android.app.Service;
 import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
@@ -21,6 +22,7 @@ import android.os.IBinder;
 import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
+import android.provider.ContactsContract.RawContacts.Entity;
 import android.util.Log;
 
 public class ContactsSyncAdapterService extends Service {
@@ -161,37 +163,98 @@ public class ContactsSyncAdapterService extends Service {
 			long rawContactId) {
 
 		Log.i(TAG, "updating contact: " + uri);
-		/*
-		 * Uri rawContactUri =
-		 * ContentUris.withAppendedId(RawContacts.CONTENT_URI, rawContactId);
-		 * Uri entityUri = Uri.withAppendedPath(rawContactUri,
-		 * Entity.CONTENT_DIRECTORY); Cursor c = content.query(entityUri, new
-		 * String[] { RawContacts.SOURCE_ID, Entity.DATA_ID, Entity.MIMETYPE,
-		 * Entity.DATA1 }, null, null, null); try { while (c.moveToNext()) { if
-		 * (!c.isNull(1)) { String mimeType = c.getString(2);
-		 * 
-		 * if (mimeType
-		 * .equals("vnd.android.cursor.item/vnd.org.c99.SyncProviderDemo.profile"
-		 * )) { ContentProviderOperation.Builder builder =
-		 * ContentProviderOperation
-		 * .newInsert(ContactsContract.StatusUpdates.CONTENT_URI);
-		 * builder.withValue( ContactsContract.StatusUpdates.DATA_ID,
-		 * c.getLong(1)); builder.withValue(
-		 * ContactsContract.StatusUpdates.STATUS, status); builder.withValue(
-		 * ContactsContract.StatusUpdates.STATUS_RES_PACKAGE,
-		 * "org.c99.SyncProviderDemo"); builder.withValue(
-		 * ContactsContract.StatusUpdates.STATUS_LABEL, R.string.app_name);
-		 * builder.withValue( ContactsContract.StatusUpdates.STATUS_ICON,
-		 * R.drawable.icon); builder.withValue(
-		 * ContactsContract.StatusUpdates.STATUS_TIMESTAMP,
-		 * System.currentTimeMillis()); operationList.add(builder.build());
-		 * 
-		 * builder = ContentProviderOperation
-		 * .newUpdate(ContactsContract.Data.CONTENT_URI); builder.withSelection(
-		 * BaseColumns._ID + " = '" + c.getLong(1) + "'", null);
-		 * builder.withValue(ContactsContract.Data.DATA3, status);
-		 * operationList.add(builder.build()); } } } } finally { c.close(); }
-		 */
+
+		try {
+			String enc = "UTF-8";
+
+			Uri contentUri = Uri.parse(CONTENT_URI + "/person/"
+					+ URLEncoder.encode(uri, enc));
+
+			String[] projection = { "http://xmlns.com/foaf/0.1/name" };
+			Cursor rc = content.query(contentUri, projection, null, null, null);
+
+			if (rc != null) {
+				// for one value kinds:
+				// should get the current value of a field
+				// compare it to the value from FoafProvider
+				// if different set the FoafProvider value
+
+				// or for multivalue kinds:
+				// get all values of these fields
+				// compare all of these values with all values from FoafProvider
+				// if one of FoafProvider is missing in Contacts, add it
+				// else do nothing
+
+				/**
+				 * Many of the following code is from
+				 * http://developer.android.com
+				 * /reference/android/provider/ContactsContract.RawContacts.html
+				 */
+
+				Uri rawContactUri;
+				Uri entityUri;
+				Cursor cc;
+
+				while (rc.moveToNext()) {
+					rawContactUri = ContentUris.withAppendedId(
+							RawContacts.CONTENT_URI, rawContactId);
+					entityUri = Uri.withAppendedPath(rawContactUri,
+							Entity.CONTENT_DIRECTORY);
+					cc = content.query(entityUri, null, null, null, null);
+					try {
+						while (cc.moveToNext()) {
+							String sourcId = cc.getString(cc
+									.getColumnIndex(RawContacts.SOURCE_ID));
+							if (!cc.isNull(cc.getColumnIndex(Entity.DATA_ID))) {
+								String mimeType = cc.getString(cc
+										.getColumnIndex(Entity.MIMETYPE));
+
+								if (mimeType
+										.equals(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)) {
+									String ccName = cc
+											.getString(cc
+													.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
+									String rcName = rc.getString(rc
+											.getColumnIndex("objectReadable"));
+									if (!ccName.equals(rcName)) {
+										Log.v(TAG, "Updating name from "
+												+ ccName + " to " + rcName
+												+ " of " + uri);
+
+										ContentProviderOperation.Builder builder = ContentProviderOperation
+												.newUpdate(ContactsContract.Data.CONTENT_URI);
+										builder.withSelection(
+												BaseColumns._ID
+														+ " = '"
+														+ cc.getLong(cc
+																.getColumnIndex(Entity.DATA_ID))
+														+ "'", null);
+										builder.withValue(
+												ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
+												rcName);
+										operationList.add(builder.build());
+
+									} else {
+										Log.v(TAG, "Doesn't need to update "
+												+ uri);
+									}
+								}
+							}
+						}
+					} finally {
+						cc.close();
+					}
+				}
+			} else {
+				Log.e(TAG,
+						"Contentprovider returned an empty Cursor, don't know what to do.");
+			}
+
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Problem with encoding uri for the query.", e);
+		} catch (Exception e) {
+			Log.e(TAG, "An other error occured.", e);
+		}
 	}
 
 }
