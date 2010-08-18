@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.aksw.mssw;
+package org.aksw.mssw.contact;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;

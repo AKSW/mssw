@@ -1,11 +1,12 @@
 /**
  * 
  */
-package org.aksw.mssw;
+package org.aksw.mssw.content;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -26,7 +27,7 @@ public class FoafProvider extends ContentProvider {
 
 	private static final String TAG = "FoafProvider";
 	public static final String DISPLAY_NAME = "FoafProvider";
-	public static final String AUTHORITY = "org.aksw.mssw.foafprovider";
+	public static final String AUTHORITY = "org.aksw.mssw.content.foafprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
 	/**
@@ -44,11 +45,11 @@ public class FoafProvider extends ContentProvider {
 	private static final int ME_MECARD = 110;
 	private static final int ME_FRIENDS = 120;
 	private static final int ME_FRIEND_ADD = 121;
-	private static final int PERSON = 20;
-	private static final int PERSON_NAME = 21;
-	private static final int PERSON_PICTURE = 22;
-	private static final int PERSON_MECARD = 23;
-	private static final int PERSON_FRIENDS = 24;
+	private static final int PERSON = 200;
+	private static final int PERSON_NAME = 210;
+	private static final int PERSON_PICTURE = 220;
+	private static final int PERSON_MECARD = 230;
+	private static final int PERSON_FRIENDS = 240;
 
 	/**
 	 * The UriMatcher, which parses the incoming querie-uris
@@ -73,7 +74,7 @@ public class FoafProvider extends ContentProvider {
 	private String me;
 
 	/**
-	 * The Application Context in wich the ContentProvider is running and the
+	 * The Application Context in which the ContentProvider is running and the
 	 * SharedPreferences of all Applications in this Context
 	 */
 	private static Context context;
@@ -164,24 +165,34 @@ public class FoafProvider extends ContentProvider {
 
 		switch (match) {
 		case ME:
-			return getMe();
+			return getMe(projection);
 		case PERSON:
 			if (path.size() > 1) {
-				return getPerson(path.get(1));
+				return getPerson(path.get(1), projection);
 			}
 			break;
 		case ME_MECARD:
-			return getMeCard();
+			return getMeCard(projection);
 		case PERSON_MECARD:
 			if (path.size() > 2) {
-				return getMeCard(path.get(2));
+				return getMeCard(path.get(2), projection);
 			}
 			break;
 		case ME_FRIENDS:
-			return getFriends();
+			return getFriends(projection);
 		case PERSON_FRIENDS:
 			if (path.size() > 2) {
-				return getFriends(path.get(2));
+				return getFriends(path.get(2), projection);
+			}
+			break;
+		case PERSON_NAME:
+			if (path.size() > 2) {
+				return getName(path.get(2), projection);
+			}
+			break;
+		case PERSON_PICTURE:
+			if (path.size() > 2) {
+				return getPicture(path.get(2), projection);
 			}
 			break;
 		default:
@@ -252,17 +263,19 @@ public class FoafProvider extends ContentProvider {
 			"http://purl.org/vocab/relationship/worksWith",
 			"http://purl.org/vocab/relationship/wouldLikeToKnow" };
 
-	private String[] meCard = { "http://xmlns.com/foaf/0.1/name",
-			"http://xmlns.com/foaf/0.1/jabberID" };
+	private String[] nameProps = { "http://xmlns.com/foaf/0.1/name",
+			"http://xmlns.com/foaf/0.1/givenName", "http://xmlns.com/foaf/0.1/familyName", "http://xmlns.com/foaf/0.1/nick" };
+	
+	private String[] pictureProps = { "http://xmlns.com/foaf/0.1/depiction" };
 
-	private Cursor getMe() {
+	private Cursor getMe(String[] projection) {
 		if (me == null) {
 			me = getConfiguration().getString("me", null);
 		}
-		return getPerson(me);
+		return getPerson(me, projection);
 	}
 
-	private Cursor getPerson(String uri) {
+	private Cursor getPerson(String uri, String[] projection) {
 		Log.v(TAG, "getPerson: <" + uri + ">");
 
 		try {
@@ -274,7 +287,7 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
-			Cursor rc = getContentResolver().query(contentUri, null, null, null,
+			Cursor rc = getContentResolver().query(contentUri, projection, null, null,
 					null);
 
 			return rc;
@@ -284,14 +297,14 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 
-	private Cursor getMeCard() {
+	private Cursor getMeCard(String[] projection) {
 		if (me == null) {
 			me = getConfiguration().getString("me", null);
 		}
-		return getMeCard(me);
+		return getMeCard(me, projection);
 	}
 
-	private Cursor getMeCard(String uri) {
+	private Cursor getMeCard(String uri, String[] projection) {
 		Log.v(TAG, "getMeCard: <" + uri + ">");
 
 		try {
@@ -303,7 +316,13 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
-			Cursor rc = getContentResolver().query(contentUri, relations, "complement", null,
+
+			String selection = null;
+			if (projection == null) {
+				projection = relations;
+				selection = "complement";
+			}
+			Cursor rc = getContentResolver().query(contentUri, projection, selection, null,
 					null);
 
 			return rc;
@@ -313,15 +332,8 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 
-	private Cursor getFriends() {
-		if (me == null) {
-			me = getConfiguration().getString("me", null);
-		}
-		return getFriends(me);
-	}
-
-	private Cursor getFriends(String uri) {
-		Log.v(TAG, "getMeCard: <" + uri + ">");
+	private Cursor getName(String uri, String[] projection) {
+		Log.v(TAG, "getName: <" + uri + ">");
 
 		try {
 			String enc = "UTF-8";
@@ -332,6 +344,100 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
+
+			if (projection != null) {
+				Log.i(TAG, "projection not supported for getName()");
+			}
+			Cursor rc = getContentResolver().query(contentUri, nameProps, null, null,
+					null);
+			
+			rc.moveToFirst();
+			
+			String[] names = new String[nameProps.length];
+			String predicat = "";
+			String object = "";
+			String subject = rc.getString(rc.getColumnIndex("subject"));
+			
+			for(rc.moveToFirst(); !rc.isLast(); rc.moveToNext()) {
+				predicat = rc.getString(rc.getColumnIndex("predicat"));
+				object = rc.getString(rc.getColumnIndex("object"));
+				for (int i = 0; i < nameProps.length; i++) { 
+					if (nameProps[i].compareToIgnoreCase(predicat) == 0) {
+						names[i] = object;
+					}
+				}
+			}
+			
+			for (int i = 0; i < names.length; i++) { 
+				if (names[i].length() > 0) {
+					object = names[i];
+					predicat = nameProps[i];
+					if(i == 1) {
+						object = object + " " + names[i+1];
+					}
+					break;
+				}
+			}
+			
+			Cursor out = new PropertyCursor(subject, predicat, object);
+
+			return out;
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Problem with encoding uri for the query.", e);
+			return null;
+		}
+	}
+	
+
+	private Cursor getPicture(String uri, String[] projection) {
+		Log.v(TAG, "getPicture: <" + uri + ">");
+
+		try {
+			String enc = "UTF-8";
+
+			Uri contentUri;
+			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, enc));
+
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
+			
+			if (projection != null) {
+				Log.i(TAG, "projection not supported for getPicture()");
+			}
+			Cursor rc = getContentResolver().query(contentUri, pictureProps, null, null,
+					null);
+
+			return rc;
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Problem with encoding uri for the query.", e);
+			return null;
+		}
+	}
+	
+	private Cursor getFriends(String[] projection) {
+		if (me == null) {
+			me = getConfiguration().getString("me", null);
+		}
+		return getFriends(me, projection);
+	}
+
+	private Cursor getFriends(String uri, String[] projection) {
+		Log.v(TAG, "getFriends: <" + uri + ">");
+
+		try {
+			String enc = "UTF-8";
+
+			Uri contentUri;
+			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, enc));
+
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
+			
+			if (projection == null) {
+				projection = relations;
+			}
 			Cursor rc = getContentResolver().query(contentUri, relations, null, null,
 					null);
 

@@ -1,13 +1,14 @@
-package org.aksw.mssw;
+package org.aksw.mssw.browser;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import org.aksw.mssw.MsswPreferenceActivity;
+import org.aksw.mssw.R;
+
 import android.app.ListActivity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,8 +17,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;
@@ -27,7 +26,7 @@ public class BrowserContacts extends ListActivity {
 
 	private static final String TAG = "msswBrowserContacts";
 
-	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.foafprovider";
+	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
 	private static final Uri CONTENT_URI = Uri.parse("content://"
 			+ CONTENT_AUTHORITY);
 
