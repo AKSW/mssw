@@ -23,9 +23,9 @@ import android.util.Log;
 public class TrustManagerFactory {
 	
 	private static String TAG = "MswTrustManagerFactory";
-	private static String KEY_ALGORITHM = "SunX509";
+	private static String KEY_ALGORITHM = "X509";
 	private static String KEYSTORE_TYPE = "PKCS12";
-	private static String SSL_PROTOCOL = "TLS";
+	private static String SSL_PROTOCOL = "SSL";
 	
 	// TODO need to import the CA somewhere
 	

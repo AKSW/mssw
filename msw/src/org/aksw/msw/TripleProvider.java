@@ -3,19 +3,15 @@ package org.aksw.msw;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.Socket;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.aksw.msw.foafssl.FoafsslURLConnection;
 import org.aksw.msw.foafssl.TrustManagerFactory;
 
 import android.content.ContentProvider;
@@ -54,7 +50,7 @@ public class TripleProvider extends ContentProvider {
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	public static final String DISPLAY_NAME = "TripleProvider";
 
-	private static final String FILES_PATH = "/Android/data/org.aksw.msw/files/";
+	private static final String FILES_PATH = "Android" + File.separator + "data" + File.separator + "org.aksw.msw" + File.separator + "files";
 
 	/**
 	 * content://org.aksw.msw.tripleprovider returns nothing, because the whole
@@ -90,6 +86,8 @@ public class TripleProvider extends ContentProvider {
 
 	private static final int TYPE = 30;
 	private static final int TYPE_OVERVIEW = 31;
+	
+	private static final int BNODE = 40;
 
 	private static final int SPARQL = 50;
 
@@ -105,6 +103,7 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "class/", CLASS_OVERVIEW);
 		uriMatcher.addURI(AUTHORITY, "type/*", TYPE);
 		uriMatcher.addURI(AUTHORITY, "type/", TYPE_OVERVIEW);
+		uriMatcher.addURI(AUTHORITY, "bnode/*", BNODE);
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
 	}
 
@@ -163,7 +162,9 @@ public class TripleProvider extends ContentProvider {
 		case SPARQL:
 			/**
 			 * sparql is not implemented, because androjena doesn't include ARQ
+			 * 2010-08-19 androjena works on ARQ support, but I don't need it now
 			 */
+		case BNODE:
 			return mimeTypeTriple;
 		default:
 			return null;
@@ -263,6 +264,15 @@ public class TripleProvider extends ContentProvider {
 						+ uri + ">");
 			}
 			break;
+		case BNODE:
+			if (path.size() > 1) {
+				Log.v(TAG, "getBlankNode: <" + path.get(1) + ">");
+				res = getBlankNode(path.get(1));
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+			}
+			break;
 		/**
 		 * The following cases are not implemented at the moment
 		 */
@@ -310,6 +320,10 @@ public class TripleProvider extends ContentProvider {
 	private static final int SAV = RESOURCE_SAVE;
 	private static final int OFF = RESOURCE_OFFLINE;
 
+	private Resource getBlankNode(String id) {
+		return queryResource(id);
+	}
+	
 	private Resource getResource(String uri, int mode) {
 		switch (mode) {
 		case TMP:
@@ -498,7 +512,7 @@ public class TripleProvider extends ContentProvider {
 	private boolean initModels() {
 		String state = Environment.getExternalStorageState();
 
-		String path = FILES_PATH + "models/";
+		String path = FILES_PATH + File.separator + "models";
 
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
 			// We can read and write the media
@@ -553,17 +567,19 @@ public class TripleProvider extends ContentProvider {
 
 		String state = Environment.getExternalStorageState();
 
-		String certPath = FILES_PATH + "certs/privatekey.p12";
+		String certPath = FILES_PATH + File.separator + "certs" + File.separator + "privatekey.p12";
 
 		if (model == null) {
 			model = ModelFactory.createDefaultModel();
 		}
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
+			try {
 			// We can read and write the media
 			File storage = Environment.getExternalStorageDirectory();
+
+			File keyFile = new File(storage, certPath);
 			// storage.getAbsolutePath();
-			if (storage.isDirectory()) {
-				File keyFile = new File(storage, certPath);
+			if (keyFile.isFile()) {
 
 				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 				
@@ -596,6 +612,9 @@ public class TripleProvider extends ContentProvider {
 						"Couldn't get private Key, reading without FOAF+SSL features.");
 			}
 			model.read(url);
+			} catch (DoesNotExistException e) {
+				Log.e(TAG, "Jena couldn't find the model: '" + url + "'.'", e);
+			}
 		}
 		return model;
 	}

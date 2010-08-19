@@ -4,7 +4,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
+import android.R.bool;
 import android.accounts.Account;
 import android.accounts.OperationCanceledException;
 import android.app.Service;
@@ -35,6 +37,10 @@ public class ContactsSyncAdapterService extends Service {
 
 	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
 	private static final Uri CONTENT_URI = Uri.parse("content://"
+			+ CONTENT_AUTHORITY);
+
+	private static final String CONTACT_AUTHORITY = "org.aksw.mssw.contact.contactprovider";
+	private static final Uri CONTACT_URI = Uri.parse("content://"
 			+ CONTENT_AUTHORITY);
 
 	@Override
@@ -111,54 +117,141 @@ public class ContactsSyncAdapterService extends Service {
 
 		try {
 			String enc = "UTF-8";
+			/*
+			 * Uri contentUri = Uri.parse(CONTENT_URI + "/person/" +
+			 * URLEncoder.encode(uri, enc));
+			 * 
+			 * String[] projection = { "http://xmlns.com/foaf/0.1/name" };
+			 * Cursor rc = content.query(contentUri, projection, null, null,
+			 * null);
+			 */
 
-			Uri contentUri = Uri.parse(CONTENT_URI + "/person/"
+			// 1. query hasData Properties
+			// 2. for each hasData Property
+			// 2.1 query hasData Properties object
+			// 2.2 check rdf:type (?s a ?o) an set as Mime-Type
+			// 2.3 for each hasData Property
+			// 2.3.1 check uri of property and set as column name (as in 2.)
+			// 2.3.2 check whether ?o is a literal or resource
+			// 2.3.2.1 literal: insert as data
+			// 2.3.2.2 resource: get object and insert (as in 2.)
+
+			HashMap<String, ContentProviderOperation.Builder> builderList = new HashMap<String, ContentProviderOperation.Builder>();
+
+			ContentProviderOperation.Builder builder = ContentProviderOperation
+					.newInsert(RawContacts.CONTENT_URI);
+			builder.withValue(RawContacts.ACCOUNT_NAME, account.name);
+			builder.withValue(RawContacts.ACCOUNT_TYPE, account.type);
+			builder.withValue(RawContacts.SYNC1, uri);
+			builderList.put(uri, builder);
+
+			Uri contentUri = Uri.parse(CONTACT_URI + "/data/"
 					+ URLEncoder.encode(uri, enc));
 
-			String[] projection = { "http://xmlns.com/foaf/0.1/name" };
-			Cursor rc = content.query(contentUri, projection, null, null, null);
+			// String[] projection = { "http://xmlns.com/foaf/0.1/name" };
+			Cursor rc = content.query(contentUri, null, null, null, null);
 
 			if (rc != null) {
-				rc.moveToFirst();
-				String name = rc.getString(rc.getColumnIndex("object"));
+				String subject, predicat, object;
+				while (rc.moveToNext()) {
+					predicat = rc.getString(rc.getColumnIndex("predicat"));
 
-				ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
+					if (predicat.equals(ContactProvider.PROP_hasData)) {
+						object = rc.getString(rc.getColumnIndex("object"));
 
-				ContentProviderOperation.Builder builder = ContentProviderOperation
-						.newInsert(RawContacts.CONTENT_URI);
-				builder.withValue(RawContacts.ACCOUNT_NAME, account.name);
-				builder.withValue(RawContacts.ACCOUNT_TYPE, account.type);
-				builder.withValue(RawContacts.SYNC1, uri);
-				operationList.add(builder.build());
+						if (!builderList.containsKey(object)) {
 
-				builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
-				builder.withValueBackReference(ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID, 0);
-				builder.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
-				builder.withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name);
-				//builder.withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, givName);
-				//builder.withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX, prefix);
-				operationList.add(builder.build());
-/*
-				builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
-				builder.withValueBackReference(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID, 0);
-				builder.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
-				builder.withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, nummer1);
-				builder.withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_HOME);
-				operationList.add(builder.build());
-				
+							builder = ContentProviderOperation
+									.newInsert(ContactsContract.Data.CONTENT_URI);
+							builder.withValueBackReference(
+									ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID,
+									0);
+							builderList.put(object, builder);
+						} else {
+							Log.i(TAG, "Builder List already has this data.");
+						}
+					}
+				}
 
-				builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
-				builder.withValueBackReference(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID, 0);
-				builder.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
-				builder.withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, nummer2);
-				builder.withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_TELEX);
-				operationList.add(builder.build());
-	*/			
-				content.applyBatch(ContactsContract.AUTHORITY, operationList);
+				// reset cursor
+				rc.moveToPosition(-1);
+
+				while (rc.moveToNext()) {
+					predicat = rc.getString(rc.getColumnIndex("predicat"));
+
+					if (!predicat.equals(ContactProvider.PROP_hasData)) {
+						subject = rc.getString(rc.getColumnIndex("subject"));
+						builder = builderList.get(subject);
+						
+						if (predicat.equals("rdf:type")) {
+							builder.withValue(
+									ContactsContract.Data.MIMETYPE,
+									ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE); // special
+						} else {
+							object = rc.getString(rc.getColumnIndex("object"));
+							
+							// check if resource
+							// if not:
+
+							builder.withValue(
+									ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, // special
+									object);
+						}
+						builderList.put(subject, builder);
+					}
+				}
+
+				// builder.withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
+				// givName);
+				// builder.withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX,
+				// prefix);
+				/*
+				 * builder =
+				 * ContentProviderOperation.newInsert(ContactsContract.
+				 * Data.CONTENT_URI);
+				 * builder.withValueBackReference(ContactsContract
+				 * .CommonDataKinds.Phone.RAW_CONTACT_ID, 0);
+				 * builder.withValue(ContactsContract.Data.MIMETYPE,
+				 * ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+				 * builder
+				 * .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER,
+				 * nummer1);
+				 * builder.withValue(ContactsContract.CommonDataKinds.Phone
+				 * .TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_HOME);
+				 * operationList.add(builder.build());
+				 * 
+				 * 
+				 * builder =
+				 * ContentProviderOperation.newInsert(ContactsContract.
+				 * Data.CONTENT_URI);
+				 * builder.withValueBackReference(ContactsContract
+				 * .CommonDataKinds.Phone.RAW_CONTACT_ID, 0);
+				 * builder.withValue(ContactsContract.Data.MIMETYPE,
+				 * ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+				 * builder
+				 * .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER,
+				 * nummer2);
+				 * builder.withValue(ContactsContract.CommonDataKinds.Phone
+				 * .TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_TELEX);
+				 * operationList.add(builder.build());
+				 */
+
 			} else {
 				Log.e(TAG,
-						"Contentprovider returned an empty Cursor, don't know what to do.");
+						"Contentprovider returned an empty Cursor, couldn't add Data to contact '"
+								+ uri + "'.");
 			}
+
+			ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
+			Iterator<String> builderIterator = builderList.keySet().iterator();
+			// ContentProviderOperation.Builder builder;
+
+			while (builderIterator.hasNext()) {
+				builder = builderList.get(builderIterator.next());
+				operationList.add(builder.build());
+			}
+
+			content.applyBatch(ContactsContract.AUTHORITY, operationList);
 
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
@@ -265,6 +358,26 @@ public class ContactsSyncAdapterService extends Service {
 		} catch (Exception e) {
 			Log.e(TAG, "An other error occured.", e);
 		}
+	}
+
+	private Class forUri(String uri, boolean isField)
+			throws ClassNotFoundException {
+		String className;
+		Uri uri_ = Uri.parse(uri);
+
+		ArrayList<String> path = new ArrayList<String>(uri_.getPathSegments());
+
+		if (isField) {
+			String fieldName = path.get(path.size() - 1);
+			className = fieldName.substring(0, fieldName.lastIndexOf("."));
+		} else {
+			className = path.get(path.size() - 1);
+		}
+
+		Log.v(TAG, "Classname ist: '" + className + "'.");
+
+		return Class.forName(className);
+
 	}
 
 }

@@ -1,4 +1,4 @@
-package org.aksw.msw;
+package org.aksw.msw.foafssl;
 
 import java.io.IOException;
 import java.net.URL;
@@ -9,7 +9,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 
 public class FoafsslURLConnection extends HttpsURLConnection {
 
-	protected FoafsslURLConnection(URL url) {
+	public FoafsslURLConnection(URL url) {
 		super(url);
 		this.setRequestProperty("accept", "application/rdf+xml, application/xml; q=0.8, text/xml; q=0.7, application/rss+xml; q=0.3, */*; q=0.2");
 	}

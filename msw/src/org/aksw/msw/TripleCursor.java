@@ -65,7 +65,7 @@ public class TripleCursor extends AbstractCursor {
 	@Override
 	public String[] getColumnNames() {
 		// TODO Auto-generated method stub
-		String[] names = { "_id", "subject", "predicat", "object", "predicatReadable", "objectReadable" };
+		String[] names = { "_id", "subject", "predicat", "object", "predicatReadable", "objectReadable", "oIsResource", "oIsBlankNode" };
 		return names;
 	}
 
@@ -112,7 +112,6 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public String getString(int column) {
-		// TODO Auto-generated method stub
 		Statement stmt = properties.get(mPos);
 		switch (column) {
 		case 1:
@@ -123,6 +122,9 @@ public class TripleCursor extends AbstractCursor {
 			if (stmt.getObject().isURIResource()) {
 				Resource res = (Resource) stmt.getObject();
 				return res.getURI();
+			} else if (stmt.getObject().isAnon()) {
+				Resource res = (Resource) stmt.getObject();
+				return res.getId().toString();
 			} else if (stmt.getObject().isLiteral()) {
 				Literal lit = (Literal) stmt.getObject();
 				return lit.getLexicalForm();
@@ -153,8 +155,15 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public boolean isNull(int column) {
-		// TODO Auto-generated method stub
-		return false;
+		Statement stmt = properties.get(mPos);
+		switch (column) {
+		case 6:
+			return !stmt.getObject().isResource();
+		case 7:
+			return !stmt.getObject().isAnon();
+		default:
+			return false;
+		}
 	}
 
 }

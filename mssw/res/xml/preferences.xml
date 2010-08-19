@@ -12,7 +12,8 @@
 			android:summary="@string/pref_your_webid_desc">
 		</Preference>
 	</PreferenceCategory>
-	<PreferenceCategory android:title="@string/triplestore">
+	<PreferenceScreen android:title="@string/triplestore"
+			android:summary="@string/pref_triplestore">
 		<intent android:action="org.aksw.msw.PREFERENCE" />
-	</PreferenceCategory>
+	</PreferenceScreen>
 </PreferenceScreen>
