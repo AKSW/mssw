@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+	<PreferenceCategory android:title="@string/app_name">
+		<EditTextPreference android:key="privatekey_password" android:title="@string/privatekey_password" android:defaultValue="123%and_roid)" android:summary="@string/pref_privatekey_password" />
+	</PreferenceCategory>
+</PreferenceScreen>

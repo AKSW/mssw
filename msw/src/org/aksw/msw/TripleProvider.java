@@ -1,14 +1,31 @@
 package org.aksw.msw;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.Socket;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.aksw.msw.foafssl.TrustManagerFactory;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.SharedPreferences;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -20,6 +37,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.SimpleSelector;
 import com.hp.hpl.jena.rdf.model.impl.PropertyImpl;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
+import com.hp.hpl.jena.shared.DoesNotExistException;
 import com.hp.hpl.jena.shared.JenaException;
 
 /**
@@ -35,7 +53,9 @@ public class TripleProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	public static final String DISPLAY_NAME = "TripleProvider";
-	
+
+	private static final String FILES_PATH = "/Android/data/org.aksw.msw/files/";
+
 	/**
 	 * content://org.aksw.msw.tripleprovider returns nothing, because the whole
 	 * web is to much. content://org.aksw.msw.tripleprovider/resource/_uri_
@@ -117,9 +137,11 @@ public class TripleProvider extends ContentProvider {
 	@Override
 	public String getType(Uri uri) {
 
-		//String mimeTypeResItm = "vnd.android.cursor.item/vnd.aksw.msw.resource";
-		//String mimeTypeResDir = "vnd.android.cursor.dir/vnd.aksw.msw.resource";
-		//String mimeTypeTriple = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
+		// String mimeTypeResItm =
+		// "vnd.android.cursor.item/vnd.aksw.msw.resource";
+		// String mimeTypeResDir =
+		// "vnd.android.cursor.dir/vnd.aksw.msw.resource";
+		// String mimeTypeTriple = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
 		String mimeTypeResItm = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
 		String mimeTypeResDir = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.resource";
 		String mimeTypeTriple = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.statement";
@@ -157,7 +179,7 @@ public class TripleProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 
-		if(initModels()) {
+		if (initModels()) {
 			Log.v(TAG, "Created TripleProvider");
 			return true;
 		} else {
@@ -165,18 +187,20 @@ public class TripleProvider extends ContentProvider {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public void onLowMemory() {
 		super.onLowMemory();
-		Log.v(TAG, "TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
+		Log.v(TAG,
+				"TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
 	}
 
 	/**
 	 * @see android.content.ContentProvider#query(android.net.Uri,
 	 *      java.lang.String[], java.lang.String, java.lang.String[],
 	 *      java.lang.String)
-	 * @param projection An array of property URIs. If empty return all properties.
+	 * @param projection
+	 *            An array of property URIs. If empty return all properties.
 	 * @param selection
 	 *            specify a WHERE clause if you use spaqrql, else it is ignorred
 	 * @param selectionArgs
@@ -201,7 +225,7 @@ public class TripleProvider extends ContentProvider {
 
 		// Debugoutput
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
-		
+
 		Log.v(TAG, "path.size() = " + path.size() + ".");
 		if (path.size() > 0) {
 			Log.v(TAG, "path(0/" + path.size() + "): " + path.get(0) + ".");
@@ -217,7 +241,7 @@ public class TripleProvider extends ContentProvider {
 
 		// Debugoutput
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
-		
+
 		switch (match) {
 		case RESOURCE:
 			if (path.size() > 1) {
@@ -269,21 +293,19 @@ public class TripleProvider extends ContentProvider {
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("The TripleProvider is not capable of updating Resources, sorry.");
-		//return 0;
+		throw new UnsupportedOperationException(
+				"The TripleProvider is not capable of updating Resources, sorry.");
+		// return 0;
 	}
 
 	// ---------------------------- private --------------------
 
 	/**
-	 * r - read permission
-	 * w - write permission (means can request to model to import missing data from the web)
-	 * 				cache 	model
-	 * TMP-Mode		 rw		 r-
-	 * SAV-Mode		 r-		 rw
-	 * OFF-Mode		 --		 r- 
+	 * r - read permission w - write permission (means can request to model to
+	 * import missing data from the web) cache model TMP-Mode rw r- SAV-Mode r-
+	 * rw OFF-Mode -- r-
 	 */
-	
+
 	private static final int TMP = RESOURCE_TMP;
 	private static final int SAV = RESOURCE_SAVE;
 	private static final int OFF = RESOURCE_OFFLINE;
@@ -303,7 +325,9 @@ public class TripleProvider extends ContentProvider {
 
 	/**
 	 * Read this resource from the model.
-	 * @param uri the URI of the resource you want to get
+	 * 
+	 * @param uri
+	 *            the URI of the resource you want to get
 	 * @return a jena-Resource-Object, or null if this resource is not available
 	 */
 	private Resource queryResource(String uri) {
@@ -311,7 +335,7 @@ public class TripleProvider extends ContentProvider {
 		// cache, but I don't know. The future will tell me, what's right.
 		return queryResource(uri, model);
 	}
-	
+
 	private Resource queryResource(String uri, Model model) {
 		// 1. check if resource exists
 		if (resourceExists(uri, model)) {
@@ -330,16 +354,17 @@ public class TripleProvider extends ContentProvider {
 			if (resourceExists(uri, cache)) {
 				// 3a. if 2 import resource from cache to model
 				Resource subj = new ResourceImpl(uri);
-				SimpleSelector selector = new SimpleSelector(subj, (Property) null,
-						(RDFNode) null);
-				
+				SimpleSelector selector = new SimpleSelector(subj,
+						(Property) null, (RDFNode) null);
+
 				model.add(cache.query(selector));
 				model.commit();
 			} else {
-				// 3b. if not 2, then import resource to model from the web (Linked Data)
+				// 3b. if not 2, then import resource to model from the web
+				// (Linked Data)
 				Model tmp = ModelFactory.createDefaultModel();
 				try {
-					tmp.read(uri);
+					tmp = this.readSSL(tmp, uri);
 
 					Resource subj = new ResourceImpl(uri);
 					SimpleSelector selector = new SimpleSelector(subj,
@@ -358,7 +383,8 @@ public class TripleProvider extends ContentProvider {
 					tmp.close();
 					model.commit();
 				} catch (JenaException e) {
-					Log.v(TAG, "An Exception occured whyle querying uri <" + uri + ">", e);
+					Log.v(TAG, "An Exception occured whyle querying uri <"
+							+ uri + ">", e);
 				}
 			}
 		} else {
@@ -379,10 +405,11 @@ public class TripleProvider extends ContentProvider {
 		if (!resourceExists(uri, model)) {
 			// 2. if not 1, then check if resource exists in cache
 			if (!resourceExists(uri, cache)) {
-				// 3b. if not 2, then import resource to cache from the web (Linked Data)
+				// 3b. if not 2, then import resource to cache from the web
+				// (Linked Data)
 				Model tmp = ModelFactory.createDefaultModel();
 				try {
-					tmp.read(uri);
+					tmp = this.readSSL(tmp, uri);
 
 					Resource subj = new ResourceImpl(uri);
 					SimpleSelector selector = new SimpleSelector(subj,
@@ -400,7 +427,8 @@ public class TripleProvider extends ContentProvider {
 					cache.add(tmp.query(selector));
 					tmp.close();
 				} catch (JenaException e) {
-					Log.v(TAG, "An Exception occured whyle querying uri <" + uri + ">", e);
+					Log.v(TAG, "An Exception occured whyle querying uri <"
+							+ uri + ">", e);
 				}
 			}
 		} else {
@@ -411,51 +439,51 @@ public class TripleProvider extends ContentProvider {
 		// 4. return resource from cache
 		return queryResource(uri, cache);
 	}
-	
+
 	/**
-	 * Check whether a triple with the given uri exists as subject or object in the model
-	 * or not.
+	 * Check whether a triple with the given uri exists as subject or object in
+	 * the model or not.
 	 * 
 	 * @param uri
 	 *            the uri of the subject-resource
 	 * @param model
 	 *            the model in which you want to check for the resource
-	 * @param asObject check also if the resource exists in a triple as object
+	 * @param asObject
+	 *            check also if the resource exists in a triple as object
 	 * @return whether the resource occures as subject in a triple or not
 	 */
 	private boolean resourceExists(String uri, Model model, boolean asObject) {
 
 		Resource res = model.getResource(uri);
-		
-		if (model.contains(res, null, (RDFNode)null)) {
-			Log.v(TAG, "The resource <" + uri + "> does exist as Subject in the given model.");
+
+		if (model.contains(res, null, (RDFNode) null)) {
+			Log.v(TAG, "The resource <" + uri
+					+ "> does exist as Subject in the given model.");
 			return true;
 		} else if (asObject && model.contains(null, null, res)) {
-			Log.v(TAG, "The resource <" + uri + "> does exist as Object in the given model.");
+			Log.v(TAG, "The resource <" + uri
+					+ "> does exist as Object in the given model.");
 			return true;
 		} else {
-			Log.v(TAG, "The resource <" + uri + "> doesn't exist in the given model.");
+			Log.v(TAG, "The resource <" + uri
+					+ "> doesn't exist in the given model.");
 			return false;
 		}
 
 		/*
-		StmtIterator si = res.listProperties();
-
-		if (!si.hasNext()) {
-			Log.v(TAG, "The resource <" + uri + "> has no properties in the given model.");
-			return false;
-		} else {
-			Log.v(TAG, "The resource <" + uri + "> has at leased one property in the given model.");
-			return true;
-		}
-		*/
+		 * StmtIterator si = res.listProperties();
+		 * 
+		 * if (!si.hasNext()) { Log.v(TAG, "The resource <" + uri +
+		 * "> has no properties in the given model."); return false; } else {
+		 * Log.v(TAG, "The resource <" + uri +
+		 * "> has at leased one property in the given model."); return true; }
+		 */
 
 	}
-	
+
 	/**
 	 * Check whether a triple with the given uri as subject exists in the model
-	 * or not.
-	 * The asObject parameter is defaulted to false.
+	 * or not. The asObject parameter is defaulted to false.
 	 * 
 	 * @param uri
 	 *            the uri of the subject-resource
@@ -466,57 +494,123 @@ public class TripleProvider extends ContentProvider {
 	private boolean resourceExists(String uri, Model model) {
 		return this.resourceExists(uri, model, false);
 	}
-	
+
 	private boolean initModels() {
 		String state = Environment.getExternalStorageState();
 
-		String path = "/Android/data/org.aksw.msw/files/models/";
+		String path = FILES_PATH + "models/";
 
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
-		    // We can read and write the media
+			// We can read and write the media
 			File storage = Environment.getExternalStorageDirectory();
-			storage.getAbsolutePath();
+			// storage.getAbsolutePath();
 			if (storage.isDirectory()) {
 				File modelsPath = new File(storage, path);
 				modelsPath.mkdirs();
-				ModelMaker models = ModelFactory.createFileModelMaker(modelsPath.getAbsolutePath());
+				ModelMaker models = ModelFactory
+						.createFileModelMaker(modelsPath.getAbsolutePath());
 				ModelMaker caches = ModelFactory.createMemModelMaker();
 				cache = caches.openModel("cache");
 				model = models.openModel("model");
 				model.begin();
-				
-				model.setNsPrefix("rel", "http://purl.org/vocab/relationship/");
-				model.setNsPrefix("foaf", "http://xmlns.com/foaf/0.1/");
-				model.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-				model.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
-				
-				cache.setNsPrefix("rel", "http://purl.org/vocab/relationship/");
-				cache.setNsPrefix("foaf", "http://xmlns.com/foaf/0.1/");
-				cache.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-				cache.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
-				
+
+				HashMap<String, String> namespaces = new HashMap<String, String>();
+				namespaces.put("rel", "http://purl.org/vocab/relationship/");
+				namespaces.put("foaf", "http://xmlns.com/foaf/0.1/");
+				namespaces.put("rdf",
+						"http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+				namespaces.put("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
+
+				model = applyNamespaces(model, namespaces);
+				cache = applyNamespaces(cache, namespaces);
+
 				return true;
 			} else {
 				return false;
 			}
 
 		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-		    // We can only read the media
+			// We can only read the media
 			return false;
 		} else {
-		    // Something else is wrong. It may be one of many other states, but all we need
-		    //  to know is we can neither read nor write
+			// Something else is wrong. It may be one of many other states, but
+			// all we need
+			// to know is we can neither read nor write
 			return false;
 		}
-		
+
 	}
-	
+
 	public static String getName(Resource person) {
 		return person.getLocalName();
 	}
-	
+
 	public static String getLable(Resource resource) {
 		return resource.getLocalName();
+	}
+
+	private Model readSSL(Model model, String url) {
+
+		String state = Environment.getExternalStorageState();
+
+		String certPath = FILES_PATH + "certs/privatekey.p12";
+
+		if (model == null) {
+			model = ModelFactory.createDefaultModel();
+		}
+		if (Environment.MEDIA_MOUNTED.equals(state)) {
+			// We can read and write the media
+			File storage = Environment.getExternalStorageDirectory();
+			// storage.getAbsolutePath();
+			if (storage.isDirectory()) {
+				File keyFile = new File(storage, certPath);
+
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+				
+				SSLSocketFactory socketFactory = TrustManagerFactory
+						.getFactory(keyFile, prefs.getString("privatekey_password", ""));
+
+				try {
+					FoafsslURLConnection.setDefaultSSLSocketFactory(socketFactory);
+					HttpsURLConnection conn = new FoafsslURLConnection(new URL(
+							url));
+
+					String encoding = conn.getContentEncoding();
+					if (encoding == null) {
+						model.read(conn.getInputStream(), url);
+					} else {
+						model.read(new InputStreamReader(conn.getInputStream(),
+								encoding), url);
+					}
+				} catch (FileNotFoundException e) {
+					Log.e(TAG, "Couldn't find File.", e);
+				} catch (IOException e) {
+					Log.e(TAG,
+							"Input/Output Error while creating or using Socket.",
+							e);
+					model.read(url);
+				}
+
+			} else {
+				Log.i(TAG,
+						"Couldn't get private Key, reading without FOAF+SSL features.");
+			}
+			model.read(url);
+		}
+		return model;
+	}
+
+	/**
+	 * 
+	 * @param model
+	 * @param namespaces
+	 *            key - prefix, value - uri
+	 * @return the modified model
+	 */
+	private static Model applyNamespaces(Model model,
+			HashMap<String, String> namespaces) {
+		model.setNsPrefixes(namespaces);
+		return model;
 	}
 
 }

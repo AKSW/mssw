@@ -131,19 +131,29 @@ public class ContactsSyncAdapterService extends Service {
 				builder.withValue(RawContacts.SYNC1, uri);
 				operationList.add(builder.build());
 
-				builder = ContentProviderOperation
-						.newInsert(ContactsContract.Data.CONTENT_URI);
-				builder.withValueBackReference(
-						ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID,
-						0);
-				builder.withValue(
-						ContactsContract.Data.MIMETYPE,
-						ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
-				builder.withValue(
-						ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
-						name);
+				builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
+				builder.withValueBackReference(ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID, 0);
+				builder.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
+				builder.withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name);
+				//builder.withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, givName);
+				//builder.withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX, prefix);
 				operationList.add(builder.build());
+/*
+				builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
+				builder.withValueBackReference(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID, 0);
+				builder.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+				builder.withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, nummer1);
+				builder.withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_HOME);
+				operationList.add(builder.build());
+				
 
+				builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
+				builder.withValueBackReference(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID, 0);
+				builder.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+				builder.withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, nummer2);
+				builder.withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_TELEX);
+				operationList.add(builder.build());
+	*/			
 				content.applyBatch(ContactsContract.AUTHORITY, operationList);
 			} else {
 				Log.e(TAG,
