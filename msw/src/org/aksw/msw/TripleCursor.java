@@ -177,12 +177,12 @@ public class TripleCursor extends AbstractCursor {
 				return null;
 			}
 			case 6:
-				Log.v(TAG, "asks if the object is a Resource, I would say: '"
-						+ stmt.getObject().isResource() + "'.");
+				//Log.v(TAG, "asks if the object is a Resource, I would say: '"
+				//		+ stmt.getObject().isResource() + "'.");
 				return stmt.getObject().isResource() ? "true" : "false";
 			case 7:
-				Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
-						+ stmt.getObject().isAnon() + "'.");
+				//Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
+				//		+ stmt.getObject().isAnon() + "'.");
 				return stmt.getObject().isAnon() ? "true" : "false";
 		default:
 			return null;

@@ -149,6 +149,8 @@ public class ContactsSyncAdapterService extends Service {
 					+ URLEncoder.encode(uri, enc));
 
 			// String[] projection = { "http://xmlns.com/foaf/0.1/name" };
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
 			Cursor rc = content.query(contentUri, null, null, null, null);
 
 			if (rc != null) {
@@ -156,7 +158,7 @@ public class ContactsSyncAdapterService extends Service {
 				while (rc.moveToNext()) {
 					predicat = rc.getString(rc.getColumnIndex("predicat"));
 
-					if (predicat.equals(ContactProvider.PROP_hasData)) {
+					if (predicat != null && predicat.equals(ContactProvider.PROP_hasData)) {
 						object = rc.getString(rc.getColumnIndex("object"));
 
 						if (!builderList.containsKey(object)) {
@@ -179,13 +181,22 @@ public class ContactsSyncAdapterService extends Service {
 				while (rc.moveToNext()) {
 					predicat = rc.getString(rc.getColumnIndex("predicat"));
 
-					if (!predicat.equals(ContactProvider.PROP_hasData)) {
+					if (predicat != null && !predicat.equals(ContactProvider.PROP_hasData)) {
 						subject = rc.getString(rc.getColumnIndex("subject"));
 						object = rc.getString(rc.getColumnIndex("object"));
 						builder = builderList.get(subject);
-
+						
+						Log.v(TAG,
+								"Triple subject = '"
+										+ subject
+										+ "', predicat = '"
+										+ predicat
+										+ "', object = '"
+										+ object
+										+ "'.");
 						try {
 							if (predicat.equals(ContactProvider.PROP_rdfType)) {
+								Log.v(TAG, "rdf:type = " + object + ".");
 								// this is the place of magic
 								String type = (String) forUri(object, false)
 										.getField("CONTENT_ITEM_TYPE")
@@ -193,6 +204,8 @@ public class ContactsSyncAdapterService extends Service {
 
 								builder.withValue(
 										ContactsContract.Data.MIMETYPE, type);
+								
+								Log.v(TAG, "Added Mimetype: " + type + ".");
 							} else {
 								boolean isResource;
 								if (rc.getString(rc.getColumnIndex("oIsResource")).equals("true")) {
@@ -218,6 +231,8 @@ public class ContactsSyncAdapterService extends Service {
 										int value = (Integer) valueField
 												.get(null);
 										builder.withValue(column, value);
+
+										Log.v(TAG, "Added value: " + value + " to column: " + column + ".");
 									} else if (valueField
 											.getType()
 											.getName()
@@ -252,41 +267,6 @@ public class ContactsSyncAdapterService extends Service {
 					}
 				}
 
-				// builder.withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
-				// givName);
-				// builder.withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX,
-				// prefix);
-				/*
-				 * builder =
-				 * ContentProviderOperation.newInsert(ContactsContract.
-				 * Data.CONTENT_URI);
-				 * builder.withValueBackReference(ContactsContract
-				 * .CommonDataKinds.Phone.RAW_CONTACT_ID, 0);
-				 * builder.withValue(ContactsContract.Data.MIMETYPE,
-				 * ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
-				 * builder
-				 * .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER,
-				 * nummer1);
-				 * builder.withValue(ContactsContract.CommonDataKinds.Phone
-				 * .TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_HOME);
-				 * operationList.add(builder.build());
-				 * 
-				 * 
-				 * builder =
-				 * ContentProviderOperation.newInsert(ContactsContract.
-				 * Data.CONTENT_URI);
-				 * builder.withValueBackReference(ContactsContract
-				 * .CommonDataKinds.Phone.RAW_CONTACT_ID, 0);
-				 * builder.withValue(ContactsContract.Data.MIMETYPE,
-				 * ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
-				 * builder
-				 * .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER,
-				 * nummer2);
-				 * builder.withValue(ContactsContract.CommonDataKinds.Phone
-				 * .TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_TELEX);
-				 * operationList.add(builder.build());
-				 */
-
 			} else {
 				Log.e(TAG,
 						"Contentprovider returned an empty Cursor, couldn't add Data to contact '"
@@ -295,7 +275,6 @@ public class ContactsSyncAdapterService extends Service {
 
 			ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 			Iterator<String> builderIterator = builderList.keySet().iterator();
-			// ContentProviderOperation.Builder builder;
 
 			while (builderIterator.hasNext()) {
 				builder = builderList.get(builderIterator.next());

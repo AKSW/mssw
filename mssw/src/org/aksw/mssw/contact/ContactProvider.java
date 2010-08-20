@@ -220,6 +220,8 @@ public class ContactProvider extends ContentProvider {
 									+ "/resource/"
 									+ URLEncoder.encode(subject, enc));
 						}
+						Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+								+ ">.");
 						Cursor rc2 = getContentResolver().query(contentUri,
 								null, null, null, null);
 
