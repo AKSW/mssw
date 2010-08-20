@@ -24,6 +24,7 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.hp.hpl.jena.rdf.model.AnonId;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.ModelMaker;
@@ -321,7 +322,7 @@ public class TripleProvider extends ContentProvider {
 	private static final int OFF = RESOURCE_OFFLINE;
 
 	private Resource getBlankNode(String id) {
-		return queryResource(id);
+		return model.createResource(new AnonId(id));
 	}
 	
 	private Resource getResource(String uri, int mode) {

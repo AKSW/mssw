@@ -64,10 +64,11 @@ public final class R {
         public static final int me=0x7f050009;
         public static final int name=0x7f05000f;
         public static final int new_WebID=0x7f050004;
-        public static final int no_contacts=0x7f050017;
-        public static final int no_result=0x7f050018;
+        public static final int no_contacts=0x7f050018;
+        public static final int no_result=0x7f050019;
         public static final int phone=0x7f050012;
-        public static final int pref_your_webid_desc=0x7f050016;
+        public static final int pref_triplestore=0x7f050016;
+        public static final int pref_your_webid_desc=0x7f050017;
         public static final int preferences=0x7f050008;
         public static final int search=0x7f05000c;
         public static final int sex=0x7f050014;

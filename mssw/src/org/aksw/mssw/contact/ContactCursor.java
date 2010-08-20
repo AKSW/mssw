@@ -8,6 +8,10 @@ public class ContactCursor extends AbstractCursor {
 
 	ArrayList<Triple> triples;
 
+	public ContactCursor () {
+		triples = new ArrayList<Triple>();
+	}
+	
 	public void addTriple(Triple tripple) {
 		triples.add(tripple);
 	}
@@ -91,14 +95,7 @@ public class ContactCursor extends AbstractCursor {
 
 	@Override
 	public boolean isNull(int column) {
-		switch (column) {
-		case 4:
-			return !triples.get(mPos).oIsResource;
-		case 5:
-			return !triples.get(mPos).oIsBlankNode;
-		default:
-			return false;
-		}
+		return false;
 	}
 
 	public class Triple {

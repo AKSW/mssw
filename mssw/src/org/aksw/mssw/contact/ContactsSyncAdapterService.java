@@ -1,12 +1,12 @@
 package org.aksw.mssw.contact;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import android.R.bool;
 import android.accounts.Account;
 import android.accounts.OperationCanceledException;
 import android.app.Service;
@@ -41,7 +41,7 @@ public class ContactsSyncAdapterService extends Service {
 
 	private static final String CONTACT_AUTHORITY = "org.aksw.mssw.contact.contactprovider";
 	private static final Uri CONTACT_URI = Uri.parse("content://"
-			+ CONTENT_AUTHORITY);
+			+ CONTACT_AUTHORITY);
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -164,7 +164,7 @@ public class ContactsSyncAdapterService extends Service {
 							builder = ContentProviderOperation
 									.newInsert(ContactsContract.Data.CONTENT_URI);
 							builder.withValueBackReference(
-									ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID,
+									ContactsContract.RawContactsEntity.RAW_CONTACT_ID,
 									0);
 							builderList.put(object, builder);
 						} else {
@@ -181,22 +181,73 @@ public class ContactsSyncAdapterService extends Service {
 
 					if (!predicat.equals(ContactProvider.PROP_hasData)) {
 						subject = rc.getString(rc.getColumnIndex("subject"));
+						object = rc.getString(rc.getColumnIndex("object"));
 						builder = builderList.get(subject);
-						
-						if (predicat.equals("rdf:type")) {
-							builder.withValue(
-									ContactsContract.Data.MIMETYPE,
-									ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE); // special
-						} else {
-							object = rc.getString(rc.getColumnIndex("object"));
-							
-							// check if resource
-							// if not:
 
-							builder.withValue(
-									ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, // special
-									object);
+						try {
+							if (predicat.equals(ContactProvider.PROP_rdfType)) {
+								// this is the place of magic
+								String type = (String) forUri(object, false)
+										.getField("CONTENT_ITEM_TYPE")
+										.get(null);
+
+								builder.withValue(
+										ContactsContract.Data.MIMETYPE, type);
+							} else {
+								boolean isResource;
+								if (rc.getString(rc.getColumnIndex("oIsResource")).equals("true")) {
+									isResource = true;
+								} else {
+									isResource = false;
+								}
+								// this is the place of magic
+								String fieldName = extractFieldName(predicat);
+								String column = (String) forUri(predicat, true)
+										.getField(fieldName).get(null);
+
+								if (isResource) {
+									// Type is int Protocol is string
+
+									// this is the place of magic
+									fieldName = extractFieldName(object);
+									Field valueField = forUri(object, true)
+											.getField(object);
+
+									if (valueField.getType().getName()
+											.equalsIgnoreCase("int")) {
+										int value = (Integer) valueField
+												.get(null);
+										builder.withValue(column, value);
+									} else if (valueField
+											.getType()
+											.getName()
+											.equalsIgnoreCase(
+													"java.lang.String")) {
+										String value = (java.lang.String) valueField
+												.get(null);
+										builder.withValue(column, value);
+									} else {
+										Log.e(TAG,
+												"I don't know the Type of the field: '"
+														+ object + "'.");
+									}
+
+								} else {
+									builder.withValue(column, object);
+								}
+							}
+
+						} catch (Exception e) {
+							Log.e(TAG,
+									"Couldn't interpres the Triple subject = '"
+											+ subject
+											+ "', predicat = '"
+											+ predicat
+											+ "', object = '"
+											+ object
+											+ "' I'll ignorr it and am proceding with next Property.");
 						}
+
 						builderList.put(subject, builder);
 					}
 				}
@@ -360,7 +411,7 @@ public class ContactsSyncAdapterService extends Service {
 		}
 	}
 
-	private Class forUri(String uri, boolean isField)
+	private static Class forUri(String uri, boolean isField)
 			throws ClassNotFoundException {
 		String className;
 		Uri uri_ = Uri.parse(uri);
@@ -377,7 +428,19 @@ public class ContactsSyncAdapterService extends Service {
 		Log.v(TAG, "Classname ist: '" + className + "'.");
 
 		return Class.forName(className);
+	}
 
+	private static String extractFieldName(String uri) {
+		Uri uri_ = Uri.parse(uri);
+
+		ArrayList<String> path = new ArrayList<String>(uri_.getPathSegments());
+
+		String fullFieldName = path.get(path.size() - 1);
+		String fieldName = fullFieldName.substring(fullFieldName
+				.lastIndexOf("."));
+		Log.v(TAG, "Fieldname ist: '" + fieldName + "'.");
+
+		return fieldName;
 	}
 
 }

@@ -10,6 +10,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 
 import android.database.AbstractCursor;
+import android.util.Log;
 
 /**
  * A Cursor, which holds Triples with one common Subject.
@@ -19,12 +20,14 @@ import android.database.AbstractCursor;
  */
 public class TripleCursor extends AbstractCursor {
 
+	private static final String TAG = "MsswTripleCursor";
+
 	private ArrayList<Statement> properties;
 
 	public TripleCursor(Resource subject) {
 		this(subject, null, false);
 	}
-	
+
 	public TripleCursor(Resource subject, String[] predicates) {
 		this(subject, predicates, false);
 	}
@@ -41,7 +44,7 @@ public class TripleCursor extends AbstractCursor {
 			if (model != null) {
 				ArrayList<Statement> properties = new ArrayList<Statement>();
 				Property property;
-				
+
 				for (String predicate : predicates) {
 					property = model.getProperty(predicate);
 
@@ -60,12 +63,14 @@ public class TripleCursor extends AbstractCursor {
 				// Error
 			}
 		}
+		Log.v(TAG, "TripleCursor ready.");
 	}
 
 	@Override
 	public String[] getColumnNames() {
-		// TODO Auto-generated method stub
-		String[] names = { "_id", "subject", "predicat", "object", "predicatReadable", "objectReadable", "oIsResource", "oIsBlankNode" };
+		String[] names = { "_id", "subject", "predicat", "object",
+				"predicatReadable", "objectReadable", "oIsResource",
+				"oIsBlankNode" };
 		return names;
 	}
 
@@ -77,22 +82,42 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public double getDouble(int column) {
+		Log.v(TAG, "getDouble.");
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public float getFloat(int column) {
+		Log.v(TAG, "getFloat.");
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public int getInt(int column) {
-		// TODO Auto-generated method stub
+		Log.v(TAG, "getInt from column: " + column + " at possition: '" + mPos
+				+ "'.");
+		Statement stmt = properties.get(mPos);
 		switch (column) {
 		case 0:
 			return mPos;
+		case 6:
+			Log.v(TAG, "asks if the object is a Resource, I would say: '"
+					+ stmt.getObject().isResource() + "'.");
+			if(stmt.getObject().isResource()) {
+				return 1;
+			} else {
+				return 0;
+			}
+		case 7:
+			Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
+					+ stmt.getObject().isAnon() + "'.");
+			if(stmt.getObject().isAnon()) {
+				return 1;
+			} else {
+				return 0;
+			}
 		default:
 			return 0;
 		}
@@ -100,18 +125,21 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public long getLong(int column) {
+		Log.v(TAG, "getLong.");
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public short getShort(int column) {
+		Log.v(TAG, "getShort.");
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public String getString(int column) {
+		//Log.v(TAG, "getString(" + column + "," + mPos + ").");
 		Statement stmt = properties.get(mPos);
 		switch (column) {
 		case 1:
@@ -148,6 +176,14 @@ public class TripleCursor extends AbstractCursor {
 				// I don't know
 				return null;
 			}
+			case 6:
+				Log.v(TAG, "asks if the object is a Resource, I would say: '"
+						+ stmt.getObject().isResource() + "'.");
+				return stmt.getObject().isResource() ? "true" : "false";
+			case 7:
+				Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
+						+ stmt.getObject().isAnon() + "'.");
+				return stmt.getObject().isAnon() ? "true" : "false";
 		default:
 			return null;
 		}
@@ -155,15 +191,8 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public boolean isNull(int column) {
-		Statement stmt = properties.get(mPos);
-		switch (column) {
-		case 6:
-			return !stmt.getObject().isResource();
-		case 7:
-			return !stmt.getObject().isAnon();
-		default:
-			return false;
-		}
+		Log.v(TAG, "isNull.");
+		return false;
 	}
 
 }

@@ -34,8 +34,9 @@ public class ContactProvider extends ContentProvider {
 	private static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
 	private static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
 			+ TRIPLE_AUTHORITY);
-	
+
 	public static final String PROP_hasData = "http://ns.aksw.org/Android/hasData";
+	public static final String PROP_rdfType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 
 	/**
 	 * Static values which represent the different pathes of the query uris
@@ -187,57 +188,77 @@ public class ContactProvider extends ContentProvider {
 			Cursor rc = getContentResolver().query(contentUri, projection,
 					null, null, null);
 
-			ContactCursor cc = new ContactCursor();
-			// foreach hasData propertiy get object
-			String subject, predicat, object;
-			boolean oIsResource, oIsBlankNode;
-			while (rc.moveToNext()) {
-				object = rc.getString(rc.getColumnIndex("object"));
-				oIsResource = !rc.isNull((rc.getColumnIndex("oIsResource")));
-				oIsBlankNode = !rc.isNull((rc.getColumnIndex("oIsBlankNode")));
-
-				if (oIsResource) {
-					cc.addTriple(uri, hasData, object, true, oIsBlankNode);
-
-					subject = object;
-					// query for objects properties
-					if (oIsBlankNode) {
-						contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/bnode/"
-								+ URLEncoder.encode(subject, enc));
-					} else {
-						contentUri = Uri.parse(TRIPLE_CONTENT_URI
-								+ "/resource/"
-								+ URLEncoder.encode(subject, enc));
+			if (rc != null) {
+				ContactCursor cc = new ContactCursor();
+				// foreach hasData propertiy get object
+				String subject, predicat, object;
+				boolean oIsResource, oIsBlankNode;
+				while (rc.moveToNext()) {
+					object = rc.getString(rc.getColumnIndex("object"));
+					oIsBlankNode = oIsResource = false;
+					if (rc.getString(rc.getColumnIndex("oIsResource")).equals("true")) {
+						oIsResource = true;
 					}
-					Cursor rc2 = getContentResolver().query(contentUri, null,
-							null, null, null);
+					
+					Log.v(TAG, "oIsResource? columnindex: " + rc.getColumnIndex("oIsResource") + " int: " + rc.getInt(rc.getColumnIndex("oIsResource")) + " String: " + rc.getString(rc.getColumnIndex("oIsResource")) + ".");
 
-					while (rc2.moveToNext()) {
-						// get object properties
-						predicat = rc2.getString(rc.getColumnIndex("predicat"));
-						object = rc2.getString(rc.getColumnIndex("object"));
-						oIsResource = !rc2.isNull((rc
-								.getColumnIndex("oIsResource")));
-						oIsBlankNode = !rc2.isNull((rc
-								.getColumnIndex("oIsBlankNode")));
-
-						if (!oIsBlankNode) {
-							cc.addTriple(subject, predicat, object,
-									oIsResource, false);
-						} else {
-							Log.e(TAG,
-									"Got data with blanknode as object, ignorring.");
+					if (oIsResource) {
+						if (rc.getInt((rc.getColumnIndex("oIsBlankNode"))) == 1) {
+							oIsBlankNode = true;
 						}
+						cc.addTriple(uri, PROP_hasData, object, true,
+								oIsBlankNode);
+
+						subject = object;
+						// query for objects properties
+						if (oIsBlankNode) {
+							contentUri = Uri.parse(TRIPLE_CONTENT_URI
+									+ "/bnode/"
+									+ URLEncoder.encode(subject, enc));
+						} else {
+							contentUri = Uri.parse(TRIPLE_CONTENT_URI
+									+ "/resource/"
+									+ URLEncoder.encode(subject, enc));
+						}
+						Cursor rc2 = getContentResolver().query(contentUri,
+								null, null, null, null);
+
+						while (rc2.moveToNext()) {
+							// get object properties
+							predicat = rc2.getString(rc
+									.getColumnIndex("predicat"));
+							object = rc2.getString(rc.getColumnIndex("object"));
+
+							oIsBlankNode = oIsResource = false;
+							if (rc2.getString(rc2.getColumnIndex("oIsResource")).equals("true")) {
+								oIsResource = true;
+							}
+							if (rc2.getString(rc2.getColumnIndex("oIsBlankNode")).equals("true")) {
+								oIsBlankNode = true;
+							}
+
+							if (!oIsBlankNode) {
+								cc.addTriple(subject, predicat, object,
+										oIsResource, false);
+							} else {
+								Log.e(TAG,
+										"Got data with blanknode as object, ignorring.");
+							}
+						}
+
+					} else {
+						Log.e(TAG,
+								"Found hasData Property without Resource in range: object = '"
+										+ object + "', ignorring.");
 					}
-
-				} else {
-					Log.e(TAG,
-							"hasData Property without Resource in range, ignorring.");
 				}
-			}
 
-			// return ...
-			return cc;
+				// return ...
+				return cc;
+			} else {
+				Log.v(TAG, "Triple Provider gave me nothing, so I can't give you anything. Returning null.");
+				return null;
+			}
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
 			return null;
