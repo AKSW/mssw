@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import dalvik.system.PathClassLoader;
+
 import android.accounts.Account;
 import android.accounts.OperationCanceledException;
 import android.app.Service;
@@ -62,7 +64,7 @@ public class ContactsSyncAdapterService extends Service {
 		if (content == null) {
 			content = context.getContentResolver();
 		}
-
+		
 		// maybe should also tell Foaf/TripleProvider to pull the latest
 		// versions from the Web
 		// get the friend list from FoafProvider
@@ -109,6 +111,7 @@ public class ContactsSyncAdapterService extends Service {
 		} catch (Exception e) {
 			Log.e(TAG, "error:", e);
 		}
+
 	}
 
 	private static void addContact(Account account, String uri) {
@@ -230,7 +233,7 @@ public class ContactsSyncAdapterService extends Service {
 									// this is the place of magic
 									fieldName = extractFieldName(object);
 									Field valueField = forUri(object, true)
-											.getField(object);
+											.getField(fieldName);
 
 									if (valueField.getType().getName()
 											.equalsIgnoreCase("int")) {
@@ -397,6 +400,24 @@ public class ContactsSyncAdapterService extends Service {
 			Log.e(TAG, "An other error occured.", e);
 		}
 	}
+	
+	private static HashMap<String,Class> commonDataKinds = new HashMap<String,Class>();
+	
+	static { 	
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Email", ContactsContract.CommonDataKinds.Email.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Event", ContactsContract.CommonDataKinds.Event.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.GroupMembership", ContactsContract.CommonDataKinds.GroupMembership.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Im", ContactsContract.CommonDataKinds.Im.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Nickname", ContactsContract.CommonDataKinds.Nickname.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Note", ContactsContract.CommonDataKinds.Note.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Organization", ContactsContract.CommonDataKinds.Organization.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Phone", ContactsContract.CommonDataKinds.Phone.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Photo", ContactsContract.CommonDataKinds.Photo.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Relation", ContactsContract.CommonDataKinds.Relation.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.StructuredName", ContactsContract.CommonDataKinds.StructuredName.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.StructuredPostal", ContactsContract.CommonDataKinds.StructuredPostal.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Website", ContactsContract.CommonDataKinds.Website.class);
+	}
 
 	private static Class forUri(String uri, boolean isField)
 			throws ClassNotFoundException {
@@ -411,12 +432,18 @@ public class ContactsSyncAdapterService extends Service {
 		} else {
 			className = path.get(path.size() - 1);
 		}
-
-		className = "android.provider." + className;
+		
+		//className = "android.provider." + className;
 		
 		Log.v(TAG, "Classname ist: '" + className + "'.");
-
-		return Class.forName(className);
+		
+		//ClassLoader cl = PathClassLoader.getSystemClassLoader();
+		//ClassLoader cl = ContactsContract.CommonDataKinds.StructuredName.class.getClassLoader();
+		
+		//Log.v(TAG, "ClassLoader name is: '" + cl.toString() + "'.");
+		
+		//return Class.forName(className, true, cl);
+		return commonDataKinds.get(className);
 	}
 
 	private static String extractFieldName(String uri) {
@@ -430,6 +457,37 @@ public class ContactsSyncAdapterService extends Service {
 		Log.v(TAG, "Fieldname ist: '" + fieldName + "'.");
 
 		return fieldName;
+	}
+	
+	private static void testMethod ()  {
+
+		// public static final class
+		String className = "android.provider.ContactsContract.CommonDataKinds.StructuredName";
+		//String className = "android.provider.CallLog";
+
+		Log.v(TAG,"Now I try some magic.");
+		try {
+			Class myClass = context.getClassLoader().loadClass(className);
+			String mimetype = (String) myClass.getField("CONTENT_ITEM_TYPE").get(null);
+			//String mimetype = (String) myClass.getField("AUTHORITY").get(null);
+			Log.v(TAG, "Yes it works. mimetype = " + mimetype);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			Log.e(TAG, "Classe wurde wieder nicht gefunden.", e);
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			Log.e(TAG, "Falsches argument.", e);
+		} catch (SecurityException e) {
+			// TODO Auto-generated catch block
+			Log.e(TAG, "sicherheits ausnahme.", e);
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			Log.e(TAG, "ittegaler zutritt.", e);
+		} catch (NoSuchFieldException e) {
+			// TODO Auto-generated catch block
+			Log.e(TAG, "feld nicht gefunden.", e);
+		}
+		
 	}
 
 }
