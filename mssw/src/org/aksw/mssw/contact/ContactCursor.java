@@ -3,23 +3,29 @@ package org.aksw.mssw.contact;
 import java.util.ArrayList;
 
 import android.database.AbstractCursor;
+import android.util.Log;
 
 public class ContactCursor extends AbstractCursor {
 
+	private static final String TAG = "MsswContactCursor";
+	
 	ArrayList<Triple> triples;
 
 	public ContactCursor () {
 		triples = new ArrayList<Triple>();
+		Log.v(TAG, "ContactCursor created.");
 	}
 	
 	public void addTriple(Triple tripple) {
 		triples.add(tripple);
+		Log.v(TAG, "added Triple. s = " + tripple.subject + " p = " + tripple.predicat + " o = " + tripple.object + ".");
 	}
 
 	public void addTriple(String subject, String predicat, String object,
 			boolean oIsResource, boolean oIsBlankNode) {
 		triples.add(new Triple(subject, predicat, object, oIsResource,
 				oIsBlankNode));
+		Log.v(TAG, "added Triple. s = " + subject + " p = " + predicat + " o = " + object + ".");
 	}
 
 	public void addDataset() {
@@ -104,8 +110,21 @@ public class ContactCursor extends AbstractCursor {
 
 		public Triple(String subject, String predicat, String object,
 				boolean oIsResource, boolean oIsBlankNode) {
-
+				this.subject = subject;
+				this.predicat = predicat;
+				this.object = object;
+				this.oIsResource = oIsResource;
+				this.oIsBlankNode = oIsBlankNode;
 		}
 	}
+	
+	public void checkData() {
+		Log.v(TAG, "ContactCursor Data Check!");
+		for (int i = 0; i < triples.size(); i++) {
+			Triple tr = triples.get(i);
+			Log.v(TAG, "s = " + tr.subject + " p = " + tr.predicat + " o = " + tr.object + ".");
+		}
+		Log.v(TAG, "Done");
+ 	}
 
 }

@@ -153,15 +153,19 @@ public class ContactsSyncAdapterService extends Service {
 					+ ">.");
 			Cursor rc = content.query(contentUri, null, null, null, null);
 
+			Log.i(TAG, "Initializing hasData properties.");
 			if (rc != null) {
 				String subject, predicat, object;
 				while (rc.moveToNext()) {
 					predicat = rc.getString(rc.getColumnIndex("predicat"));
+					Log.v(TAG, "predicat = " + predicat);
 
-					if (predicat != null && predicat.equals(ContactProvider.PROP_hasData)) {
+					if (predicat != null
+							&& predicat.equals(ContactProvider.PROP_hasData)) {
 						object = rc.getString(rc.getColumnIndex("object"));
 
 						if (!builderList.containsKey(object)) {
+							Log.v(TAG, "Builder List already has this data.");
 
 							builder = ContentProviderOperation
 									.newInsert(ContactsContract.Data.CONTENT_URI);
@@ -178,22 +182,21 @@ public class ContactsSyncAdapterService extends Service {
 				// reset cursor
 				rc.moveToPosition(-1);
 
+				Log.i(TAG, "Initializing propertys of hasData objects.");
 				while (rc.moveToNext()) {
 					predicat = rc.getString(rc.getColumnIndex("predicat"));
+					Log.v(TAG, "predicat = " + predicat);
 
-					if (predicat != null && !predicat.equals(ContactProvider.PROP_hasData)) {
+					if (predicat != null
+							&& !predicat.equals(ContactProvider.PROP_hasData)) {
 						subject = rc.getString(rc.getColumnIndex("subject"));
 						object = rc.getString(rc.getColumnIndex("object"));
 						builder = builderList.get(subject);
+
+						//Log.v(TAG, "Triple subject = '" + subject
+						//		+ "', predicat = '" + predicat
+						//		+ "', object = '" + object + "'.");
 						
-						Log.v(TAG,
-								"Triple subject = '"
-										+ subject
-										+ "', predicat = '"
-										+ predicat
-										+ "', object = '"
-										+ object
-										+ "'.");
 						try {
 							if (predicat.equals(ContactProvider.PROP_rdfType)) {
 								Log.v(TAG, "rdf:type = " + object + ".");
@@ -202,13 +205,16 @@ public class ContactsSyncAdapterService extends Service {
 										.getField("CONTENT_ITEM_TYPE")
 										.get(null);
 
+								Log.v(TAG, "Goind to Add Mimetype: " + type
+										+ ".");
 								builder.withValue(
 										ContactsContract.Data.MIMETYPE, type);
-								
-								Log.v(TAG, "Added Mimetype: " + type + ".");
+
 							} else {
 								boolean isResource;
-								if (rc.getString(rc.getColumnIndex("oIsResource")).equals("true")) {
+								if (rc.getString(
+										rc.getColumnIndex("oIsResource"))
+										.equals("true")) {
 									isResource = true;
 								} else {
 									isResource = false;
@@ -232,7 +238,8 @@ public class ContactsSyncAdapterService extends Service {
 												.get(null);
 										builder.withValue(column, value);
 
-										Log.v(TAG, "Added value: " + value + " to column: " + column + ".");
+										Log.v(TAG, "Added value: " + value
+												+ " to column: " + column + ".");
 									} else if (valueField
 											.getType()
 											.getName()
@@ -260,7 +267,8 @@ public class ContactsSyncAdapterService extends Service {
 											+ predicat
 											+ "', object = '"
 											+ object
-											+ "' I'll ignorr it and am proceding with next Property.");
+											+ "' I'll ignorr it and am proceding with next Property.",
+									e);
 						}
 
 						builderList.put(subject, builder);
@@ -404,6 +412,8 @@ public class ContactsSyncAdapterService extends Service {
 			className = path.get(path.size() - 1);
 		}
 
+		className = "android.provider." + className;
+		
 		Log.v(TAG, "Classname ist: '" + className + "'.");
 
 		return Class.forName(className);
@@ -416,7 +426,7 @@ public class ContactsSyncAdapterService extends Service {
 
 		String fullFieldName = path.get(path.size() - 1);
 		String fieldName = fullFieldName.substring(fullFieldName
-				.lastIndexOf("."));
+				.lastIndexOf(".") + 1);
 		Log.v(TAG, "Fieldname ist: '" + fieldName + "'.");
 
 		return fieldName;

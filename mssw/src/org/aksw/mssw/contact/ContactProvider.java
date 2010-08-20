@@ -256,6 +256,7 @@ public class ContactProvider extends ContentProvider {
 				}
 
 				// return ...
+				cc.checkData();
 				return cc;
 			} else {
 				Log.v(TAG, "Triple Provider gave me nothing, so I can't give you anything. Returning null.");
