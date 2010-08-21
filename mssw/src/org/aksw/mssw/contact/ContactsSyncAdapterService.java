@@ -111,6 +111,8 @@ public class ContactsSyncAdapterService extends Service {
 		} catch (Exception e) {
 			Log.e(TAG, "error:", e);
 		}
+		
+		testMethod();
 
 	}
 
@@ -401,6 +403,9 @@ public class ContactsSyncAdapterService extends Service {
 		}
 	}
 	
+	/**
+	 * This HashMap holds the Mapping of ClassNames to static final classes of CommonDataKinds, because I couldn't find a way to get these Class-Objects with reflection
+	 */
 	private static HashMap<String,Class> commonDataKinds = new HashMap<String,Class>();
 	
 	static { 	
@@ -462,7 +467,8 @@ public class ContactsSyncAdapterService extends Service {
 	private static void testMethod ()  {
 
 		// public static final class
-		String className = "android.provider.ContactsContract.CommonDataKinds.StructuredName";
+		// the last two points are replaced by $ because they are nested classes :-S
+		String className = "android.provider.ContactsContract$CommonDataKinds$StructuredName";
 		//String className = "android.provider.CallLog";
 
 		Log.v(TAG,"Now I try some magic.");
