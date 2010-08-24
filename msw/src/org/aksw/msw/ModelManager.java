@@ -113,7 +113,9 @@ public class ModelManager {
 			if (persistant) {
 				boolean has = webModels.hasModel(uri);
 				model = webModels.openModel(uri);
-				// model.begin();
+				if(model.supportsTransactions()) {
+					model.begin();
+				}
 				if (!has) {
 					model = readSSL(uri, model);
 				}
