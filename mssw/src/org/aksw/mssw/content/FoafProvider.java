@@ -369,7 +369,7 @@ public class FoafProvider extends ContentProvider {
 			}
 			
 			for (int i = 0; i < names.length; i++) { 
-				if (names[i].length() > 0) {
+				if (names[i] != null && names[i].length() > 0) {
 					object = names[i];
 					predicat = nameProps[i];
 					if(i == 1) {

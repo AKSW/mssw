@@ -32,6 +32,7 @@ import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.SimpleSelector;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.PropertyImpl;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
 import com.hp.hpl.jena.shared.DoesNotExistException;
@@ -125,6 +126,8 @@ public class TripleProvider extends ContentProvider {
 	 * on the device, but are needed for the current work.
 	 */
 	private Model cache;
+	
+	private static FoafMapper fm;
 
 	// ---------------------------- methods --------------------
 
@@ -180,6 +183,7 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
+		fm = new FoafMapper(getContext());
 
 		if (initModels()) {
 			Log.v(TAG, "Created TripleProvider");
@@ -322,7 +326,13 @@ public class TripleProvider extends ContentProvider {
 	private static final int OFF = RESOURCE_OFFLINE;
 
 	private Resource getBlankNode(String id) {
-		return model.createResource(new AnonId(id));
+		Resource resource = fm.map(model).createResource(new AnonId(id));
+		StmtIterator iterator = resource.listProperties();
+		while (iterator.hasNext()) {
+			String triple = iterator.next().asTriple().toString();
+			Log.v(TAG, "BNode (" + id + ") has triple: " + triple );
+		}
+		return resource;
 	}
 	
 	private Resource getResource(String uri, int mode) {
@@ -354,7 +364,7 @@ public class TripleProvider extends ContentProvider {
 	private Resource queryResource(String uri, Model model) {
 		// 1. check if resource exists
 		if (resourceExists(uri, model)) {
-			FoafMapper fm = new FoafMapper(getContext());
+			//FoafMapper fm = new FoafMapper(getContext());
 			// 2a. get and return resource
 			return fm.map(model).getResource(uri);
 		} else {
@@ -373,7 +383,7 @@ public class TripleProvider extends ContentProvider {
 				SimpleSelector selector = new SimpleSelector(subj,
 						(Property) null, (RDFNode) null);
 
-				model.add(cache.query(selector));
+				model.add(fm.map(cache).query(selector));
 				model.commit();
 			} else {
 				// 3b. if not 2, then import resource to model from the web
@@ -395,7 +405,7 @@ public class TripleProvider extends ContentProvider {
 					// "lastUpdate");
 					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
 
-					model.add(tmp.query(selector));
+					model.add(fm.map(tmp).query(selector));
 					tmp.close();
 					model.commit();
 				} catch (JenaException e) {
@@ -440,7 +450,7 @@ public class TripleProvider extends ContentProvider {
 					// "lastUpdate");
 					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
 
-					cache.add(tmp.query(selector));
+					cache.add(fm.map(tmp).query(selector));
 					tmp.close();
 				} catch (JenaException e) {
 					Log.v(TAG, "An Exception occured whyle querying uri <"
@@ -470,13 +480,13 @@ public class TripleProvider extends ContentProvider {
 	 */
 	private boolean resourceExists(String uri, Model model, boolean asObject) {
 
-		Resource res = model.getResource(uri);
+		Resource res = fm.map(model).getResource(uri);
 
-		if (model.contains(res, null, (RDFNode) null)) {
+		if (fm.map(model).contains(res, null, (RDFNode) null)) {
 			Log.v(TAG, "The resource <" + uri
 					+ "> does exist as Subject in the given model.");
 			return true;
-		} else if (asObject && model.contains(null, null, res)) {
+		} else if (asObject && fm.map(model).contains(null, null, res)) {
 			Log.v(TAG, "The resource <" + uri
 					+ "> does exist as Object in the given model.");
 			return true;

@@ -54,6 +54,7 @@ public class FoafMapper {
 
 		String state = Environment.getExternalStorageState();
 
+		if(false) {
 		String path = FILES_PATH + File.separator + "infmodel.rdf";
 		try {
 			if (Environment.MEDIA_MOUNTED.equals(state)) {
@@ -67,14 +68,13 @@ public class FoafMapper {
 						file.createNewFile();
 					}
 					writer = new FileWriter(file);
-					Log.v(TAG, "Writing Model:");
+					// Log.v(TAG, "Writing Model:");
 					infmodel.write(writer);
 				}
 			}
 		} catch (IOException e) {
-			Log.e(TAG,
-					"Could not write infmodel to file ...",
-					e);
+			Log.e(TAG, "Could not write infmodel to file ...", e);
+		}
 		}
 
 		return infmodel;
