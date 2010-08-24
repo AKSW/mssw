@@ -1,42 +1,19 @@
 package org.aksw.msw;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
-
-import org.aksw.msw.foafssl.FoafsslURLConnection;
-import org.aksw.msw.foafssl.TrustManagerFactory;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
-import android.content.SharedPreferences;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.hp.hpl.jena.rdf.model.AnonId;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.ModelMaker;
-import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.SimpleSelector;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.rdf.model.impl.PropertyImpl;
-import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
-import com.hp.hpl.jena.shared.DoesNotExistException;
-import com.hp.hpl.jena.shared.JenaException;
 
 /**
  * The triple Provider is a simple Android ContentProvider, which stores and
@@ -51,8 +28,6 @@ public class TripleProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	public static final String DISPLAY_NAME = "TripleProvider";
-
-	private static final String FILES_PATH = "Android" + File.separator + "data" + File.separator + "org.aksw.msw" + File.separator + "files";
 
 	/**
 	 * content://org.aksw.msw.tripleprovider returns nothing, because the whole
@@ -108,33 +83,23 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "bnode/*", BNODE);
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
 	}
-
-	/**
-	 * some often used properties
-	 */
-	public static final String PROPNAMESPACE = "http://msw.aksw.org/";
-	public static final Property PROP_LASTUPDATE = new PropertyImpl(
-			PROPNAMESPACE, "lastUpdate");
-
-	/**
-	 * The model contains all triples stored on the device.
-	 */
-	private Model model;
-
-	/**
-	 * The cache-Model contains some triples, which are not stored permanently
-	 * on the device, but are needed for the current work.
-	 */
-	private Model cache;
 	
-	private static FoafMapper fm;
+	private static ModelManager mm;
 
 	// ---------------------------- methods --------------------
 
 	@Override
-	public int delete(Uri uri, String selection, String[] selectionArgs) {
-		// TODO Auto-generated method stub
-		return 0;
+	public boolean onCreate() {
+		mm = new ModelManager(getContext());
+		return true;
+	}
+
+	@Override
+	public void onLowMemory() {
+		super.onLowMemory();
+		Log.v(TAG,
+				"TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
+		mm.clearCache();
 	}
 
 	@Override
@@ -173,32 +138,6 @@ public class TripleProvider extends ContentProvider {
 		default:
 			return null;
 		}
-	}
-
-	@Override
-	public Uri insert(Uri uri, ContentValues values) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean onCreate() {
-		fm = new FoafMapper(getContext());
-
-		if (initModels()) {
-			Log.v(TAG, "Created TripleProvider");
-			return true;
-		} else {
-			Log.e(TAG, "The models couln't be initiated.");
-			return false;
-		}
-	}
-
-	@Override
-	public void onLowMemory() {
-		super.onLowMemory();
-		Log.v(TAG,
-				"TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
 	}
 
 	/**
@@ -305,6 +244,18 @@ public class TripleProvider extends ContentProvider {
 	}
 
 	@Override
+	public Uri insert(Uri uri, ContentValues values) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int delete(Uri uri, String selection, String[] selectionArgs) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
 		// TODO Auto-generated method stub
@@ -326,7 +277,7 @@ public class TripleProvider extends ContentProvider {
 	private static final int OFF = RESOURCE_OFFLINE;
 
 	private Resource getBlankNode(String id) {
-		Resource resource = fm.map(model).createResource(new AnonId(id));
+		Resource resource = mm.getModel().createResource(new AnonId(id));
 		StmtIterator iterator = resource.listProperties();
 		while (iterator.hasNext()) {
 			String triple = iterator.next().asTriple().toString();
@@ -338,13 +289,13 @@ public class TripleProvider extends ContentProvider {
 	private Resource getResource(String uri, int mode) {
 		switch (mode) {
 		case TMP:
-			return cacheResource(uri);
+			return queryResource(uri, false);
 		case SAV:
-			return importResource(uri);
+			return queryResource(uri, true);
 		case OFF:
-			return queryResource(uri);
+			return queryResource(uri, true);
 		default:
-			return cacheResource(uri);
+			return queryResource(uri, true);
 		}
 	}
 
@@ -355,10 +306,10 @@ public class TripleProvider extends ContentProvider {
 	 *            the URI of the resource you want to get
 	 * @return a jena-Resource-Object, or null if this resource is not available
 	 */
-	private Resource queryResource(String uri) {
+	private Resource queryResource(String uri, boolean mode) {
 		// maybe it is better if this method would query the union of model and
 		// cache, but I don't know. The future will tell me, what's right.
-		return queryResource(uri, model);
+		return queryResource(uri, mm.getModel(uri, mode));
 	}
 
 	private Resource queryResource(String uri, Model model) {
@@ -366,104 +317,11 @@ public class TripleProvider extends ContentProvider {
 		if (resourceExists(uri, model)) {
 			//FoafMapper fm = new FoafMapper(getContext());
 			// 2a. get and return resource
-			return fm.map(model).getResource(uri);
+			return model.getResource(uri);
 		} else {
 			// 2b. or null if resource doesn't exist
 			return null;
 		}
-	}
-
-	private Resource importResource(String uri) {
-		// 1. check if resource exists in model
-		if (!resourceExists(uri, model)) {
-			// 2. if not 1, then check if resource exists in cache
-			if (resourceExists(uri, cache)) {
-				// 3a. if 2 import resource from cache to model
-				Resource subj = new ResourceImpl(uri);
-				SimpleSelector selector = new SimpleSelector(subj,
-						(Property) null, (RDFNode) null);
-
-				model.add(fm.map(cache).query(selector));
-				model.commit();
-			} else {
-				// 3b. if not 2, then import resource to model from the web
-				// (Linked Data)
-				Model tmp = ModelFactory.createDefaultModel();
-				try {
-					tmp = this.readSSL(tmp, uri);
-
-					Resource subj = new ResourceImpl(uri);
-					SimpleSelector selector = new SimpleSelector(subj,
-							(Property) null, (RDFNode) null);
-
-					// on every update of a resource from the web I should add
-					// some
-					// information about the last update, for versioning and
-					// sync
-
-					// Property lastUpdate = cache.createProperty(PROPNAMESPACE,
-					// "lastUpdate");
-					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
-
-					model.add(fm.map(tmp).query(selector));
-					tmp.close();
-					model.commit();
-				} catch (JenaException e) {
-					Log.v(TAG, "An Exception occured whyle querying uri <"
-							+ uri + ">", e);
-				}
-			}
-		} else {
-			// 2b. the resource exists in model, so we can query it
-		}
-
-		// 4. return resource from model
-		return queryResource(uri, model);
-	}
-
-	private Resource cacheResource(String uri) {
-		// 1. check if resource exists in model
-		// 2. if not 1, then check if resource exists in cache
-		// 3. if not 2, then import resource to cache
-		// 4. return resource from cache
-
-		// 1. check if resource exists in model
-		if (!resourceExists(uri, model)) {
-			// 2. if not 1, then check if resource exists in cache
-			if (!resourceExists(uri, cache)) {
-				// 3b. if not 2, then import resource to cache from the web
-				// (Linked Data)
-				Model tmp = ModelFactory.createDefaultModel();
-				try {
-					tmp = this.readSSL(tmp, uri);
-
-					Resource subj = new ResourceImpl(uri);
-					SimpleSelector selector = new SimpleSelector(subj,
-							(Property) null, (RDFNode) null);
-
-					// on every update of a resource from the web I should add
-					// some
-					// information about the last update, for versioning and
-					// sync
-
-					// Property lastUpdate = cache.createProperty(PROPNAMESPACE,
-					// "lastUpdate");
-					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
-
-					cache.add(fm.map(tmp).query(selector));
-					tmp.close();
-				} catch (JenaException e) {
-					Log.v(TAG, "An Exception occured whyle querying uri <"
-							+ uri + ">", e);
-				}
-			}
-		} else {
-			// 2b. the resource exists in model, so we can query it
-			return queryResource(uri, model);
-		}
-
-		// 4. return resource from cache
-		return queryResource(uri, cache);
 	}
 
 	/**
@@ -480,13 +338,13 @@ public class TripleProvider extends ContentProvider {
 	 */
 	private boolean resourceExists(String uri, Model model, boolean asObject) {
 
-		Resource res = fm.map(model).getResource(uri);
+		Resource res = model.getResource(uri);
 
-		if (fm.map(model).contains(res, null, (RDFNode) null)) {
+		if (model.contains(res, null, (RDFNode) null)) {
 			Log.v(TAG, "The resource <" + uri
 					+ "> does exist as Subject in the given model.");
 			return true;
-		} else if (asObject && fm.map(model).contains(null, null, res)) {
+		} else if (asObject && model.contains(null, null, res)) {
 			Log.v(TAG, "The resource <" + uri
 					+ "> does exist as Object in the given model.");
 			return true;
@@ -495,15 +353,6 @@ public class TripleProvider extends ContentProvider {
 					+ "> doesn't exist in the given model.");
 			return false;
 		}
-
-		/*
-		 * StmtIterator si = res.listProperties();
-		 * 
-		 * if (!si.hasNext()) { Log.v(TAG, "The resource <" + uri +
-		 * "> has no properties in the given model."); return false; } else {
-		 * Log.v(TAG, "The resource <" + uri +
-		 * "> has at leased one property in the given model."); return true; }
-		 */
 
 	}
 
@@ -518,53 +367,7 @@ public class TripleProvider extends ContentProvider {
 	 * @return whether the resource occures as subject in a triple or not
 	 */
 	private boolean resourceExists(String uri, Model model) {
-		return this.resourceExists(uri, model, false);
-	}
-
-	private boolean initModels() {
-		String state = Environment.getExternalStorageState();
-
-		String path = FILES_PATH + File.separator + "models";
-
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
-			// We can read and write the media
-			File storage = Environment.getExternalStorageDirectory();
-			// storage.getAbsolutePath();
-			if (storage.isDirectory()) {
-				File modelsPath = new File(storage, path);
-				modelsPath.mkdirs();
-				ModelMaker models = ModelFactory
-						.createFileModelMaker(modelsPath.getAbsolutePath());
-				ModelMaker caches = ModelFactory.createMemModelMaker();
-				cache = caches.openModel("cache");
-				model = models.openModel("model");
-				model.begin();
-
-				HashMap<String, String> namespaces = new HashMap<String, String>();
-				namespaces.put("rel", "http://purl.org/vocab/relationship/");
-				namespaces.put("foaf", "http://xmlns.com/foaf/0.1/");
-				namespaces.put("rdf",
-						"http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-				namespaces.put("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
-
-				model = applyNamespaces(model, namespaces);
-				cache = applyNamespaces(cache, namespaces);
-
-				return true;
-			} else {
-				return false;
-			}
-
-		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-			// We can only read the media
-			return false;
-		} else {
-			// Something else is wrong. It may be one of many other states, but
-			// all we need
-			// to know is we can neither read nor write
-			return false;
-		}
-
+		return resourceExists(uri, model, false);
 	}
 
 	public static String getName(Resource person) {
@@ -573,75 +376,6 @@ public class TripleProvider extends ContentProvider {
 
 	public static String getLable(Resource resource) {
 		return resource.getLocalName();
-	}
-
-	private Model readSSL(Model model, String url) {
-
-		String state = Environment.getExternalStorageState();
-
-		String certPath = FILES_PATH + File.separator + "certs" + File.separator + "privatekey.p12";
-
-		if (model == null) {
-			model = ModelFactory.createDefaultModel();
-		}
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
-			try {
-			// We can read and write the media
-			File storage = Environment.getExternalStorageDirectory();
-
-			File keyFile = new File(storage, certPath);
-			// storage.getAbsolutePath();
-			if (keyFile.isFile()) {
-
-				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-				
-				SSLSocketFactory socketFactory = TrustManagerFactory
-						.getFactory(keyFile, prefs.getString("privatekey_password", ""));
-
-				try {
-					FoafsslURLConnection.setDefaultSSLSocketFactory(socketFactory);
-					HttpsURLConnection conn = new FoafsslURLConnection(new URL(
-							url));
-
-					String encoding = conn.getContentEncoding();
-					if (encoding == null) {
-						model.read(conn.getInputStream(), url);
-					} else {
-						model.read(new InputStreamReader(conn.getInputStream(),
-								encoding), url);
-					}
-				} catch (FileNotFoundException e) {
-					Log.e(TAG, "Couldn't find File.", e);
-				} catch (IOException e) {
-					Log.e(TAG,
-							"Input/Output Error while creating or using Socket.",
-							e);
-					model.read(url);
-				}
-
-			} else {
-				Log.i(TAG,
-						"Couldn't get private Key, reading without FOAF+SSL features.");
-			}
-			model.read(url);
-			} catch (DoesNotExistException e) {
-				Log.e(TAG, "Jena couldn't find the model: '" + url + "'.'", e);
-			}
-		}
-		return model;
-	}
-
-	/**
-	 * 
-	 * @param model
-	 * @param namespaces
-	 *            key - prefix, value - uri
-	 * @return the modified model
-	 */
-	private static Model applyNamespaces(Model model,
-			HashMap<String, String> namespaces) {
-		model.setNsPrefixes(namespaces);
-		return model;
 	}
 
 }
