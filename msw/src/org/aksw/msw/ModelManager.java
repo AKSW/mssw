@@ -83,6 +83,10 @@ public class ModelManager {
 			webModels = ModelFactory.createFileModelMaker(webModelsFiles
 					.getAbsolutePath());
 			cacheModels = ModelFactory.createMemModelMaker();
+			infModels = ModelFactory.createFileModelMaker(infModelsFiles
+					.getAbsolutePath());
+			localModels = ModelFactory.createFileModelMaker(localModelsFiles
+					.getAbsolutePath());
 
 			return true;
 		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
@@ -109,7 +113,7 @@ public class ModelManager {
 			if (persistant) {
 				boolean has = webModels.hasModel(uri);
 				model = webModels.openModel(uri);
-				//model.begin();
+				// model.begin();
 				if (!has) {
 					model = readSSL(uri, model);
 				}
@@ -123,6 +127,10 @@ public class ModelManager {
 			}
 
 			model.setNsPrefixes(namespaces);
+			
+			if (localModels.hasModel(uri)) {
+				model.add(localModels.openModel(uri));
+			}
 		}
 		return model;
 	}
@@ -202,6 +210,10 @@ public class ModelManager {
 				Log.e(TAG, "Jena couldn't find the model: '" + url + "'.'", e);
 			}
 		}
+		if (model.supportsTransactions()) {
+			model.commit();
+		}
+		
 		return model;
 	}
 
