@@ -6,6 +6,10 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Stack;
+
+import org.aksw.mssw.Constants;
 
 import dalvik.system.PathClassLoader;
 
@@ -64,7 +68,7 @@ public class ContactsSyncAdapterService extends Service {
 		if (content == null) {
 			content = context.getContentResolver();
 		}
-		
+
 		// maybe should also tell Foaf/TripleProvider to pull the latest
 		// versions from the Web
 		// get the friend list from FoafProvider
@@ -111,26 +115,20 @@ public class ContactsSyncAdapterService extends Service {
 		} catch (Exception e) {
 			Log.e(TAG, "error:", e);
 		}
-		
-		testMethod();
 
 	}
 
+	/**
+	 * Add a contact to the Android system addressbook
+	 * 
+	 * @param account
+	 * @param uri
+	 */
 	private static void addContact(Account account, String uri) {
 
 		Log.i(TAG, "Adding contact: " + uri);
 
 		try {
-			String enc = "UTF-8";
-			/*
-			 * Uri contentUri = Uri.parse(CONTENT_URI + "/person/" +
-			 * URLEncoder.encode(uri, enc));
-			 * 
-			 * String[] projection = { "http://xmlns.com/foaf/0.1/name" };
-			 * Cursor rc = content.query(contentUri, projection, null, null,
-			 * null);
-			 */
-
 			// 1. query hasData Properties
 			// 2. for each hasData Property
 			// 2.1 query hasData Properties object
@@ -141,7 +139,10 @@ public class ContactsSyncAdapterService extends Service {
 			// 2.3.2.1 literal: insert as data
 			// 2.3.2.2 resource: get object and insert (as in 2.)
 
-			HashMap<String, ContentProviderOperation.Builder> builderList = new HashMap<String, ContentProviderOperation.Builder>();
+			// have to check if any data was added to the builder.
+
+			LinkedHashMap<String, ContentProviderOperation.Builder> builderList;
+			builderList = new LinkedHashMap<String, ContentProviderOperation.Builder>();
 
 			ContentProviderOperation.Builder builder = ContentProviderOperation
 					.newInsert(RawContacts.CONTENT_URI);
@@ -151,16 +152,19 @@ public class ContactsSyncAdapterService extends Service {
 			builderList.put(uri, builder);
 
 			Uri contentUri = Uri.parse(CONTACT_URI + "/data/"
-					+ URLEncoder.encode(uri, enc));
+					+ URLEncoder.encode(uri, Constants.ENC));
 
-			// String[] projection = { "http://xmlns.com/foaf/0.1/name" };
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
 			Cursor rc = content.query(contentUri, null, null, null, null);
 
-			Log.i(TAG, "Initializing hasData properties.");
 			if (rc != null) {
 				String subject, predicat, object;
+
+				Log.i(TAG, "== Initializing hasData properties. ==");
+				/**
+				 * Initializing all hasData Properties of this contact
+				 */
 				while (rc.moveToNext()) {
 					predicat = rc.getString(rc.getColumnIndex("predicat"));
 					Log.v(TAG, "predicat = " + predicat);
@@ -170,8 +174,6 @@ public class ContactsSyncAdapterService extends Service {
 						object = rc.getString(rc.getColumnIndex("object"));
 
 						if (!builderList.containsKey(object)) {
-							Log.v(TAG, "Builder List already has this data.");
-
 							builder = ContentProviderOperation
 									.newInsert(ContactsContract.Data.CONTENT_URI);
 							builder.withValueBackReference(
@@ -179,15 +181,19 @@ public class ContactsSyncAdapterService extends Service {
 									0);
 							builderList.put(object, builder);
 						} else {
-							Log.i(TAG, "Builder List already has this data.");
+							Log.i(TAG, "Builder List already has this data: "
+									+ object);
 						}
 					}
 				}
 
-				// reset cursor
+				// reset cursor before first element, as if it would be new 
 				rc.moveToPosition(-1);
 
-				Log.i(TAG, "Initializing propertys of hasData objects.");
+				Log.i(TAG, "== Initializing propertys of hasData objects. ==");
+				/**
+				 * get the properties of the nodes, which are the in the range of a hasData property
+				 */
 				while (rc.moveToNext()) {
 					predicat = rc.getString(rc.getColumnIndex("predicat"));
 					Log.v(TAG, "predicat = " + predicat);
@@ -198,10 +204,6 @@ public class ContactsSyncAdapterService extends Service {
 						object = rc.getString(rc.getColumnIndex("object"));
 						builder = builderList.get(subject);
 
-						//Log.v(TAG, "Triple subject = '" + subject
-						//		+ "', predicat = '" + predicat
-						//		+ "', object = '" + object + "'.");
-						
 						try {
 							if (predicat.equals(ContactProvider.PROP_rdfType)) {
 								Log.v(TAG, "rdf:type = " + object + ".");
@@ -224,19 +226,26 @@ public class ContactsSyncAdapterService extends Service {
 								} else {
 									isResource = false;
 								}
-								// this is the place of magic
+
+								/**
+								 * this is the place of magic extract the last
+								 * part of the URI, which determines a property
+								 * of the given class and get a Class object
+								 * representing the class given in the uri. than
+								 * get the specified property from this class.
+								 */
 								String fieldName = extractFieldName(predicat);
 								String column = (String) forUri(predicat, true)
 										.getField(fieldName).get(null);
 
 								if (isResource) {
-									// Type is int Protocol is string
-
 									// this is the place of magic
 									fieldName = extractFieldName(object);
 									Field valueField = forUri(object, true)
 											.getField(fieldName);
 
+									// Type is int
+									// Protocol is string
 									if (valueField.getType().getName()
 											.equalsIgnoreCase("int")) {
 										int value = (Integer) valueField
@@ -284,17 +293,22 @@ public class ContactsSyncAdapterService extends Service {
 				Log.e(TAG,
 						"Contentprovider returned an empty Cursor, couldn't add Data to contact '"
 								+ uri + "'.");
+				Log.v(TAG, "Destroy builders, to avoid (Unknown)-Contacts.");
+				builderList.clear();
 			}
 
-			ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
-			Iterator<String> builderIterator = builderList.keySet().iterator();
+			if (builderList.size() > 1) {
+				ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
+				Iterator<String> builderIterator = builderList.keySet()
+						.iterator();
 
-			while (builderIterator.hasNext()) {
-				builder = builderList.get(builderIterator.next());
-				operationList.add(builder.build());
+				while (builderIterator.hasNext()) {
+					builder = builderList.get(builderIterator.next());
+					operationList.add(builder.build());
+				}
+
+				content.applyBatch(ContactsContract.AUTHORITY, operationList);
 			}
-
-			content.applyBatch(ContactsContract.AUTHORITY, operationList);
 
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
@@ -311,10 +325,9 @@ public class ContactsSyncAdapterService extends Service {
 		Log.i(TAG, "updating contact: " + uri);
 
 		try {
-			String enc = "UTF-8";
 
 			Uri contentUri = Uri.parse(CONTENT_URI + "/person/"
-					+ URLEncoder.encode(uri, enc));
+					+ URLEncoder.encode(uri, Constants.ENC));
 
 			String[] projection = { "http://xmlns.com/foaf/0.1/name" };
 			Cursor rc = content.query(contentUri, projection, null, null, null);
@@ -402,53 +415,85 @@ public class ContactsSyncAdapterService extends Service {
 			Log.e(TAG, "An other error occured.", e);
 		}
 	}
-	
+
 	/**
-	 * This HashMap holds the Mapping of ClassNames to static final classes of CommonDataKinds, because I couldn't find a way to get these Class-Objects with reflection
+	 * This HashMap holds the Mapping of ClassNames to static final classes of
+	 * CommonDataKinds, because I couldn't find a way to get these Class-Objects
+	 * with reflection
 	 */
-	private static HashMap<String,Class> commonDataKinds = new HashMap<String,Class>();
-	
-	static { 	
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Email", ContactsContract.CommonDataKinds.Email.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Event", ContactsContract.CommonDataKinds.Event.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.GroupMembership", ContactsContract.CommonDataKinds.GroupMembership.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Im", ContactsContract.CommonDataKinds.Im.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Nickname", ContactsContract.CommonDataKinds.Nickname.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Note", ContactsContract.CommonDataKinds.Note.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Organization", ContactsContract.CommonDataKinds.Organization.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Phone", ContactsContract.CommonDataKinds.Phone.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Photo", ContactsContract.CommonDataKinds.Photo.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Relation", ContactsContract.CommonDataKinds.Relation.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.StructuredName", ContactsContract.CommonDataKinds.StructuredName.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.StructuredPostal", ContactsContract.CommonDataKinds.StructuredPostal.class);
-		commonDataKinds.put("ContactsContract.CommonDataKinds.Website", ContactsContract.CommonDataKinds.Website.class);
+	private static HashMap<String, Class> commonDataKinds = new HashMap<String, Class>();
+
+	static {
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Email",
+				ContactsContract.CommonDataKinds.Email.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Event",
+				ContactsContract.CommonDataKinds.Event.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.GroupMembership",
+				ContactsContract.CommonDataKinds.GroupMembership.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Im",
+				ContactsContract.CommonDataKinds.Im.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Nickname",
+				ContactsContract.CommonDataKinds.Nickname.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Note",
+				ContactsContract.CommonDataKinds.Note.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Organization",
+				ContactsContract.CommonDataKinds.Organization.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Phone",
+				ContactsContract.CommonDataKinds.Phone.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Photo",
+				ContactsContract.CommonDataKinds.Photo.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Relation",
+				ContactsContract.CommonDataKinds.Relation.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.StructuredName",
+				ContactsContract.CommonDataKinds.StructuredName.class);
+		commonDataKinds.put(
+				"ContactsContract.CommonDataKinds.StructuredPostal",
+				ContactsContract.CommonDataKinds.StructuredPostal.class);
+		commonDataKinds.put("ContactsContract.CommonDataKinds.Website",
+				ContactsContract.CommonDataKinds.Website.class);
 	}
 
 	private static Class forUri(String uri, boolean isField)
 			throws ClassNotFoundException {
+		String classNamePrefix = "android.provider.";
 		String className;
 		Uri uri_ = Uri.parse(uri);
 
 		ArrayList<String> path = new ArrayList<String>(uri_.getPathSegments());
 
 		if (isField) {
-			String fieldName = path.get(path.size() - 1);
-			className = fieldName.substring(0, fieldName.lastIndexOf("."));
+			String fullFieldName = path.get(path.size() - 1);
+			className = fullFieldName.substring(0,
+					fullFieldName.lastIndexOf("."));
 		} else {
 			className = path.get(path.size() - 1);
 		}
-		
-		//className = "android.provider." + className;
-		
-		Log.v(TAG, "Classname ist: '" + className + "'.");
-		
-		//ClassLoader cl = PathClassLoader.getSystemClassLoader();
-		//ClassLoader cl = ContactsContract.CommonDataKinds.StructuredName.class.getClassLoader();
-		
-		//Log.v(TAG, "ClassLoader name is: '" + cl.toString() + "'.");
-		
-		//return Class.forName(className, true, cl);
-		return commonDataKinds.get(className);
+
+		className = classNamePrefix + className;
+
+		Stack<String> nestedPath = new Stack<String>();
+		Class klasse;
+		while (className.lastIndexOf(".") > 0) {
+			try {
+				klasse = Class.forName(className);
+				break;
+			} catch (ClassNotFoundException e) {
+				nestedPath
+						.add(className.substring(className.lastIndexOf(".") + 1));
+				className = className.substring(0, className.lastIndexOf("."));
+			}
+		}
+
+		while (!nestedPath.empty()) {
+			className += "$" + nestedPath.pop();
+		}
+
+		// Log.v(TAG, "Classname is: '" + className + "'.");
+
+		klasse = Class.forName(className);
+
+		// return commonDataKinds.get(className);
+		return klasse;
 	}
 
 	private static String extractFieldName(String uri) {
@@ -459,23 +504,26 @@ public class ContactsSyncAdapterService extends Service {
 		String fullFieldName = path.get(path.size() - 1);
 		String fieldName = fullFieldName.substring(fullFieldName
 				.lastIndexOf(".") + 1);
-		Log.v(TAG, "Fieldname ist: '" + fieldName + "'.");
+		// Log.v(TAG, "Fieldname ist: '" + fieldName + "'.");
 
 		return fieldName;
 	}
-	
-	private static void testMethod ()  {
+
+	private static void testMethod() {
 
 		// public static final class
-		// the last two points are replaced by $ because they are nested classes :-S
+		// the last two points are replaced by $ because they are nested classes
+		// :-S
 		String className = "android.provider.ContactsContract$CommonDataKinds$StructuredName";
-		//String className = "android.provider.CallLog";
+		// String className = "android.provider.CallLog";
 
-		Log.v(TAG,"Now I try some magic.");
+		Log.v(TAG, "Now I try some magic.");
 		try {
 			Class myClass = context.getClassLoader().loadClass(className);
-			String mimetype = (String) myClass.getField("CONTENT_ITEM_TYPE").get(null);
-			//String mimetype = (String) myClass.getField("AUTHORITY").get(null);
+			String mimetype = (String) myClass.getField("CONTENT_ITEM_TYPE")
+					.get(null);
+			// String mimetype = (String)
+			// myClass.getField("AUTHORITY").get(null);
 			Log.v(TAG, "Yes it works. mimetype = " + mimetype);
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -493,7 +541,7 @@ public class ContactsSyncAdapterService extends Service {
 			// TODO Auto-generated catch block
 			Log.e(TAG, "feld nicht gefunden.", e);
 		}
-		
+
 	}
 
 }

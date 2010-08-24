@@ -354,8 +354,9 @@ public class TripleProvider extends ContentProvider {
 	private Resource queryResource(String uri, Model model) {
 		// 1. check if resource exists
 		if (resourceExists(uri, model)) {
+			FoafMapper fm = new FoafMapper(getContext());
 			// 2a. get and return resource
-			return model.getResource(uri);
+			return fm.map(model).getResource(uri);
 		} else {
 			// 2b. or null if resource doesn't exist
 			return null;

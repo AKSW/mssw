@@ -7,6 +7,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
+import org.aksw.mssw.Constants;
+
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -171,13 +173,11 @@ public class ContactProvider extends ContentProvider {
 
 	private Cursor getData(String uri) {
 		Log.v(TAG, "getPerson: <" + uri + ">");
-
+		
 		try {
-			String enc = "UTF-8";
-
 			Uri contentUri;
 			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, enc));
+					+ URLEncoder.encode(uri, Constants.ENC));
 
 			String[] projection = new String[] { PROP_hasData };
 
@@ -188,7 +188,8 @@ public class ContactProvider extends ContentProvider {
 			Cursor rc = getContentResolver().query(contentUri, projection,
 					null, null, null);
 
-			if (rc != null) {
+			if (rc != null && rc.getCount() > 0) {
+				rc.moveToPrevious();
 				ContactCursor cc = new ContactCursor();
 				// foreach hasData propertiy get object
 				String subject, predicat, object;
@@ -196,16 +197,16 @@ public class ContactProvider extends ContentProvider {
 				while (rc.moveToNext()) {
 					object = rc.getString(rc.getColumnIndex("object"));
 					oIsBlankNode = oIsResource = false;
-					if (rc.getString(rc.getColumnIndex("oIsResource")).equals("true")) {
+					if (rc.getString(rc.getColumnIndex("oIsResource")).equals(
+							"true")) {
 						oIsResource = true;
 					}
-					
-					Log.v(TAG, "oIsResource? columnindex: " + rc.getColumnIndex("oIsResource") + " int: " + rc.getInt(rc.getColumnIndex("oIsResource")) + " String: " + rc.getString(rc.getColumnIndex("oIsResource")) + ".");
 
 					if (oIsResource) {
-						if (rc.getInt((rc.getColumnIndex("oIsBlankNode"))) == 1) {
+						if (rc.getString(rc.getColumnIndex("oIsBlankNode")).equals("true")) {
 							oIsBlankNode = true;
 						}
+						
 						cc.addTriple(uri, PROP_hasData, object, true,
 								oIsBlankNode);
 
@@ -214,14 +215,15 @@ public class ContactProvider extends ContentProvider {
 						if (oIsBlankNode) {
 							contentUri = Uri.parse(TRIPLE_CONTENT_URI
 									+ "/bnode/"
-									+ URLEncoder.encode(subject, enc));
+									+ URLEncoder.encode(subject, Constants.ENC));
 						} else {
 							contentUri = Uri.parse(TRIPLE_CONTENT_URI
 									+ "/resource/"
-									+ URLEncoder.encode(subject, enc));
+									+ URLEncoder.encode(subject, Constants.ENC));
 						}
-						Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-								+ ">.");
+						Log.v(TAG,
+								"Starting Query with uri: <"
+										+ contentUri.toString() + ">.");
 						Cursor rc2 = getContentResolver().query(contentUri,
 								null, null, null, null);
 
@@ -232,10 +234,13 @@ public class ContactProvider extends ContentProvider {
 							object = rc2.getString(rc.getColumnIndex("object"));
 
 							oIsBlankNode = oIsResource = false;
-							if (rc2.getString(rc2.getColumnIndex("oIsResource")).equals("true")) {
+							if (rc2.getString(rc2.getColumnIndex("oIsResource"))
+									.equals("true")) {
 								oIsResource = true;
 							}
-							if (rc2.getString(rc2.getColumnIndex("oIsBlankNode")).equals("true")) {
+							if (rc2.getString(
+									rc2.getColumnIndex("oIsBlankNode")).equals(
+									"true")) {
 								oIsBlankNode = true;
 							}
 
@@ -256,10 +261,11 @@ public class ContactProvider extends ContentProvider {
 				}
 
 				// return ...
-				cc.checkData();
+				// cc.checkData(); // only debug output
 				return cc;
 			} else {
-				Log.v(TAG, "Triple Provider gave me nothing, so I can't give you anything. Returning null.");
+				Log.v(TAG,
+						"Triple Provider gave me nothing, so I can't give you anything. Returning null.");
 				return null;
 			}
 		} catch (UnsupportedEncodingException e) {
