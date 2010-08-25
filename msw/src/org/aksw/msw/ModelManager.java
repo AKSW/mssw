@@ -113,9 +113,6 @@ public class ModelManager {
 			if (persistant) {
 				boolean has = webModels.hasModel(uri);
 				model = webModels.openModel(uri);
-				if(model.supportsTransactions()) {
-					model.begin();
-				}
 				if (!has) {
 					model = readSSL(uri, model);
 				}
@@ -129,7 +126,7 @@ public class ModelManager {
 			}
 
 			model.setNsPrefixes(namespaces);
-			
+
 			if (localModels.hasModel(uri)) {
 				model.add(localModels.openModel(uri));
 			}
@@ -145,10 +142,21 @@ public class ModelManager {
 			modelName = webModelIterator.next();
 			Log.v(TAG, "webModelMaker knows: " + modelName);
 			model = webModels.openModel(modelName);
-			model.begin();
-			model.removeAll();
-			model = readSSL(modelName, model);
-			model.commit();
+			try {
+				if (model.supportsTransactions()) {
+					model.begin();
+				}
+				model.removeAll();
+				readSSL(modelName, model);
+				if (model.supportsTransactions()) {
+					model.commit();
+				}
+			} catch (JenaException e) {
+				Log.e(TAG, "Exception on updating model. (rollback)", e);
+				if (model.supportsTransactions()) {
+					model.abort();
+				}
+			}
 			model.close();
 		}
 	}
@@ -193,29 +201,26 @@ public class ModelManager {
 						HttpsURLConnection conn = new FoafsslURLConnection(
 								new URL(url));
 
-						model = read(url, model, conn.getInputStream());
+						read(url, model, conn.getInputStream());
 					} catch (FileNotFoundException e) {
 						Log.e(TAG, "Couldn't find File.", e);
 					} catch (IOException e) {
 						Log.e(TAG,
 								"Input/Output Error while creating or using Socket.",
 								e);
-						model = read(url, model, null);
+						read(url, model, null);
 					}
 
 				} else {
 					Log.i(TAG,
 							"Couldn't get private Key, reading without FOAF+SSL features.");
 				}
-				model = read(url, model, null);
+				read(url, model, null);
 			} catch (DoesNotExistException e) {
 				Log.e(TAG, "Jena couldn't find the model: '" + url + "'.'", e);
 			}
 		}
-		if (model.supportsTransactions()) {
-			model.commit();
-		}
-		
+
 		return model;
 	}
 
@@ -237,9 +242,18 @@ public class ModelManager {
 				(RDFNode) null);
 
 		try {
+			if (model.supportsTransactions()) {
+				model.begin();
+			}
 			model.add(tmp.query(selector));
+			if (model.supportsTransactions()) {
+				model.commit();
+			}
 		} catch (JenaException e) {
-			Log.e(TAG, "Exception on query for resource.", e);
+			Log.e(TAG, "Exception on query for resource. (rollback)", e);
+			if (model.supportsTransactions()) {
+				model.abort();
+			}
 		}
 		tmp.close();
 
