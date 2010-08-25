@@ -119,7 +119,7 @@ public class ModelManager {
 		return cacheModels.createDefaultModel();
 	}
 
-	public Model getModel(String uri, boolean persistant) {
+	public Model getModel(String uri, boolean persistant, boolean inferenced) {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
 		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
@@ -134,7 +134,6 @@ public class ModelManager {
 					}
 				}
 			} else {
-				boolean has = modelMakers.get("cache").hasModel(uri);
 				if (modelExists(uri, "cache")) {
 					model = modelMakers.get("cache").openModel(uri);
 				} else {
@@ -148,6 +147,8 @@ public class ModelManager {
 			if (modelExists(uri, "local")) {
 				model.add(modelMakers.get("local").openModel(uri));
 			}
+			
+			// TODO add the according inference model
 		} else if (uri == null) {
 			Log.v(TAG,
 					"You have to give an uri, to get a Model, that is the deal. Returning 'null'");
@@ -190,6 +191,8 @@ public class ModelManager {
 					}
 				}
 				model.close();
+				
+				// TODO remove the according inference model
 			} else {
 				Log.v(TAG, "webModelMaker knows model without name.");
 			}
@@ -275,7 +278,7 @@ public class ModelManager {
 			Log.e(TAG, "Error on reading <" + uri + "> into temp model.", e);
 		}
 
-		// should include also all blanknodes in the connected graph
+		// TODO should include also all blanknodes in the connected graph
 		Resource subj = new ResourceImpl(uri);
 		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
 				(RDFNode) null);

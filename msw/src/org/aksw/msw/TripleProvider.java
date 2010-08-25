@@ -329,10 +329,11 @@ public class TripleProvider extends ContentProvider {
 	 *            the URI of the resource you want to get
 	 * @return a jena-Resource-Object, or null if this resource is not available
 	 */
-	private Resource queryResource(String uri, boolean mode) {
+	private Resource queryResource(String uri, boolean persistant) {
 		// maybe it is better if this method would query the union of model and
 		// cache, but I don't know. The future will tell me, what's right.
-		return queryResource(uri, mm.getModel(uri, mode));
+		boolean inferenced = true;
+		return queryResource(uri, mm.getModel(uri, persistant, inferenced));
 	}
 
 	private Resource queryResource(String uri, Model model) {
