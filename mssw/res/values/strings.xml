@@ -24,6 +24,10 @@
 	<string name="triplestore">Triplestore</string>
 	<string name="pref_triplestore">Configure special settings for your triplestore.</string>
 	<string name="pref_your_webid_desc">Insert the URI of your WebID don\'t forget the scheme e.g. \'http://\'.</string>
+	<string name="pref_update_desc">Click this to update all resources from the web.</string>
 	<string name="no_contacts">This WebID has no Contacts</string>
 	<string name="no_result">No WebIDs found</string>
+	<string name="syncing_toast">Synchronizing Resources from Web.</string>
+	<string name="syncing_toast_success">Synchronizing Resources from Web. Done successfully!</string>
+	<string name="syncing_toast_failed">Synchronizing Resources from Web. Failed!</string>
 </resources>

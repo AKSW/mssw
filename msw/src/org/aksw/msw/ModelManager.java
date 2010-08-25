@@ -108,7 +108,7 @@ public class ModelManager {
 	public Model getModel(String uri, boolean persistant) {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
+		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
 			// read and write access
 			if (persistant) {
 				boolean has = webModels.hasModel(uri);
@@ -130,34 +130,47 @@ public class ModelManager {
 			if (localModels.hasModel(uri)) {
 				model.add(localModels.openModel(uri));
 			}
+		} else if (uri == null) {
+			Log.v(TAG,
+					"You have to give an uri, to get a Model, that is the deal. Returning 'null'");
+		} else {
+			Log.v(TAG,
+					"ExternalStorrage not mounted, couldn't get model, returning 'null'");
 		}
 		return model;
 	}
 
 	public void updateResources() {
+		
+		// should check if a internet connection is possible before
+		
 		ExtendedIterator<String> webModelIterator = webModels.listModels();
 		Model model;
 		String modelName;
 		while (webModelIterator.hasNext()) {
 			modelName = webModelIterator.next();
 			Log.v(TAG, "webModelMaker knows: " + modelName);
-			model = webModels.openModel(modelName);
-			try {
-				if (model.supportsTransactions()) {
-					model.begin();
+			if (modelName != null) {
+				model = webModels.openModel(modelName);
+				try {
+					if (model.supportsTransactions()) {
+						model.begin();
+					}
+					model.removeAll();
+					readSSL(modelName, model);
+					if (model.supportsTransactions()) {
+						model.commit();
+					}
+				} catch (JenaException e) {
+					Log.e(TAG, "Exception on updating model. (rollback)", e);
+					if (model.supportsTransactions()) {
+						model.abort();
+					}
 				}
-				model.removeAll();
-				readSSL(modelName, model);
-				if (model.supportsTransactions()) {
-					model.commit();
-				}
-			} catch (JenaException e) {
-				Log.e(TAG, "Exception on updating model. (rollback)", e);
-				if (model.supportsTransactions()) {
-					model.abort();
-				}
+				model.close();
+			} else {
+				Log.v(TAG, "webModelMaker knows model without name.");
 			}
-			model.close();
 		}
 	}
 
@@ -229,12 +242,15 @@ public class ModelManager {
 		if (model == null) {
 			model = cacheModels.openModel(uri);
 		}
-		Model tmp = cacheModels.createDefaultModel();
-
-		if (inputstream == null) {
-			tmp.read(uri);
-		} else {
-			tmp.read(inputstream, uri);
+		Model tmp = cacheModels.createFreshModel();
+		try {
+			if (inputstream == null) {
+				tmp.read(uri);
+			} else {
+				tmp.read(inputstream, uri);
+			}
+		} catch (JenaException e) {
+			Log.e(TAG, "Error on reading <" + uri + "> into temp model.", e);
 		}
 
 		Resource subj = new ResourceImpl(uri);
@@ -243,6 +259,7 @@ public class ModelManager {
 
 		try {
 			if (model.supportsTransactions()) {
+				model.abort();
 				model.begin();
 			}
 			model.add(tmp.query(selector));
@@ -255,6 +272,7 @@ public class ModelManager {
 				model.abort();
 			}
 		}
+		tmp.removeAll();
 		tmp.close();
 
 		return model;

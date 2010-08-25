@@ -63,10 +63,13 @@ public class TripleProvider extends ContentProvider {
 
 	private static final int TYPE = 30;
 	private static final int TYPE_OVERVIEW = 31;
-	
+
 	private static final int BNODE = 40;
 
 	private static final int SPARQL = 50;
+
+	private static final int UPDATE_ALL = 60;
+	private static final int UPDATE_THIS = 61;
 
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
@@ -82,8 +85,10 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "type/", TYPE_OVERVIEW);
 		uriMatcher.addURI(AUTHORITY, "bnode/*", BNODE);
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
+		uriMatcher.addURI(AUTHORITY, "update/*", UPDATE_THIS);
+		uriMatcher.addURI(AUTHORITY, "update/", UPDATE_ALL);
 	}
-	
+
 	private static ModelManager mm;
 
 	// ---------------------------- methods --------------------
@@ -131,7 +136,8 @@ public class TripleProvider extends ContentProvider {
 		case SPARQL:
 			/**
 			 * sparql is not implemented, because androjena doesn't include ARQ
-			 * 2010-08-19 androjena works on ARQ support, but I don't need it now
+			 * 2010-08-19 androjena works on ARQ support, but I don't need it
+			 * now
 			 */
 		case BNODE:
 			return mimeTypeTriple;
@@ -252,16 +258,33 @@ public class TripleProvider extends ContentProvider {
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
 		// TODO Auto-generated method stub
-		return 0;
+		throw new UnsupportedOperationException(
+				"The TripleProvider is not capable of deleting Resources, sorry.");
+		// return 0;
 	}
 
 	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException(
-				"The TripleProvider is not capable of updating Resources, sorry.");
-		// return 0;
+		int match = uriMatcher.match(uri);
+		switch (match) {
+		case UPDATE_ALL:
+			mm.updateResources();
+			return 2;
+		case UPDATE_THIS:
+			ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
+
+			if (path.size() > 1) {
+				mm.updateResource(path.get(1));
+				return 1;
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				return 0;
+			}
+		default:
+			return 0;
+		}
 	}
 
 	// ---------------------------- private --------------------
@@ -281,11 +304,11 @@ public class TripleProvider extends ContentProvider {
 		StmtIterator iterator = resource.listProperties();
 		while (iterator.hasNext()) {
 			String triple = iterator.next().asTriple().toString();
-			Log.v(TAG, "BNode (" + id + ") has triple: " + triple );
+			Log.v(TAG, "BNode (" + id + ") has triple: " + triple);
 		}
 		return resource;
 	}
-	
+
 	private Resource getResource(String uri, int mode) {
 		switch (mode) {
 		case TMP:
@@ -315,7 +338,7 @@ public class TripleProvider extends ContentProvider {
 	private Resource queryResource(String uri, Model model) {
 		// 1. check if resource exists
 		if (resourceExists(uri, model)) {
-			//FoafMapper fm = new FoafMapper(getContext());
+			// FoafMapper fm = new FoafMapper(getContext());
 			// 2a. get and return resource
 			return model.getResource(uri);
 		} else {
