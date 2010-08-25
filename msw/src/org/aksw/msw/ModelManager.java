@@ -56,13 +56,7 @@ public class ModelManager {
 	private static File localModelsFiles;
 	// private static File cacheModelsFiles;
 
-	private static HashMap<String, Model> models = new HashMap<String, Model>();
-
 	private static HashMap<String, ModelMaker> modelMakers;
-	private static ModelMaker webModels;
-	private static ModelMaker infModels;
-	private static ModelMaker localModels;
-	private static ModelMaker cacheModels;
 
 	private static Context context;
 
@@ -75,7 +69,6 @@ public class ModelManager {
 		webModelsFiles = new File(storage, Constants.WEB_MODELS_DIR);
 		infModelsFiles = new File(storage, Constants.INF_MODELS_DIR);
 		localModelsFiles = new File(storage, Constants.LOCAL_MODELS_DIR);
-		// cacheModelsFiles = new File(storage, Constants.CACHE_MODELS_DIR);
 
 		if (initModelMakers()) {
 			Log.v(TAG, "ModelManager initiated ModelMakers successfully.");
@@ -116,7 +109,7 @@ public class ModelManager {
 	}
 
 	public Model getModel() {
-		return cacheModels.createDefaultModel();
+		return modelMakers.get("cache").createDefaultModel();
 	}
 
 	public Model getModel(String uri, boolean persistant, boolean inferenced) {
@@ -130,7 +123,7 @@ public class ModelManager {
 				} else {
 					model = createModel(uri, "web");
 					if (model != null) {
-						model = readSSL(uri, model);
+						readSSL(uri, model);
 					}
 				}
 			} else {
@@ -143,12 +136,35 @@ public class ModelManager {
 			}
 
 			model.setNsPrefixes(namespaces);
-
+			
 			if (modelExists(uri, "local")) {
 				model.add(modelMakers.get("local").openModel(uri));
 			}
-			
-			// TODO add the according inference model
+
+			// add the according inference model
+			if (inferenced) {
+				Model infModel;
+				if (modelExists(uri, "inf")) {
+					infModel = modelMakers.get("inf").openModel(uri);
+				} else {
+					infModel = createModel(uri, "inf");
+					try {
+						if (infModel.supportsTransactions()) {
+							infModel.begin();
+						}
+						infModel = fm.map(model);
+						if (infModel.supportsTransactions()) {
+							infModel.commit();
+						}
+					} catch (JenaException e) {
+						Log.e(TAG, "Exception on updating model. (rollback)", e);
+						if (infModel.supportsTransactions()) {
+							infModel.abort();
+						}
+					}
+				}
+				model.add(infModel);				
+			}
 		} else if (uri == null) {
 			Log.v(TAG,
 					"You have to give an uri, to get a Model, that is the deal. Returning 'null'");
@@ -192,7 +208,25 @@ public class ModelManager {
 				}
 				model.close();
 				
-				// TODO remove the according inference model
+				// remove the according inference model
+				if (modelExists(modelName, "inf")) {
+					model = modelMakers.get("inf").openModel(modelName);
+					try {
+						if (model.supportsTransactions()) {
+							model.begin();
+						}
+						model.removeAll();
+						if (model.supportsTransactions()) {
+							model.commit();
+						}
+					} catch (JenaException e) {
+						Log.e(TAG, "Exception on updating model. (rollback)", e);
+						if (model.supportsTransactions()) {
+							model.abort();
+						}
+					}
+					model.close();
+				}
 			} else {
 				Log.v(TAG, "webModelMaker knows model without name.");
 			}
@@ -285,7 +319,7 @@ public class ModelManager {
 
 		try {
 			if (model.supportsTransactions()) {
-				model.abort();
+				//model.abort();
 				model.begin();
 			}
 			model.add(tmp.query(selector));
