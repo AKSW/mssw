@@ -92,7 +92,7 @@ public class ModelManager {
 			webModelsFiles.mkdirs();
 			infModelsFiles.mkdirs();
 			localModelsFiles.mkdirs();
-			
+
 			modelMakers = new HashMap<String, ModelMaker>();
 			modelMakers.put("web", ModelFactory
 					.createFileModelMaker(webModelsFiles.getAbsolutePath()));
@@ -125,23 +125,27 @@ public class ModelManager {
 		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
 			// read and write access
 			if (persistant) {
-				boolean has = modelMakers.get("web").hasModel(uri);
-				model = modelMakers.get("web").openModel(uri);
-				if (!has) {
-					model = readSSL(uri, model);
+				if (modelExists(uri, "web")) {
+					model = modelMakers.get("web").openModel(uri);
+				} else {
+					model = createModel(uri, "web");
+					if (model != null) {
+						model = readSSL(uri, model);
+					}
 				}
-
 			} else {
 				boolean has = modelMakers.get("cache").hasModel(uri);
-				model = modelMakers.get("cache").openModel(uri);
-				if (!has) {
+				if (modelExists(uri, "cache")) {
+					model = modelMakers.get("cache").openModel(uri);
+				} else {
+					model = modelMakers.get("cache").openModel(uri);
 					model = readSSL(uri, null);
 				}
 			}
 
 			model.setNsPrefixes(namespaces);
 
-			if (modelMakers.get("local").hasModel(uri)) {
+			if (modelExists(uri, "local")) {
 				model.add(modelMakers.get("local").openModel(uri));
 			}
 		} else if (uri == null) {
@@ -159,12 +163,12 @@ public class ModelManager {
 		// should check if a internet connection is possible before
 
 		List<String> webModels = listModels("web");
-		
+
 		Model model;
 		String modelName;
-		
+
 		Iterator<String> webModelIterator = webModels.iterator();
-		
+
 		while (webModelIterator.hasNext()) {
 			modelName = webModelIterator.next();
 			Log.v(TAG, "webModelMaker knows: " + modelName);
@@ -271,6 +275,7 @@ public class ModelManager {
 			Log.e(TAG, "Error on reading <" + uri + "> into temp model.", e);
 		}
 
+		// should include also all blanknodes in the connected graph
 		Resource subj = new ResourceImpl(uri);
 		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
 				(RDFNode) null);
@@ -297,7 +302,9 @@ public class ModelManager {
 	}
 
 	private static final String INDEX = "http://ns.aksw.org/Android/SysOnt/index";
+	private static final String MODEL = "http://ns.aksw.org/Android/SysOnt/Model";
 	private static final String CONTAINS = "http://ns.aksw.org/Android/SysOnt/contains";
+	private static final String RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 
 	private ArrayList<String> listModels(String makerKey) {
 
@@ -353,5 +360,36 @@ public class ModelManager {
 
 		return listModels(makerKey).contains(uri);
 
+	}
+
+	private Model createModel(String uri, String makerKey) {
+		if (modelMakers.get(makerKey) != null) {
+			if (makerKey == "cache" || modelExists(uri, makerKey)) {
+				return modelMakers.get(makerKey).openModel(uri);
+			} else {
+				Model indexMod = modelMakers.get(makerKey).openModel("index");
+				Resource index = indexMod.getResource(INDEX);
+				Property contains = indexMod.getProperty(CONTAINS);
+				Property rdf_type = indexMod.getProperty(RDF_TYPE);
+				Resource modelClass = indexMod.getResource(MODEL);
+				Resource model = indexMod.getResource(uri);
+
+				try {
+					indexMod.begin();
+					model.addProperty(rdf_type, modelClass);
+					index.addProperty(contains, model);
+					indexMod.commit();
+
+					return modelMakers.get(makerKey).openModel(uri);
+				} catch (JenaException e) {
+					Log.e(TAG, "Could not write new Model <" + uri
+							+ "> to index.", e);
+					indexMod.abort();
+					return null;
+				}
+			}
+		} else {
+			return null;
+		}
 	}
 }
