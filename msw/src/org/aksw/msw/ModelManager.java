@@ -7,7 +7,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
@@ -23,6 +26,8 @@ import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.SimpleSelector;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
 import com.hp.hpl.jena.shared.DoesNotExistException;
 import com.hp.hpl.jena.shared.JenaException;
@@ -49,10 +54,11 @@ public class ModelManager {
 	private static File webModelsFiles;
 	private static File infModelsFiles;
 	private static File localModelsFiles;
-	private static File cacheModelsFiles;
+	// private static File cacheModelsFiles;
 
 	private static HashMap<String, Model> models = new HashMap<String, Model>();
 
+	private static HashMap<String, ModelMaker> modelMakers;
 	private static ModelMaker webModels;
 	private static ModelMaker infModels;
 	private static ModelMaker localModels;
@@ -69,9 +75,13 @@ public class ModelManager {
 		webModelsFiles = new File(storage, Constants.WEB_MODELS_DIR);
 		infModelsFiles = new File(storage, Constants.INF_MODELS_DIR);
 		localModelsFiles = new File(storage, Constants.LOCAL_MODELS_DIR);
-		cacheModelsFiles = new File(storage, Constants.CACHE_MODELS_DIR);
+		// cacheModelsFiles = new File(storage, Constants.CACHE_MODELS_DIR);
 
-		initModelMakers();
+		if (initModelMakers()) {
+			Log.v(TAG, "ModelManager initiated ModelMakers successfully.");
+		} else {
+			Log.v(TAG, "ModelManager couldn't initiate ModelMakers.");
+		}
 
 	}
 
@@ -80,13 +90,17 @@ public class ModelManager {
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
 			// read and write access
 			webModelsFiles.mkdirs();
-			webModels = ModelFactory.createFileModelMaker(webModelsFiles
-					.getAbsolutePath());
-			cacheModels = ModelFactory.createMemModelMaker();
-			infModels = ModelFactory.createFileModelMaker(infModelsFiles
-					.getAbsolutePath());
-			localModels = ModelFactory.createFileModelMaker(localModelsFiles
-					.getAbsolutePath());
+			infModelsFiles.mkdirs();
+			localModelsFiles.mkdirs();
+			
+			modelMakers = new HashMap<String, ModelMaker>();
+			modelMakers.put("web", ModelFactory
+					.createFileModelMaker(webModelsFiles.getAbsolutePath()));
+			modelMakers.put("inf", ModelFactory
+					.createFileModelMaker(infModelsFiles.getAbsolutePath()));
+			modelMakers.put("local", ModelFactory
+					.createFileModelMaker(localModelsFiles.getAbsolutePath()));
+			modelMakers.put("cache", ModelFactory.createMemModelMaker());
 
 			return true;
 		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
@@ -111,15 +125,15 @@ public class ModelManager {
 		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
 			// read and write access
 			if (persistant) {
-				boolean has = webModels.hasModel(uri);
-				model = webModels.openModel(uri);
+				boolean has = modelMakers.get("web").hasModel(uri);
+				model = modelMakers.get("web").openModel(uri);
 				if (!has) {
 					model = readSSL(uri, model);
 				}
 
 			} else {
-				boolean has = cacheModels.hasModel(uri);
-				model = cacheModels.openModel(uri);
+				boolean has = modelMakers.get("cache").hasModel(uri);
+				model = modelMakers.get("cache").openModel(uri);
 				if (!has) {
 					model = readSSL(uri, null);
 				}
@@ -127,8 +141,8 @@ public class ModelManager {
 
 			model.setNsPrefixes(namespaces);
 
-			if (localModels.hasModel(uri)) {
-				model.add(localModels.openModel(uri));
+			if (modelMakers.get("local").hasModel(uri)) {
+				model.add(modelMakers.get("local").openModel(uri));
 			}
 		} else if (uri == null) {
 			Log.v(TAG,
@@ -141,17 +155,21 @@ public class ModelManager {
 	}
 
 	public void updateResources() {
-		
+
 		// should check if a internet connection is possible before
+
+		List<String> webModels = listModels("web");
 		
-		ExtendedIterator<String> webModelIterator = webModels.listModels();
 		Model model;
 		String modelName;
+		
+		Iterator<String> webModelIterator = webModels.iterator();
+		
 		while (webModelIterator.hasNext()) {
 			modelName = webModelIterator.next();
 			Log.v(TAG, "webModelMaker knows: " + modelName);
 			if (modelName != null) {
-				model = webModels.openModel(modelName);
+				model = modelMakers.get("web").openModel(modelName);
 				try {
 					if (model.supportsTransactions()) {
 						model.begin();
@@ -190,7 +208,7 @@ public class ModelManager {
 				+ "privatekey.p12";
 
 		if (model == null) {
-			model = cacheModels.createDefaultModel();
+			model = modelMakers.get("cache").createDefaultModel();
 		}
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
 			try {
@@ -240,9 +258,9 @@ public class ModelManager {
 	private Model read(String uri, Model model, InputStream inputstream) {
 
 		if (model == null) {
-			model = cacheModels.openModel(uri);
+			model = modelMakers.get("cache").openModel(uri);
 		}
-		Model tmp = cacheModels.createFreshModel();
+		Model tmp = modelMakers.get("cache").createFreshModel();
 		try {
 			if (inputstream == null) {
 				tmp.read(uri);
@@ -276,5 +294,64 @@ public class ModelManager {
 		tmp.close();
 
 		return model;
+	}
+
+	private static final String INDEX = "http://ns.aksw.org/Android/SysOnt/index";
+	private static final String CONTAINS = "http://ns.aksw.org/Android/SysOnt/contains";
+
+	private ArrayList<String> listModels(String makerKey) {
+
+		ArrayList<String> modelList = new ArrayList<String>();
+
+		List<ModelMaker> makers = new ArrayList<ModelMaker>();
+
+		if (makerKey == null || !makerKey.equals("cache")) {
+			// are FileModels
+			if (makerKey == null) {
+				makers.add(modelMakers.get("web"));
+				makers.add(modelMakers.get("inf"));
+				makers.add(modelMakers.get("local"));
+			} else if (modelMakers.get(makerKey) != null) {
+				makers.add(modelMakers.get(makerKey));
+			} else {
+				Log.v(TAG, "There is no Modeltype: '" + makerKey + "'.");
+			}
+
+			Iterator<ModelMaker> makerIterator = makers.iterator();
+
+			while (makerIterator.hasNext()) {
+				ModelMaker maker = makerIterator.next();
+				Model indexModel = maker.openModel("index");
+
+				Resource index = indexModel.getResource(INDEX);
+
+				StmtIterator models = index.listProperties(indexModel
+						.getProperty(CONTAINS));
+
+				while (models.hasNext()) {
+					Statement modelEntry = models.next();
+					if (modelEntry.getObject().isURIResource()) {
+						Resource object = (Resource) modelEntry.getObject();
+						modelList.add(object.getURI());
+					}
+				}
+			}
+		}
+
+		if (makerKey == null || makerKey.equals("cache")) {
+			// is MemModel
+			Iterator<String> models = modelMakers.get("cache").listModels();
+			while (models.hasNext()) {
+				modelList.add(models.next());
+			}
+		}
+
+		return modelList;
+	}
+
+	private boolean modelExists(String uri, String makerKey) {
+
+		return listModels(makerKey).contains(uri);
+
 	}
 }
