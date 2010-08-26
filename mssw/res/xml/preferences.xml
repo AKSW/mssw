@@ -8,8 +8,11 @@
 	</PreferenceCategory>
 	<PreferenceCategory android:title="@string/app_name">
 		<Preference android:key="sync" android:title="@string/sync"
-			android:defaultValue="http://people.comiles.eu/example"
-			android:summary="@string/pref_your_webid_desc">
+			android:summary="@string/pref_update_desc">
 		</Preference>
 	</PreferenceCategory>
+	<PreferenceScreen android:title="@string/triplestore"
+			android:summary="@string/pref_triplestore">
+		<intent android:action="org.aksw.msw.PREFERENCE" />
+	</PreferenceScreen>
 </PreferenceScreen>

@@ -1,6 +1,5 @@
 package org.aksw.msw;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import android.content.ContentProvider;
@@ -8,19 +7,13 @@ import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Environment;
 import android.util.Log;
 
+import com.hp.hpl.jena.rdf.model.AnonId;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.ModelMaker;
-import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.SimpleSelector;
-import com.hp.hpl.jena.rdf.model.impl.PropertyImpl;
-import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
-import com.hp.hpl.jena.shared.JenaException;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 /**
  * The triple Provider is a simple Android ContentProvider, which stores and
@@ -35,7 +28,7 @@ public class TripleProvider extends ContentProvider {
 	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	public static final String DISPLAY_NAME = "TripleProvider";
-	
+
 	/**
 	 * content://org.aksw.msw.tripleprovider returns nothing, because the whole
 	 * web is to much. content://org.aksw.msw.tripleprovider/resource/_uri_
@@ -71,7 +64,12 @@ public class TripleProvider extends ContentProvider {
 	private static final int TYPE = 30;
 	private static final int TYPE_OVERVIEW = 31;
 
+	private static final int BNODE = 40;
+
 	private static final int SPARQL = 50;
+
+	private static final int UPDATE_ALL = 60;
+	private static final int UPDATE_THIS = 61;
 
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
@@ -85,41 +83,38 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "class/", CLASS_OVERVIEW);
 		uriMatcher.addURI(AUTHORITY, "type/*", TYPE);
 		uriMatcher.addURI(AUTHORITY, "type/", TYPE_OVERVIEW);
+		uriMatcher.addURI(AUTHORITY, "bnode/*/*", BNODE);
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
+		uriMatcher.addURI(AUTHORITY, "update/*", UPDATE_THIS);
+		uriMatcher.addURI(AUTHORITY, "update/", UPDATE_ALL);
 	}
 
-	/**
-	 * some often used properties
-	 */
-	public static final String PROPNAMESPACE = "http://msw.aksw.org/";
-	public static final Property PROP_LASTUPDATE = new PropertyImpl(
-			PROPNAMESPACE, "lastUpdate");
-
-	/**
-	 * The model contains all triples stored on the device.
-	 */
-	private Model model;
-
-	/**
-	 * The cache-Model contains some triples, which are not stored permanently
-	 * on the device, but are needed for the current work.
-	 */
-	private Model cache;
+	private static ModelManager mm;
 
 	// ---------------------------- methods --------------------
 
 	@Override
-	public int delete(Uri uri, String selection, String[] selectionArgs) {
-		// TODO Auto-generated method stub
-		return 0;
+	public boolean onCreate() {
+		mm = new ModelManager(getContext());
+		return true;
+	}
+
+	@Override
+	public void onLowMemory() {
+		super.onLowMemory();
+		Log.v(TAG,
+				"TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
+		mm.clearCache();
 	}
 
 	@Override
 	public String getType(Uri uri) {
 
-		//String mimeTypeResItm = "vnd.android.cursor.item/vnd.aksw.msw.resource";
-		//String mimeTypeResDir = "vnd.android.cursor.dir/vnd.aksw.msw.resource";
-		//String mimeTypeTriple = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
+		// String mimeTypeResItm =
+		// "vnd.android.cursor.item/vnd.aksw.msw.resource";
+		// String mimeTypeResDir =
+		// "vnd.android.cursor.dir/vnd.aksw.msw.resource";
+		// String mimeTypeTriple = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
 		String mimeTypeResItm = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
 		String mimeTypeResDir = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.resource";
 		String mimeTypeTriple = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.statement";
@@ -141,83 +136,60 @@ public class TripleProvider extends ContentProvider {
 		case SPARQL:
 			/**
 			 * sparql is not implemented, because androjena doesn't include ARQ
+			 * 2010-08-19 androjena works on ARQ support, but I don't need it
+			 * now
 			 */
+		case BNODE:
 			return mimeTypeTriple;
 		default:
 			return null;
 		}
 	}
 
-	@Override
-	public Uri insert(Uri uri, ContentValues values) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean onCreate() {
-
-		if(initModels()) {
-			Log.v(TAG, "Created TripleProvider");
-			return true;
-		} else {
-			Log.e(TAG, "The models couln't be initiated.");
-			return false;
-		}
-	}
-	
-	@Override
-	public void onLowMemory() {
-		super.onLowMemory();
-		Log.v(TAG, "TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
-	}
-
 	/**
 	 * @see android.content.ContentProvider#query(android.net.Uri,
 	 *      java.lang.String[], java.lang.String, java.lang.String[],
 	 *      java.lang.String)
-	 * @param projection An array of property URIs. If empty return all properties.
+	 * @param projection
+	 *            An array of property URIs. If empty return all properties.
 	 * @param selection
-	 *            specify a WHERE clause if you use spaqrql, else it is ignorred
+	 *            if this string is null nothing special happens, if it is not
+	 *            null the projection will be interpreted as complement to all
+	 *            existing properties
 	 * @param selectionArgs
-	 *            some substitutions for the selection, I don't use this
+	 *            unused
 	 * @param sortOrder
-	 *            specify the sort order like in sparql
+	 *            unused
 	 */
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
-		// TODO Auto-generated method stub
 		Log.v(TAG, "Starting query");
 
 		Resource res = null;
 		String[] properties = projection;
+
 		boolean complement;
+
 		if (selection == null) {
 			complement = false;
 		} else {
 			complement = true;
 		}
 
-		// Debugoutput
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
-		
+
 		Log.v(TAG, "path.size() = " + path.size() + ".");
-		if (path.size() > 0) {
-			Log.v(TAG, "path(0/" + path.size() + "): " + path.get(0) + ".");
-		}
-		if (path.size() > 1) {
-			Log.v(TAG, "path(1/" + path.size() + "): " + path.get(1) + ".");
-		}
-		if (path.size() > 2) {
-			Log.v(TAG, "path(2/" + path.size() + "): " + path.get(2) + ".");
+
+		for (int i = 0; i < path.size(); i++) {
+			Log.v(TAG, "path(" + i + "/" + path.size() + "): " + path.get(i)
+					+ ".");
 		}
 
 		int match = uriMatcher.match(uri);
 
-		// Debugoutput
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
-		
+
 		switch (match) {
 		case RESOURCE:
 			if (path.size() > 1) {
@@ -234,6 +206,15 @@ public class TripleProvider extends ContentProvider {
 			if (path.size() > 2) {
 				Log.v(TAG, "getResource: <" + path.get(2) + ">");
 				res = getResource(path.get(2), match);
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+			}
+			break;
+		case BNODE:
+			if (path.size() > 2) {
+				Log.v(TAG, "getBlankNode: <" + path.get(2) + "> from model <" + path.get(1) + ">.");
+				res = getBlankNode(path.get(2), path.get(1), true);
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
@@ -266,255 +247,137 @@ public class TripleProvider extends ContentProvider {
 	}
 
 	@Override
+	public Uri insert(Uri uri, ContentValues values) {
+		throw new UnsupportedOperationException(
+				"The TripleProvider is not capable of inserting Resources, sorry.");
+		// return null;
+	}
+
+	@Override
+	public int delete(Uri uri, String selection, String[] selectionArgs) {
+		throw new UnsupportedOperationException(
+				"The TripleProvider is not capable of deleting Resources, sorry.");
+		// return 0;
+	}
+
+	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("The TripleProvider is not capable of updating Resources, sorry.");
-		//return 0;
+		int match = uriMatcher.match(uri);
+		switch (match) {
+		case UPDATE_ALL:
+			mm.updateResources();
+			return 2;
+		case UPDATE_THIS:
+			ArrayList<String> path = new ArrayList<String>(
+					uri.getPathSegments());
+
+			if (path.size() > 1) {
+				mm.updateResource(path.get(1));
+				return 1;
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				return 0;
+			}
+		default:
+			return 0;
+		}
 	}
 
 	// ---------------------------- private --------------------
 
 	/**
-	 * r - read permission
-	 * w - write permission (means can request to model to import missing data from the web)
-	 * 				cache 	model
-	 * TMP-Mode		 rw		 r-
-	 * SAV-Mode		 r-		 rw
-	 * OFF-Mode		 --		 r- 
+	 * r - read permission w - write permission (means can request to model to
+	 * import missing data from the web) cache model TMP-Mode rw r- SAV-Mode r-
+	 * rw OFF-Mode -- r-
 	 */
-	
+
 	private static final int TMP = RESOURCE_TMP;
 	private static final int SAV = RESOURCE_SAVE;
 	private static final int OFF = RESOURCE_OFFLINE;
 
+	private Resource getBlankNode(String id, String uri, boolean persistant) {
+		boolean inferenced = true;
+		Resource resource = mm.getModel(uri, persistant, inferenced).createResource(new AnonId(id));
+		StmtIterator iterator = resource.listProperties();
+		while (iterator.hasNext()) {
+			String triple = iterator.next().asTriple().toString();
+			Log.v(TAG, "BNode (" + id + ") has triple: " + triple);
+		}
+		return resource;
+	}
+
 	private Resource getResource(String uri, int mode) {
 		switch (mode) {
 		case TMP:
-			return cacheResource(uri);
+			return queryResource(uri, false);
 		case SAV:
-			return importResource(uri);
+			return queryResource(uri, true);
 		case OFF:
-			return queryResource(uri);
+			return queryResource(uri, true);
 		default:
-			return cacheResource(uri);
+			return queryResource(uri, true);
 		}
 	}
 
 	/**
 	 * Read this resource from the model.
-	 * @param uri the URI of the resource you want to get
+	 * 
+	 * @param uri
+	 *            the URI of the resource you want to get
 	 * @return a jena-Resource-Object, or null if this resource is not available
 	 */
-	private Resource queryResource(String uri) {
-		// maybe it is better if this method would query the union of model and
-		// cache, but I don't know. The future will tell me, what's right.
-		return queryResource(uri, model);
-	}
-	
-	private Resource queryResource(String uri, Model model) {
-		// 1. check if resource exists
-		if (resourceExists(uri, model)) {
-			// 2a. get and return resource
-			return model.getResource(uri);
-		} else {
-			// 2b. or null if resource doesn't exist
-			return null;
+	private Resource queryResource(String uri, boolean persistant) {
+		boolean inferenced = true;
+
+		Resource resource = mm.getModel(uri, persistant, inferenced).getResource(uri);
+
+		StmtIterator iterator = resource.listProperties();
+		while (iterator.hasNext()) {
+			String triple = iterator.next().asTriple().toString();
+			Log.v(TAG, "Resource (" + uri + ") has triple: " + triple);
 		}
+		
+		return resource;
 	}
 
-	private Resource importResource(String uri) {
-		// 1. check if resource exists in model
-		if (!resourceExists(uri, model)) {
-			// 2. if not 1, then check if resource exists in cache
-			if (resourceExists(uri, cache)) {
-				// 3a. if 2 import resource from cache to model
-				Resource subj = new ResourceImpl(uri);
-				SimpleSelector selector = new SimpleSelector(subj, (Property) null,
-						(RDFNode) null);
-				
-				model.add(cache.query(selector));
-				model.commit();
-			} else {
-				// 3b. if not 2, then import resource to model from the web (Linked Data)
-				Model tmp = ModelFactory.createDefaultModel();
-				try {
-					tmp.read(uri);
-
-					Resource subj = new ResourceImpl(uri);
-					SimpleSelector selector = new SimpleSelector(subj,
-							(Property) null, (RDFNode) null);
-
-					// on every update of a resource from the web I should add
-					// some
-					// information about the last update, for versioning and
-					// sync
-
-					// Property lastUpdate = cache.createProperty(PROPNAMESPACE,
-					// "lastUpdate");
-					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
-
-					model.add(tmp.query(selector));
-					tmp.close();
-					model.commit();
-				} catch (JenaException e) {
-					Log.v(TAG, "An Exception occured whyle querying uri <" + uri + ">", e);
-				}
-			}
-		} else {
-			// 2b. the resource exists in model, so we can query it
-		}
-
-		// 4. return resource from model
-		return queryResource(uri, model);
-	}
-
-	private Resource cacheResource(String uri) {
-		// 1. check if resource exists in model
-		// 2. if not 1, then check if resource exists in cache
-		// 3. if not 2, then import resource to cache
-		// 4. return resource from cache
-
-		// 1. check if resource exists in model
-		if (!resourceExists(uri, model)) {
-			// 2. if not 1, then check if resource exists in cache
-			if (!resourceExists(uri, cache)) {
-				// 3b. if not 2, then import resource to cache from the web (Linked Data)
-				Model tmp = ModelFactory.createDefaultModel();
-				try {
-					tmp.read(uri);
-
-					Resource subj = new ResourceImpl(uri);
-					SimpleSelector selector = new SimpleSelector(subj,
-							(Property) null, (RDFNode) null);
-
-					// on every update of a resource from the web I should add
-					// some
-					// information about the last update, for versioning and
-					// sync
-
-					// Property lastUpdate = cache.createProperty(PROPNAMESPACE,
-					// "lastUpdate");
-					// tmp.getResource(uri).addProperty(lastUpdate, "heute");
-
-					cache.add(tmp.query(selector));
-					tmp.close();
-				} catch (JenaException e) {
-					Log.v(TAG, "An Exception occured whyle querying uri <" + uri + ">", e);
-				}
-			}
-		} else {
-			// 2b. the resource exists in model, so we can query it
-			return queryResource(uri, model);
-		}
-
-		// 4. return resource from cache
-		return queryResource(uri, cache);
-	}
-	
 	/**
-	 * Check whether a triple with the given uri exists as subject or object in the model
-	 * or not.
+	 * Check whether a triple with the given uri exists as subject or object in
+	 * the model or not.
 	 * 
 	 * @param uri
 	 *            the uri of the subject-resource
 	 * @param model
 	 *            the model in which you want to check for the resource
-	 * @param asObject check also if the resource exists in a triple as object
+	 * @param asObject
+	 *            check also if the resource exists in a triple as object
 	 * @return whether the resource occures as subject in a triple or not
 	 */
 	private boolean resourceExists(String uri, Model model, boolean asObject) {
 
 		Resource res = model.getResource(uri);
-		
-		if (model.contains(res, null, (RDFNode)null)) {
-			Log.v(TAG, "The resource <" + uri + "> does exist as Subject in the given model.");
+
+		if (model.contains(res, null, (RDFNode) null)) {
+			Log.v(TAG, "The resource <" + uri
+					+ "> does exist as Subject in the given model.");
 			return true;
 		} else if (asObject && model.contains(null, null, res)) {
-			Log.v(TAG, "The resource <" + uri + "> does exist as Object in the given model.");
+			Log.v(TAG, "The resource <" + uri
+					+ "> does exist as Object in the given model.");
 			return true;
 		} else {
-			Log.v(TAG, "The resource <" + uri + "> doesn't exist in the given model.");
+			Log.v(TAG, "The resource <" + uri
+					+ "> doesn't exist in the given model.");
 			return false;
 		}
 
-		/*
-		StmtIterator si = res.listProperties();
-
-		if (!si.hasNext()) {
-			Log.v(TAG, "The resource <" + uri + "> has no properties in the given model.");
-			return false;
-		} else {
-			Log.v(TAG, "The resource <" + uri + "> has at leased one property in the given model.");
-			return true;
-		}
-		*/
-
 	}
-	
-	/**
-	 * Check whether a triple with the given uri as subject exists in the model
-	 * or not.
-	 * The asObject parameter is defaulted to false.
-	 * 
-	 * @param uri
-	 *            the uri of the subject-resource
-	 * @param model
-	 *            the model in which you want to check for the resource
-	 * @return whether the resource occures as subject in a triple or not
-	 */
-	private boolean resourceExists(String uri, Model model) {
-		return this.resourceExists(uri, model, false);
-	}
-	
-	private boolean initModels() {
-		String state = Environment.getExternalStorageState();
 
-		String path = "/Android/data/org.aksw.msw/files/models/";
-
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
-		    // We can read and write the media
-			File storage = Environment.getExternalStorageDirectory();
-			storage.getAbsolutePath();
-			if (storage.isDirectory()) {
-				File modelsPath = new File(storage, path);
-				modelsPath.mkdirs();
-				ModelMaker models = ModelFactory.createFileModelMaker(modelsPath.getAbsolutePath());
-				ModelMaker caches = ModelFactory.createMemModelMaker();
-				cache = caches.openModel("cache");
-				model = models.openModel("model");
-				model.begin();
-				
-				model.setNsPrefix("rel", "http://purl.org/vocab/relationship/");
-				model.setNsPrefix("foaf", "http://xmlns.com/foaf/0.1/");
-				model.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-				model.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
-				
-				cache.setNsPrefix("rel", "http://purl.org/vocab/relationship/");
-				cache.setNsPrefix("foaf", "http://xmlns.com/foaf/0.1/");
-				cache.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-				cache.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
-				
-				return true;
-			} else {
-				return false;
-			}
-
-		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-		    // We can only read the media
-			return false;
-		} else {
-		    // Something else is wrong. It may be one of many other states, but all we need
-		    //  to know is we can neither read nor write
-			return false;
-		}
-		
-	}
-	
 	public static String getName(Resource person) {
 		return person.getLocalName();
 	}
-	
+
 	public static String getLable(Resource resource) {
 		return resource.getLocalName();
 	}

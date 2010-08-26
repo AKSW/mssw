@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
     <string name="hello">Hello World!</string>
     <string name="app_name">msw</string>
+    <string name="privatekey_password">Privatekey Password</string>
+    <string name="pref_privatekey_password">Enter the password for your private Key, which is on the SD-Card in \'/Android/org.aksw.msw/files/certs/privatekey.p12\'.</string>
 </resources>
