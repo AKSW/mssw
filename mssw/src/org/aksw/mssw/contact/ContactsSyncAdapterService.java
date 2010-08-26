@@ -198,8 +198,9 @@ public class ContactsSyncAdapterService extends Service {
 						builder = builderList.get(subject);
 
 						try {
-							if (predicat.equals(Constants.PROP_rdfType) && object
-									.startsWith(Constants.DATA_KINDS_PREFIX)) {
+							if (predicat.equals(Constants.PROP_rdfType)
+									&& object
+											.startsWith(Constants.DATA_KINDS_PREFIX)) {
 								Log.v(TAG, "rdf:type = " + object + ".");
 								// this is the place of magic
 								String type = (String) forUri(object, false)
@@ -212,7 +213,7 @@ public class ContactsSyncAdapterService extends Service {
 										ContactsContract.Data.MIMETYPE, type);
 
 							} else if (predicat
-												.startsWith(Constants.DATA_KINDS_PREFIX)) {
+									.startsWith(Constants.DATA_KINDS_PREFIX)) {
 								boolean isResource;
 								if (rc.getString(
 										rc.getColumnIndex("oIsResource"))
@@ -269,9 +270,15 @@ public class ContactsSyncAdapterService extends Service {
 									builder.withValue(column, object);
 								}
 							} else if (predicat.equals(Constants.PROP_rdfType)) {
-								Log.v(TAG, "The given object <" + object + "> is not a valide type. (ignorring this triple)");
+								Log.v(TAG,
+										"The given object <"
+												+ object
+												+ "> is not a valide type. (ignorring this triple)");
 							} else {
-								Log.v(TAG, "The given predicat <" + predicat + "> is not valide. (ignorring this triple)");
+								Log.v(TAG,
+										"The given predicat <"
+												+ predicat
+												+ "> is not valide. (ignorring this triple)");
 							}
 
 						} catch (ClassNotFoundException e) {
@@ -345,64 +352,89 @@ public class ContactsSyncAdapterService extends Service {
 				ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 				HashMap<String, HashMap<String, String>> dataList = new HashMap<String, HashMap<String, String>>();
 
-				// for one value kinds:
-				// should get the current value of a field
-				// compare it to the value from ContactProvider
-				// if different set the ContactProvider value
-
-				// or for multivalue kinds:
-				// get all values of these fields
-				// compare all of these values with all values from
-				// ContactProvider
-				// if one of ContactProvider is missing in Contacts, add it
-				// else do nothing
-
-				/**
-				 * some of the following code is from
-				 * http://developer.android.com
-				 * /reference/android/provider/ContactsContract.RawContacts.html
-				 */
+				HashMap<String, String> data;
 
 				while (rc.moveToNext()) {
 
 					String subject = rc.getString(rc.getColumnIndex("subject"));
-					String predicat = rc.getString(rc.getColumnIndex("predicat"));
+					String predicat = rc.getString(rc
+							.getColumnIndex("predicat"));
 					String object = rc.getString(rc.getColumnIndex("object"));
-					boolean isResource = rc.getString(rc.getColumnIndex("oIsResource")).equals("true");
+					boolean isResource = rc.getString(
+							rc.getColumnIndex("oIsResource")).equals("true");
 
 					if (predicat.equals(Constants.PROP_hasData)) {
 						if (!dataList.containsKey(object)) {
-							dataList.put(object, new HashMap<String,String>());
+							dataList.put(object, new HashMap<String, String>());
 						}
-					} else if (predicat.equals(Constants.PROP_rdfType)){
-						
-					} else {
-						HashMap<String,String> data;
+					} else if (predicat.equals(Constants.PROP_rdfType)
+							&& object.startsWith(Constants.DATA_KINDS_PREFIX)) {
+						// check mimetype
+						if (!dataList.containsKey(object)) {
+							dataList.put(object, new HashMap<String, String>());
+						}
+
+						Log.v(TAG, "rdf:type = " + object + ".");
+						// this is the place of magic
+						String type = (String) forUri(object, false).getField(
+								"CONTENT_ITEM_TYPE").get(null);
+
+						data = dataList.get(object);
+						data.put(Entity.MIMETYPE, type);
+						dataList.put(object, data);
+					} else if (predicat.startsWith(Constants.DATA_KINDS_PREFIX)) {
 
 						String fieldName = extractFieldName(predicat);
 						String column = (String) forUri(predicat, true)
 								.getField(fieldName).get(null);
-						
+
 						if (isResource
 								&& object
-								.startsWith(Constants.DATA_KINDS_PREFIX)) {
-						if (dataList.containsKey(object)) {
-							data = dataList.get(object);
-							
-							data.put(column, object);
-						} else {
-							data = new HashMap<String, String>();
+										.startsWith(Constants.DATA_KINDS_PREFIX)) {
+
+							if (dataList.containsKey(object)) {
+								data = dataList.get(object);
+							} else {
+								data = new HashMap<String, String>();
+							}
+
+							// this is the place of magic
+							fieldName = extractFieldName(object);
+							Field valueField = forUri(object, true).getField(
+									fieldName);
+
+							// Type is int
+							// Protocol is string
+							if (valueField.getType().getName()
+									.equalsIgnoreCase("int")) {
+								int value = (Integer) valueField.get(null);
+
+								data.put(column, Integer.toString(value));
+							} else if (valueField.getType().getName()
+									.equalsIgnoreCase("java.lang.String")) {
+								object = (java.lang.String) valueField
+										.get(null);
+
+								data.put(column, object);
+							} else {
+								Log.e(TAG,
+										"I don't know the Type of the field: '"
+												+ object + "'.");
+							}
+
 							dataList.put(object, data);
-						}
 						} else {
 							if (dataList.containsKey(object)) {
-								data = dataList.get(column);
+								data = dataList.get(object);
 							} else {
 								data = new HashMap<String, String>();
 							}
 							data.put(column, object);
 							dataList.put(object, data);
 						}
+					} else {
+						Log.v(TAG, "Unknown predicat <" + predicat
+								+ "> or unknown object <" + object + ">.");
 					}
 
 				}
@@ -413,8 +445,24 @@ public class ContactsSyncAdapterService extends Service {
 							.getColumnIndex(RawContacts.SOURCE_ID));
 
 					if (!cc.isNull(cc.getColumnIndex(Entity.DATA_ID))) {
-						String mimeType = cc.getString(cc
-								.getColumnIndex(Entity.MIMETYPE));
+
+						// for one value kinds:
+						// should get the current value of a field
+						// compare it to the value from ContactProvider
+						// if different set the ContactProvider value
+
+						// or for multivalue kinds:
+						// get all values of these fields
+						// compare all of these values with all values from
+						// ContactProvider
+						// if one of ContactProvider is missing in Contacts, add
+						// it
+						// else do nothing
+
+						String mimeType = cc.getString(cc.getColumnIndex(Entity.MIMETYPE));
+						
+
+						// search dataList for entries, which could fit
 
 						if (mimeType
 								.equals(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)) {
