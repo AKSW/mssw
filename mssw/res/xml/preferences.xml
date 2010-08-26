@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 	<PreferenceCategory android:title="@string/your_webid">
-		<EditTextPreference android:key="me" android:title="@string/your_webid"
-			android:defaultValue="http://people.comiles.eu/example"
+		<EditTextPreference android:key="me"
+			android:title="@string/your_webid" android:defaultValue="http://people.comiles.eu/example"
 			android:summary="@string/pref_your_webid_desc">
 		</EditTextPreference>
 	</PreferenceCategory>
-	<PreferenceCategory android:title="@string/app_name">
-		<Preference android:key="sync" android:title="@string/sync"
-			android:summary="@string/pref_update_desc">
-		</Preference>
+	<PreferenceCategory android:title="@string/triplestore">
+		<PreferenceScreen android:title="@string/triplestore_msw"
+			android:summary="@string/pref_triplestore_msw">
+			<intent android:action="org.aksw.msw.PREFERENCE" />
+		</PreferenceScreen>
 	</PreferenceCategory>
-	<PreferenceScreen android:title="@string/triplestore"
-			android:summary="@string/pref_triplestore">
-		<intent android:action="org.aksw.msw.PREFERENCE" />
-	</PreferenceScreen>
 </PreferenceScreen>

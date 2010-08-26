@@ -187,12 +187,13 @@ public class ContactsSyncAdapterService extends Service {
 					}
 				}
 
-				// reset cursor before first element, as if it would be new 
+				// reset cursor before first element, as if it would be new
 				rc.moveToPosition(-1);
 
 				Log.i(TAG, "== Initializing propertys of hasData objects. ==");
 				/**
-				 * get the properties of the nodes, which are the in the range of a hasData property
+				 * get the properties of the nodes, which are the in the range
+				 * of a hasData property
 				 */
 				while (rc.moveToNext()) {
 					predicat = rc.getString(rc.getColumnIndex("predicat"));
@@ -238,7 +239,7 @@ public class ContactsSyncAdapterService extends Service {
 								String column = (String) forUri(predicat, true)
 										.getField(fieldName).get(null);
 
-								if (isResource) {
+								if (isResource && object.startsWith(Constants.DATA_KINDS_PREFIX)) {
 									// this is the place of magic
 									fieldName = extractFieldName(object);
 									Field valueField = forUri(object, true)
@@ -501,12 +502,17 @@ public class ContactsSyncAdapterService extends Service {
 
 		ArrayList<String> path = new ArrayList<String>(uri_.getPathSegments());
 
-		String fullFieldName = path.get(path.size() - 1);
-		String fieldName = fullFieldName.substring(fullFieldName
-				.lastIndexOf(".") + 1);
-		// Log.v(TAG, "Fieldname ist: '" + fieldName + "'.");
+		if (path.size() > 0) {
+			String fullFieldName = path.get(path.size() - 1);
+			String fieldName = fullFieldName.substring(fullFieldName
+					.lastIndexOf(".") + 1);
+			// Log.v(TAG, "Fieldname ist: '" + fieldName + "'.");
+			return fieldName;
+		} else {
+			Log.v(TAG, "Couldn't extract fieldname  from uri <" + uri + ">.");
+			return null;
+		}
 
-		return fieldName;
 	}
 
 	private static void testMethod() {

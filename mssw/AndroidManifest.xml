@@ -9,7 +9,14 @@
 			</intent-filter>
 		</activity>
 		<activity android:name=".MsswPreferenceActivity"
-			android:label="MSSW Preferences" />
+			android:label="MSSW Preferences">
+
+			<intent-filter>
+				<action android:name="org.aksw.mssw.PREFERENCE" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.PREFERENCE" />
+			</intent-filter>
+		</activity>
 		<activity android:name=".browser.BrowserMeCard"
 			android:label="MSSW Browser-MeCard" android:theme="@android:style/Theme.NoTitleBar" />
 		<activity android:name=".browser.BrowserContacts"
@@ -24,11 +31,13 @@
 			<meta-data android:name="android.accounts.AccountAuthenticator"
 				android:resource="@xml/authenticator" />
 		</service>
-		<service android:name=".contact.ContactsSyncAdapterService"	android:exported="true">
+		<service android:name=".contact.ContactsSyncAdapterService"
+			android:exported="true">
 			<intent-filter>
 				<action android:name="android.content.SyncAdapter" />
 			</intent-filter>
-			<meta-data android:name="android.content.SyncAdapter" android:resource="@xml/sync_contacts" />
+			<meta-data android:name="android.content.SyncAdapter"
+				android:resource="@xml/sync_contacts" />
 		</service>
 		<provider android:authorities="org.aksw.mssw.content.foafprovider"
 			android:name=".content.FoafProvider" />
