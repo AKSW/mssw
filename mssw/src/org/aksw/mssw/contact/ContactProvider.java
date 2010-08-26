@@ -37,9 +37,6 @@ public class ContactProvider extends ContentProvider {
 	private static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
 			+ TRIPLE_AUTHORITY);
 
-	public static final String PROP_hasData = "http://ns.aksw.org/Android/hasData";
-	public static final String PROP_rdfType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
-
 	/**
 	 * Static values which represent the different pathes of the query uris
 	 */
@@ -179,7 +176,7 @@ public class ContactProvider extends ContentProvider {
 			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
 					+ URLEncoder.encode(uri, Constants.ENC));
 
-			String[] projection = new String[] { PROP_hasData };
+			String[] projection = new String[] { Constants.PROP_hasData };
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
@@ -207,7 +204,7 @@ public class ContactProvider extends ContentProvider {
 							oIsBlankNode = true;
 						}
 						
-						cc.addTriple(uri, PROP_hasData, object, true,
+						cc.addTriple(uri, Constants.PROP_hasData, object, true,
 								oIsBlankNode);
 
 						subject = object;
