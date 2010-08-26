@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.aksw.mssw;
+package org.aksw.msw;
 
 import java.util.ArrayList;
 
@@ -21,7 +21,7 @@ public class ResourceCursor extends AbstractCursor {
 
 	private static final String TAG = "ResourceCursor";
 
-	private ArrayList<Statement> properties[];
+	private ArrayList<Statement> properties;
 	private Resource subject;
 	private Resource[] subjects;
 
@@ -30,7 +30,7 @@ public class ResourceCursor extends AbstractCursor {
 		
 		// the cursor iterates the properties of a resource at the moment.
 		// maybe it should hold a list of resources in the future.
-		this.properties[0] = new ArrayList<Statement>(subject.listProperties()
+		this.properties = new ArrayList<Statement>(subject.listProperties()
 				.toList());
 	}
 	

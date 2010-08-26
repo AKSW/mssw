@@ -7,7 +7,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
-
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -264,8 +263,10 @@ public class FoafProvider extends ContentProvider {
 			"http://purl.org/vocab/relationship/wouldLikeToKnow" };
 
 	private String[] nameProps = { "http://xmlns.com/foaf/0.1/name",
-			"http://xmlns.com/foaf/0.1/givenName", "http://xmlns.com/foaf/0.1/familyName", "http://xmlns.com/foaf/0.1/nick" };
-	
+			"http://xmlns.com/foaf/0.1/givenName",
+			"http://xmlns.com/foaf/0.1/familyName",
+			"http://xmlns.com/foaf/0.1/nick" };
+
 	private String[] pictureProps = { "http://xmlns.com/foaf/0.1/depiction" };
 
 	private Cursor getMe(String[] projection) {
@@ -287,8 +288,8 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
-			Cursor rc = getContentResolver().query(contentUri, projection, null, null,
-					null);
+			Cursor rc = getContentResolver().query(contentUri, projection,
+					null, null, null);
 
 			return rc;
 		} catch (UnsupportedEncodingException e) {
@@ -322,8 +323,8 @@ public class FoafProvider extends ContentProvider {
 				projection = relations;
 				selection = "complement";
 			}
-			Cursor rc = getContentResolver().query(contentUri, projection, selection, null,
-					null);
+			Cursor rc = getContentResolver().query(contentUri, projection,
+					selection, null, null);
 
 			return rc;
 		} catch (UnsupportedEncodingException e) {
@@ -348,46 +349,49 @@ public class FoafProvider extends ContentProvider {
 			if (projection != null) {
 				Log.i(TAG, "projection not supported for getName()");
 			}
-			Cursor rc = getContentResolver().query(contentUri, nameProps, null, null,
-					null);
-			
-			rc.moveToFirst();
-			
-			String[] names = new String[nameProps.length];
-			String predicat = "";
-			String object = "";
-			String subject = rc.getString(rc.getColumnIndex("subject"));
-			
-			for(rc.moveToFirst(); !rc.isLast(); rc.moveToNext()) {
-				predicat = rc.getString(rc.getColumnIndex("predicat"));
-				object = rc.getString(rc.getColumnIndex("object"));
-				for (int i = 0; i < nameProps.length; i++) { 
-					if (nameProps[i].compareToIgnoreCase(predicat) == 0) {
-						names[i] = object;
-					}
-				}
-			}
-			
-			for (int i = 0; i < names.length; i++) { 
-				if (names[i].length() > 0) {
-					object = names[i];
-					predicat = nameProps[i];
-					if(i == 1) {
-						object = object + " " + names[i+1];
-					}
-					break;
-				}
-			}
-			
-			Cursor out = new PropertyCursor(subject, predicat, object);
+			Cursor rc = getContentResolver().query(contentUri, nameProps, null,
+					null, null);
+			if (rc != null) {
+				rc.moveToFirst();
 
-			return out;
+				String[] names = new String[nameProps.length];
+				String predicat = "";
+				String object = "";
+				String subject = rc.getString(rc.getColumnIndex("subject"));
+
+				for (rc.moveToFirst(); !rc.isLast(); rc.moveToNext()) {
+					predicat = rc.getString(rc.getColumnIndex("predicat"));
+					object = rc.getString(rc.getColumnIndex("object"));
+					for (int i = 0; i < nameProps.length; i++) {
+						if (nameProps[i].compareToIgnoreCase(predicat) == 0) {
+							names[i] = object;
+						}
+					}
+				}
+
+				for (int i = 0; i < names.length; i++) {
+					if (names[i] != null && names[i].length() > 0) {
+						object = names[i];
+						predicat = nameProps[i];
+						if (i == 1) {
+							object = object + " " + names[i + 1];
+						}
+						break;
+					}
+				}
+
+				Cursor out = new PropertyCursor(subject, predicat, object);
+				return out;
+			} else {
+				Log.v(TAG, "Resourcecursor was empty, returning 'null'");
+				return null;
+			}
+
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
 			return null;
 		}
 	}
-	
 
 	private Cursor getPicture(String uri, String[] projection) {
 		Log.v(TAG, "getPicture: <" + uri + ">");
@@ -401,12 +405,12 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
-			
+
 			if (projection != null) {
 				Log.i(TAG, "projection not supported for getPicture()");
 			}
-			Cursor rc = getContentResolver().query(contentUri, pictureProps, null, null,
-					null);
+			Cursor rc = getContentResolver().query(contentUri, pictureProps,
+					null, null, null);
 
 			return rc;
 		} catch (UnsupportedEncodingException e) {
@@ -414,7 +418,7 @@ public class FoafProvider extends ContentProvider {
 			return null;
 		}
 	}
-	
+
 	private Cursor getFriends(String[] projection) {
 		if (me == null) {
 			me = getConfiguration().getString("me", null);
@@ -434,12 +438,12 @@ public class FoafProvider extends ContentProvider {
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
-			
+
 			if (projection == null) {
 				projection = relations;
 			}
-			Cursor rc = getContentResolver().query(contentUri, relations, null, null,
-					null);
+			Cursor rc = getContentResolver().query(contentUri, relations, null,
+					null, null);
 
 			return rc;
 		} catch (UnsupportedEncodingException e) {
@@ -447,7 +451,7 @@ public class FoafProvider extends ContentProvider {
 			return null;
 		}
 	}
-	
+
 	/*---- private ----*/
 
 	private SharedPreferences getConfiguration() {

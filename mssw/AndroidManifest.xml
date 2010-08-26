@@ -32,6 +32,8 @@
 		</service>
 		<provider android:authorities="org.aksw.mssw.content.foafprovider"
 			android:name=".content.FoafProvider" />
+		<provider android:authorities="org.aksw.mssw.contact.contactprovider"
+			android:name=".contact.ContactProvider" />
 	</application>
 
 	<uses-sdk android:minSdkVersion="7"></uses-sdk>

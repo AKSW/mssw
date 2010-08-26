@@ -1,0 +1,10 @@
+# A Mapping of the FOAF-Covabulary to the Datastructure of the Android addressbook
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix android: <http://ns.aksw.org/Android/>.
+@prefix acontacts: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.>.
+@prefix name: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.StructuredName.>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+
+[name: (?s foaf:name ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:StructuredName), (?d name:DISPLAY_NAME ?o)]
+#[name: (?s foaf:name ?o), makeInstance(?s, android:hasData, acontacts:StructuredName, ?d) ->  (?d name:DISPLAY_NAME ?o)]
+# http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME
