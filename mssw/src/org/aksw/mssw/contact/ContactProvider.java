@@ -215,6 +215,7 @@ public class ContactProvider extends ContentProvider {
 						if (oIsBlankNode) {
 							contentUri = Uri.parse(TRIPLE_CONTENT_URI
 									+ "/bnode/"
+									+ URLEncoder.encode(uri, Constants.ENC) + "/"
 									+ URLEncoder.encode(subject, Constants.ENC));
 						} else {
 							contentUri = Uri.parse(TRIPLE_CONTENT_URI

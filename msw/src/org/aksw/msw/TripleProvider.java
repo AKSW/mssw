@@ -83,7 +83,7 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "class/", CLASS_OVERVIEW);
 		uriMatcher.addURI(AUTHORITY, "type/*", TYPE);
 		uriMatcher.addURI(AUTHORITY, "type/", TYPE_OVERVIEW);
-		uriMatcher.addURI(AUTHORITY, "bnode/*", BNODE);
+		uriMatcher.addURI(AUTHORITY, "bnode/*/*", BNODE);
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
 		uriMatcher.addURI(AUTHORITY, "update/*", UPDATE_THIS);
 		uriMatcher.addURI(AUTHORITY, "update/", UPDATE_ALL);
@@ -180,14 +180,10 @@ public class TripleProvider extends ContentProvider {
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
 
 		Log.v(TAG, "path.size() = " + path.size() + ".");
-		if (path.size() > 0) {
-			Log.v(TAG, "path(0/" + path.size() + "): " + path.get(0) + ".");
-		}
-		if (path.size() > 1) {
-			Log.v(TAG, "path(1/" + path.size() + "): " + path.get(1) + ".");
-		}
-		if (path.size() > 2) {
-			Log.v(TAG, "path(2/" + path.size() + "): " + path.get(2) + ".");
+
+		for (int i = 0; i < path.size(); i++) {
+			Log.v(TAG, "path(" + i + "/" + path.size() + "): " + path.get(i)
+					+ ".");
 		}
 
 		int match = uriMatcher.match(uri);
@@ -216,9 +212,9 @@ public class TripleProvider extends ContentProvider {
 			}
 			break;
 		case BNODE:
-			if (path.size() > 1) {
-				Log.v(TAG, "getBlankNode: <" + path.get(1) + ">");
-				res = getBlankNode(path.get(1));
+			if (path.size() > 2) {
+				Log.v(TAG, "getBlankNode: <" + path.get(2) + "> from model <" + path.get(1) + ">.");
+				res = getBlankNode(path.get(2), path.get(1), true);
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
@@ -301,8 +297,9 @@ public class TripleProvider extends ContentProvider {
 	private static final int SAV = RESOURCE_SAVE;
 	private static final int OFF = RESOURCE_OFFLINE;
 
-	private Resource getBlankNode(String id) {
-		Resource resource = mm.getModel().createResource(new AnonId(id));
+	private Resource getBlankNode(String id, String uri, boolean persistant) {
+		boolean inferenced = true;
+		Resource resource = mm.getModel(uri, persistant, inferenced).createResource(new AnonId(id));
 		StmtIterator iterator = resource.listProperties();
 		while (iterator.hasNext()) {
 			String triple = iterator.next().asTriple().toString();
