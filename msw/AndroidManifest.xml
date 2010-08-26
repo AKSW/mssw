@@ -6,6 +6,8 @@
 			android:label="MSW Preferences">
 			<intent-filter>
 				<action android:name="org.aksw.msw.PREFERENCE" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.PREFERENCE" />
 			</intent-filter>
 		</activity>
 		<provider android:authorities="org.aksw.msw.tripleprovider"

@@ -153,28 +153,30 @@ public class TripleProvider extends ContentProvider {
 	 * @param projection
 	 *            An array of property URIs. If empty return all properties.
 	 * @param selection
-	 *            specify a WHERE clause if you use spaqrql, else it is ignorred
+	 *            if this string is null nothing special happens, if it is not
+	 *            null the projection will be interpreted as complement to all
+	 *            existing properties
 	 * @param selectionArgs
-	 *            some substitutions for the selection, I don't use this
+	 *            unused
 	 * @param sortOrder
-	 *            specify the sort order like in sparql
+	 *            unused
 	 */
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
-		// TODO Auto-generated method stub
 		Log.v(TAG, "Starting query");
 
 		Resource res = null;
 		String[] properties = projection;
+
 		boolean complement;
+
 		if (selection == null) {
 			complement = false;
 		} else {
 			complement = true;
 		}
 
-		// Debugoutput
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
 
 		Log.v(TAG, "path.size() = " + path.size() + ".");
@@ -190,7 +192,6 @@ public class TripleProvider extends ContentProvider {
 
 		int match = uriMatcher.match(uri);
 
-		// Debugoutput
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
 
 		switch (match) {
@@ -251,13 +252,13 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException(
+				"The TripleProvider is not capable of inserting Resources, sorry.");
+		// return null;
 	}
 
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
-		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException(
 				"The TripleProvider is not capable of deleting Resources, sorry.");
 		// return 0;
@@ -272,7 +273,8 @@ public class TripleProvider extends ContentProvider {
 			mm.updateResources();
 			return 2;
 		case UPDATE_THIS:
-			ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
+			ArrayList<String> path = new ArrayList<String>(
+					uri.getPathSegments());
 
 			if (path.size() > 1) {
 				mm.updateResource(path.get(1));
@@ -330,22 +332,17 @@ public class TripleProvider extends ContentProvider {
 	 * @return a jena-Resource-Object, or null if this resource is not available
 	 */
 	private Resource queryResource(String uri, boolean persistant) {
-		// maybe it is better if this method would query the union of model and
-		// cache, but I don't know. The future will tell me, what's right.
 		boolean inferenced = true;
-		return queryResource(uri, mm.getModel(uri, persistant, inferenced));
-	}
 
-	private Resource queryResource(String uri, Model model) {
-		// 1. check if resource exists
-		if (resourceExists(uri, model)) {
-			// FoafMapper fm = new FoafMapper(getContext());
-			// 2a. get and return resource
-			return model.getResource(uri);
-		} else {
-			// 2b. or null if resource doesn't exist
-			return null;
+		Resource resource = mm.getModel(uri, persistant, inferenced).getResource(uri);
+
+		StmtIterator iterator = resource.listProperties();
+		while (iterator.hasNext()) {
+			String triple = iterator.next().asTriple().toString();
+			Log.v(TAG, "Resource (" + uri + ") has triple: " + triple);
 		}
+		
+		return resource;
 	}
 
 	/**
@@ -378,20 +375,6 @@ public class TripleProvider extends ContentProvider {
 			return false;
 		}
 
-	}
-
-	/**
-	 * Check whether a triple with the given uri as subject exists in the model
-	 * or not. The asObject parameter is defaulted to false.
-	 * 
-	 * @param uri
-	 *            the uri of the subject-resource
-	 * @param model
-	 *            the model in which you want to check for the resource
-	 * @return whether the resource occures as subject in a triple or not
-	 */
-	private boolean resourceExists(String uri, Model model) {
-		return resourceExists(uri, model, false);
 	}
 
 	public static String getName(Resource person) {

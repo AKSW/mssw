@@ -136,7 +136,7 @@ public class ModelManager {
 			}
 
 			model.setNsPrefixes(namespaces);
-			
+
 			if (modelExists(uri, "local")) {
 				model.add(modelMakers.get("local").openModel(uri));
 			}
@@ -144,7 +144,7 @@ public class ModelManager {
 			// add the according inference model
 			if (inferenced) {
 				Model infModel;
-				if (modelExists(uri, "inf")) {
+				if (modelExists(uri, "inf") && !modelMakers.get("inf").openModel(uri).isEmpty()) {
 					infModel = modelMakers.get("inf").openModel(uri);
 				} else {
 					infModel = createModel(uri, "inf");
@@ -152,7 +152,7 @@ public class ModelManager {
 						if (infModel.supportsTransactions()) {
 							infModel.begin();
 						}
-						infModel = fm.map(model);
+						infModel.add(fm.map(model));
 						if (infModel.supportsTransactions()) {
 							infModel.commit();
 						}
@@ -163,7 +163,7 @@ public class ModelManager {
 						}
 					}
 				}
-				model.add(infModel);				
+				model.add(infModel);
 			}
 		} else if (uri == null) {
 			Log.v(TAG,
@@ -196,10 +196,10 @@ public class ModelManager {
 						model.begin();
 					}
 					model.removeAll();
-					readSSL(modelName, model);
 					if (model.supportsTransactions()) {
 						model.commit();
 					}
+					readSSL(modelName, model);
 				} catch (JenaException e) {
 					Log.e(TAG, "Exception on updating model. (rollback)", e);
 					if (model.supportsTransactions()) {
@@ -207,7 +207,7 @@ public class ModelManager {
 					}
 				}
 				model.close();
-				
+
 				// remove the according inference model
 				if (modelExists(modelName, "inf")) {
 					model = modelMakers.get("inf").openModel(modelName);
@@ -308,6 +308,9 @@ public class ModelManager {
 			} else {
 				tmp.read(inputstream, uri);
 			}
+		} catch (DoesNotExistException e) {
+			Log.e(TAG, "Could not get <" + uri + "> into temp model,"
+					+ "check the existence with your webbrowser.", e);
 		} catch (JenaException e) {
 			Log.e(TAG, "Error on reading <" + uri + "> into temp model.", e);
 		}
@@ -319,7 +322,7 @@ public class ModelManager {
 
 		try {
 			if (model.supportsTransactions()) {
-				//model.abort();
+				// model.abort();
 				model.begin();
 			}
 			model.add(tmp.query(selector));
