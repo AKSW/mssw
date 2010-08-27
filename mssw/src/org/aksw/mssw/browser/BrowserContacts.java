@@ -3,6 +3,7 @@ package org.aksw.mssw.browser;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import org.aksw.mssw.Constants;
 import org.aksw.mssw.MsswPreferenceActivity;
 import org.aksw.mssw.R;
 
@@ -30,8 +31,6 @@ public class BrowserContacts extends ListActivity {
 	private static final Uri CONTENT_URI = Uri.parse("content://"
 			+ CONTENT_AUTHORITY);
 
-	private static final String DEFAULT_ME = "http://people.comiles.eu/example";
-
 	/**
 	 * should be replaced by something saved in the Application Context to use it also in MeCard
 	 * @deprecated
@@ -51,7 +50,7 @@ public class BrowserContacts extends ListActivity {
 		if (selectedWebID == null) {
 			SharedPreferences sharedPreferences = PreferenceManager
 					.getDefaultSharedPreferences(getApplicationContext());
-			selectedWebID = sharedPreferences.getString("me", DEFAULT_ME);
+			selectedWebID = sharedPreferences.getString("me", Constants.EXAMPLE_webId);
 		}
 
 		try {

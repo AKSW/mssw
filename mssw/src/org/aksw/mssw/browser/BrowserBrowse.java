@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
+import org.aksw.mssw.Constants;
 import org.aksw.mssw.MsswPreferenceActivity;
 import org.aksw.mssw.R;
 
@@ -59,8 +60,8 @@ public class BrowserBrowse extends Activity {
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		
 		properties.setAdapter(aa);
-		status.setText("Activity ist erstmal da, soweit gut. Die Liste fehlt aber immernoch, das ist sehr doof und ich weiß nciht, wass ich machen soll.");
-		uriInput.setText(sharedPreferences.getString("me", "noPref"));
+		status.setText("Activity ist erstmal da, soweit gut. Die Liste fehlt aber immernoch, das ist sehr doof und ich weiß nicht, wass ich machen soll.");
+		uriInput.setText(sharedPreferences.getString("me", Constants.EXAMPLE_webId));
 
 		this.loadButton = (Button) this.findViewById(R.id.Load);
 

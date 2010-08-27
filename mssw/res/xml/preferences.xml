@@ -2,7 +2,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 	<PreferenceCategory android:title="@string/your_webid">
 		<EditTextPreference android:key="me"
-			android:title="@string/your_webid" android:defaultValue="http://people.comiles.eu/example"
+			android:title="@string/your_webid" android:defaultValue="@string/example_webid"
 			android:summary="@string/pref_your_webid_desc">
 		</EditTextPreference>
 	</PreferenceCategory>
