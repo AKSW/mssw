@@ -66,18 +66,15 @@ public final class R {
         public static final int no_contacts=0x7f050019;
         public static final int no_result=0x7f05001a;
         public static final int phone=0x7f050012;
-        public static final int pref_triplestore=0x7f050016;
-        public static final int pref_update_desc=0x7f050018;
-        public static final int pref_your_webid_desc=0x7f050017;
+        public static final int pref_triplestore_msw=0x7f050017;
+        public static final int pref_your_webid_desc=0x7f050018;
         public static final int preferences=0x7f050008;
         public static final int search=0x7f05000c;
         public static final int sex=0x7f050014;
         public static final int sync=0x7f05000d;
-        public static final int syncing_toast=0x7f05001b;
-        public static final int syncing_toast_failed=0x7f05001d;
-        public static final int syncing_toast_success=0x7f05001c;
         public static final int town=0x7f050013;
         public static final int triplestore=0x7f050015;
+        public static final int triplestore_msw=0x7f050016;
         public static final int your_webid=0x7f050003;
     }
     public static final class xml {
