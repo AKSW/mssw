@@ -1,6 +1,9 @@
 package org.aksw.msw;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -11,9 +14,9 @@ import android.util.Log;
 
 import com.hp.hpl.jena.rdf.model.AnonId;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.shared.JenaException;
 
 /**
  * The triple Provider is a simple Android ContentProvider, which stores and
@@ -56,20 +59,14 @@ public class TripleProvider extends ContentProvider {
 	private static final int RESOURCE_SAVE = 11;
 	private static final int RESOURCE_TMP = 12;
 	private static final int RESOURCE_OFFLINE = 13;
-	private static final int RESOURCE_INV = 15;
+	private static final int RESOURCE_ADD_DATA = 14;
 
-	private static final int CLASS = 20;
-	private static final int CLASS_OVERVIEW = 21;
+	private static final int BNODE = 20;
 
-	private static final int TYPE = 30;
-	private static final int TYPE_OVERVIEW = 31;
+	private static final int SPARQL = 40;
 
-	private static final int BNODE = 40;
-
-	private static final int SPARQL = 50;
-
-	private static final int UPDATE_ALL = 60;
-	private static final int UPDATE_THIS = 61;
+	private static final int UPDATE_ALL = 50;
+	private static final int UPDATE_THIS = 51;
 
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
@@ -77,12 +74,8 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "resource/tmp/*", RESOURCE_TMP);
 		uriMatcher.addURI(AUTHORITY, "resource/save/*", RESOURCE_SAVE);
 		uriMatcher.addURI(AUTHORITY, "resource/offline/*", RESOURCE_OFFLINE);
-		uriMatcher.addURI(AUTHORITY, "resource/inverse/*", RESOURCE_INV);
+		uriMatcher.addURI(AUTHORITY, "resource/addData/*", RESOURCE_ADD_DATA);
 		uriMatcher.addURI(AUTHORITY, "resource/*", RESOURCE);
-		uriMatcher.addURI(AUTHORITY, "class/*", CLASS);
-		uriMatcher.addURI(AUTHORITY, "class/", CLASS_OVERVIEW);
-		uriMatcher.addURI(AUTHORITY, "type/*", TYPE);
-		uriMatcher.addURI(AUTHORITY, "type/", TYPE_OVERVIEW);
 		uriMatcher.addURI(AUTHORITY, "bnode/*/*", BNODE);
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
 		uriMatcher.addURI(AUTHORITY, "update/*", UPDATE_THIS);
@@ -125,13 +118,8 @@ public class TripleProvider extends ContentProvider {
 		case RESOURCE_TMP:
 		case RESOURCE_SAVE:
 		case RESOURCE_OFFLINE:
-		case CLASS:
-		case TYPE:
 			return mimeTypeResItm;
 		case WORLD:
-		case RESOURCE_INV:
-		case CLASS_OVERVIEW:
-		case TYPE_OVERVIEW:
 			return mimeTypeResDir;
 		case SPARQL:
 			/**
@@ -213,7 +201,8 @@ public class TripleProvider extends ContentProvider {
 			break;
 		case BNODE:
 			if (path.size() > 2) {
-				Log.v(TAG, "getBlankNode: <" + path.get(2) + "> from model <" + path.get(1) + ">.");
+				Log.v(TAG, "getBlankNode: <" + path.get(2) + "> from model <"
+						+ path.get(1) + ">.");
 				res = getBlankNode(path.get(2), path.get(1), true);
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
@@ -224,11 +213,6 @@ public class TripleProvider extends ContentProvider {
 		 * The following cases are not implemented at the moment
 		 */
 		case WORLD:
-		case RESOURCE_INV:
-		case CLASS:
-		case CLASS_OVERVIEW:
-		case TYPE:
-		case TYPE_OVERVIEW:
 		case SPARQL:
 		default:
 			Log.v(TAG, "Return null because unimplemented URI was queried: ("
@@ -263,18 +247,28 @@ public class TripleProvider extends ContentProvider {
 	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
+
+		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
+
 		int match = uriMatcher.match(uri);
+
 		switch (match) {
 		case UPDATE_ALL:
 			mm.updateResources();
 			return 2;
 		case UPDATE_THIS:
-			ArrayList<String> path = new ArrayList<String>(
-					uri.getPathSegments());
 
 			if (path.size() > 1) {
 				mm.updateResource(path.get(1));
 				return 1;
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				return 0;
+			}
+		case RESOURCE_ADD_DATA:
+			if (path.size() > 2) {
+				return addData(path.get(2), values);
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
@@ -299,14 +293,14 @@ public class TripleProvider extends ContentProvider {
 
 	private Resource getBlankNode(String id, String uri, boolean persistant) {
 		boolean inferenced = true;
-		Resource resource = mm.getModel(uri, persistant, inferenced).createResource(new AnonId(id));
-/*
-		StmtIterator iterator = resource.listProperties();
-		while (iterator.hasNext()) {
-			String triple = iterator.next().asTriple().toString();
-			Log.v(TAG, "BNode (" + id + ") has triple: " + triple);
-		}
-		*/
+		Resource resource = mm.getModel(uri, persistant, inferenced)
+				.createResource(new AnonId(id));
+		/*
+		 * StmtIterator iterator = resource.listProperties(); while
+		 * (iterator.hasNext()) { String triple =
+		 * iterator.next().asTriple().toString(); Log.v(TAG, "BNode (" + id +
+		 * ") has triple: " + triple); }
+		 */
 		return resource;
 	}
 
@@ -333,47 +327,61 @@ public class TripleProvider extends ContentProvider {
 	private Resource queryResource(String uri, boolean persistant) {
 		boolean inferenced = true;
 
-		Resource resource = mm.getModel(uri, persistant, inferenced).getResource(uri);
-/*
-		StmtIterator iterator = resource.listProperties();
-		while (iterator.hasNext()) {
-			String triple = iterator.next().asTriple().toString();
-			Log.v(TAG, "Resource (" + uri + ") has triple: " + triple);
-		}
-	*/	
+		Resource resource = mm.getModel(uri, persistant, inferenced)
+				.getResource(uri);
+		/*
+		 * StmtIterator iterator = resource.listProperties(); while
+		 * (iterator.hasNext()) { String triple =
+		 * iterator.next().asTriple().toString(); Log.v(TAG, "Resource (" + uri
+		 * + ") has triple: " + triple); }
+		 */
 		return resource;
 	}
 
-	/**
-	 * Check whether a triple with the given uri exists as subject or object in
-	 * the model or not.
-	 * 
-	 * @param uri
-	 *            the uri of the subject-resource
-	 * @param model
-	 *            the model in which you want to check for the resource
-	 * @param asObject
-	 *            check also if the resource exists in a triple as object
-	 * @return whether the resource occures as subject in a triple or not
-	 */
-	private boolean resourceExists(String uri, Model model, boolean asObject) {
+	private int addData(String uri, ContentValues values) {
+		// TODO implement
+		Set<Entry<String, Object>> data = values.valueSet();
+		Model model = mm.getModel(uri, "local");
+		try {
+			String key;
+			String value;
+			String propUri;
+			Property property;
+			
+			if (model.supportsTransactions()) {
+				model.begin();
+			}
+			Resource resource = model.getResource(uri);
+			Property hasData = model.getProperty(Constants.PROP_hasData);
+			Resource bNode = model.createResource();
+			Iterator<Entry<String, Object>> dataIterator = data.iterator();
 
-		Resource res = model.getResource(uri);
+			while (dataIterator.hasNext()) {
+				Entry<String, Object> dataEntry = dataIterator.next();
+				key = dataEntry.getKey();
 
-		if (model.contains(res, null, (RDFNode) null)) {
-			Log.v(TAG, "The resource <" + uri
-					+ "> does exist as Subject in the given model.");
-			return true;
-		} else if (asObject && model.contains(null, null, res)) {
-			Log.v(TAG, "The resource <" + uri
-					+ "> does exist as Object in the given model.");
-			return true;
-		} else {
-			Log.v(TAG, "The resource <" + uri
-					+ "> doesn't exist in the given model.");
-			return false;
+				if (Constants.DATA_COLUMNS.containsKey(key)) {
+					propUri = Constants.DATA_COLUMNS.get(key);
+					property = model.getProperty(propUri);
+					
+					value = (String) dataEntry.getValue();
+
+					bNode.addProperty(property, model.getResource(value));
+				}
+			}
+
+			resource.addProperty(hasData, bNode);
+			if (model.supportsTransactions()) {
+				model.commit();
+			}
+		} catch (JenaException e) {
+			Log.e(TAG, "Exception on updating model of resource <" + uri
+					+ ">. (rollback)", e);
+			if (model.supportsTransactions()) {
+				model.abort();
+			}
 		}
-
+		return 0;
 	}
 
 	public static String getName(Resource person) {

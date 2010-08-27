@@ -7,14 +7,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.Stack;
 
 import org.aksw.mssw.Constants;
 
-import dalvik.system.PathClassLoader;
-
-import android.R.integer;
 import android.accounts.Account;
 import android.accounts.OperationCanceledException;
 import android.app.Service;
@@ -22,6 +18,7 @@ import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
@@ -447,14 +444,10 @@ public class ContactsSyncAdapterService extends Service {
 				String key;
 				Iterator<String> dataIterator;
 				String column;
-				String mimeType;
 
 				HashMap<String, HashMap<String, String>> changeList = new HashMap<String, HashMap<String, String>>();
 
 				while (cc.moveToNext()) {
-
-					String sourcId = cc.getString(cc
-							.getColumnIndex(RawContacts.SOURCE_ID));
 
 					if (!cc.isNull(cc.getColumnIndex(Entity.DATA_ID))) {
 
@@ -511,20 +504,13 @@ public class ContactsSyncAdapterService extends Service {
 													+ cc.getString(cc
 															.getColumnIndex(Entity.DATA_ID))
 													+ ")");
-
-									for (int i = 0; i < cc.getColumnCount(); i++) {
-										Log.v(TAG,
-												"contactRows: ("
-														+ i
-														+ ", "
-														+ cc.getColumnName(i)
-														+ ") "
-														+ cc.getString(i)
-														+ ", dataRow: "
-														+ data.get(cc
-																.getColumnName(i))
-														+ ".");
-									}
+									/*
+									 * for (int i = 0; i < cc.getColumnCount();
+									 * i++) { Log.v(TAG, "contactRows: (" + i +
+									 * ", " + cc.getColumnName(i) + ") " +
+									 * cc.getString(i) + ", dataRow: " +
+									 * data.get(cc .getColumnName(i)) + "."); }
+									 */
 
 									data.put(Entity.DATA_ID, cc.getString(cc
 											.getColumnIndex(Entity.DATA_ID)));
@@ -538,12 +524,9 @@ public class ContactsSyncAdapterService extends Service {
 						}
 
 						// if the while-loop ran through without success there
-						// is no
+						// is no fitting dataset in the webid so save them to
+						// the local model
 						if (!isSame) {
-
-							// TODO maybe find also entries in ContactsContract,
-							// which are not fitted by a data set from foaf and
-							// add them to local model
 
 							data = new HashMap<String, String>();
 
@@ -566,10 +549,11 @@ public class ContactsSyncAdapterService extends Service {
 				// reset cc
 				// cc.moveToPosition(-1);
 
-				// TODO now write the data sets, which didn't fit a contacts
-				// dataset (with data_id = null) to ContactsContract
+				// now write the data sets, which didn't fit a contacts data set
+				// (with data_id = null) to ContactsContract
 
 				dataListIterator = dataList.keySet().iterator();
+				String myData;
 
 				while (dataListIterator.hasNext()) {
 
@@ -577,23 +561,27 @@ public class ContactsSyncAdapterService extends Service {
 					data = dataList.get(key);
 
 					if (data.get(Entity.DATA_ID) == null) {
+
 						dataIterator = data.keySet().iterator();
+
+						// write to ContactContract
 
 						ContentProviderOperation.Builder builder = ContentProviderOperation
 								.newInsert(ContactsContract.Data.CONTENT_URI);
 
-						Log.v(TAG, "New insert to <" + ContactsContract.Data.CONTENT_URI + ">");
-						
+						Log.v(TAG, "New insert to <"
+								+ ContactsContract.Data.CONTENT_URI + ">");
+
 						builder.withValue(ContactsContract.Data.RAW_CONTACT_ID,
 								rawId);
 
-						Log.v(TAG, "with value " + ContactsContract.Data.RAW_CONTACT_ID + " = " + rawId + ".");
+						Log.v(TAG, "with value "
+								+ ContactsContract.Data.RAW_CONTACT_ID + " = "
+								+ rawId + ".");
 
 						while (dataIterator.hasNext()) {
 							column = dataIterator.next();
-							String myData = data.get(column);
-
-							// TODO write to ContactContract
+							myData = data.get(column);
 
 							// ContentProviderOperation.Builder builder =
 							// ContentProviderOperation
@@ -608,17 +596,40 @@ public class ContactsSyncAdapterService extends Service {
 
 							builder.withValue(column, myData);
 
-							Log.v(TAG, "with value " + column + " = " + myData + ".");
+							Log.v(TAG, "with value " + column + " = " + myData
+									+ ".");
 						}
-						
 
 						operationList.add(builder.build());
 					}
 				}
 
-				// TODO write changeList to foaf
-
 				cc.close();
+				
+				// TODO write changeList to foaf
+				dataListIterator = changeList.keySet().iterator();
+				ContentValues values;
+				while (dataListIterator.hasNext()) {
+					key = dataListIterator.next();
+					data = dataList.get(key);
+					values = new ContentValues();
+
+					dataIterator = data.keySet().iterator();
+					while (dataIterator.hasNext()) {
+						column = dataIterator.next();
+						myData = data.get(column);
+						
+						values.put(column, myData);
+					}
+					
+					int result = content.update(contactUri, values, null, null);
+					
+					if (result > 0) {
+						Log.v(TAG, "Updated contact <" + uri + "> sucessfully.");
+					} else {
+						Log.v(TAG, "Error on updating contact <" + uri + ">.");
+					}
+				}
 
 				try {
 					if (operationList.size() > 0) {
@@ -642,7 +653,14 @@ public class ContactsSyncAdapterService extends Service {
 		}
 	}
 
-	private static Class forUri(String uri, boolean isField)
+	/**
+	 * Get a Class object, from the class which is represented by the given uri.
+	 * @param uri the uri, which represents the class you want to get. This uri has to start with Constants.DATA_KINDS_PREFIX.
+	 * @param isField set to true if the given uri is not a class, but a field of this class, so the part after the last Point "." will be ignored.
+	 * @return a Class object of a final class
+	 * @throws ClassNotFoundException if the given uri doesn't start with Constants.DATA_KINDS_PREFIX or could not be found.
+	 */
+	private static Class<? extends Object> forUri(String uri, boolean isField)
 			throws ClassNotFoundException {
 		if (uri.startsWith(Constants.DATA_KINDS_PREFIX)) {
 			String classNamePrefix = "android.provider.";
@@ -663,7 +681,7 @@ public class ContactsSyncAdapterService extends Service {
 			className = classNamePrefix + className;
 
 			Stack<String> nestedPath = new Stack<String>();
-			Class klasse;
+			Class<? extends Object> klasse;
 			while (className.lastIndexOf(".") > 0) {
 				try {
 					klasse = Class.forName(className);
@@ -711,42 +729,5 @@ public class ContactsSyncAdapterService extends Service {
 			Log.v(TAG, "Couldn't extract fieldname  from uri <" + uri + ">.");
 			return null;
 		}
-
 	}
-
-	private static void testMethod() {
-
-		// public static final class
-		// the last two points are replaced by $ because they are nested classes
-		// :-S
-		String className = "android.provider.ContactsContract$CommonDataKinds$StructuredName";
-		// String className = "android.provider.CallLog";
-
-		Log.v(TAG, "Now I try some magic.");
-		try {
-			Class myClass = context.getClassLoader().loadClass(className);
-			String mimetype = (String) myClass.getField("CONTENT_ITEM_TYPE")
-					.get(null);
-			// String mimetype = (String)
-			// myClass.getField("AUTHORITY").get(null);
-			Log.v(TAG, "Yes it works. mimetype = " + mimetype);
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			Log.e(TAG, "Classe wurde wieder nicht gefunden.", e);
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			Log.e(TAG, "Falsches argument.", e);
-		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			Log.e(TAG, "sicherheits ausnahme.", e);
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			Log.e(TAG, "ittegaler zutritt.", e);
-		} catch (NoSuchFieldException e) {
-			// TODO Auto-generated catch block
-			Log.e(TAG, "feld nicht gefunden.", e);
-		}
-
-	}
-
 }

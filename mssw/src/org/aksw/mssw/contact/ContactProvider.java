@@ -13,7 +13,6 @@ import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
@@ -66,8 +65,7 @@ public class ContactProvider extends ContentProvider {
 	 */
 	@Override
 	public boolean onCreate() {
-		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	/*
@@ -164,13 +162,31 @@ public class ContactProvider extends ContentProvider {
 	@Override
 	public int update(Uri uri, ContentValues values, String selection,
 			String[] selectionArgs) {
-		// TODO Auto-generated method stub
-		return 0;
+
+		/**
+		 * The segments of the query-path
+		 */
+		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
+
+		int match = uriMatcher.match(uri);
+
+		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
+
+		switch (match) {
+		case DATA:
+			if (path.size() > 1) {
+				return addData(path.get(1), values);
+			} else {
+				Log.e(TAG, "Request URI too short.");
+			}
+		default:
+			return 0;
+		}
 	}
 
 	private Cursor getData(String uri) {
 		Log.v(TAG, "getPerson: <" + uri + ">");
-		
+
 		try {
 			Uri contentUri;
 			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
@@ -200,24 +216,31 @@ public class ContactProvider extends ContentProvider {
 					}
 
 					if (oIsResource) {
-						if (rc.getString(rc.getColumnIndex("oIsBlankNode")).equals("true")) {
+						if (rc.getString(rc.getColumnIndex("oIsBlankNode"))
+								.equals("true")) {
 							oIsBlankNode = true;
 						}
-						
+
 						cc.addTriple(uri, Constants.PROP_hasData, object, true,
 								oIsBlankNode);
 
 						subject = object;
 						// query for objects properties
 						if (oIsBlankNode) {
-							contentUri = Uri.parse(TRIPLE_CONTENT_URI
-									+ "/bnode/"
-									+ URLEncoder.encode(uri, Constants.ENC) + "/"
-									+ URLEncoder.encode(subject, Constants.ENC));
+							contentUri = Uri
+									.parse(TRIPLE_CONTENT_URI
+											+ "/bnode/"
+											+ URLEncoder.encode(uri,
+													Constants.ENC)
+											+ "/"
+											+ URLEncoder.encode(subject,
+													Constants.ENC));
 						} else {
-							contentUri = Uri.parse(TRIPLE_CONTENT_URI
-									+ "/resource/"
-									+ URLEncoder.encode(subject, Constants.ENC));
+							contentUri = Uri
+									.parse(TRIPLE_CONTENT_URI
+											+ "/resource/"
+											+ URLEncoder.encode(subject,
+													Constants.ENC));
 						}
 						Log.v(TAG,
 								"Starting Query with uri: <"
@@ -269,6 +292,19 @@ public class ContactProvider extends ContentProvider {
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
 			return null;
+		}
+	}
+
+	private int addData(String uri, ContentValues data) {
+		Uri contentUri;
+		try {
+			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/addData/"
+					+ URLEncoder.encode(uri, Constants.ENC));
+
+			return getContentResolver().update(contentUri, data, null, null);
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Error on sending resourceupdates to TripleProvider", e);
+			return 0;
 		}
 	}
 

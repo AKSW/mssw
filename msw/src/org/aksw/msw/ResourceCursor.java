@@ -22,7 +22,6 @@ public class ResourceCursor extends AbstractCursor {
 	private static final String TAG = "ResourceCursor";
 
 	private ArrayList<Statement> properties;
-	private Resource subject;
 	private Resource[] subjects;
 
 	public ResourceCursor(Resource subject) {

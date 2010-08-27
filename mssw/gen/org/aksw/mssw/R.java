@@ -58,6 +58,7 @@ public final class R {
         public static final int browser_name=0x7f050002;
         public static final int contacts=0x7f05000a;
         public static final int email=0x7f050011;
+        public static final int example_webid=0x7f05001b;
         public static final int hello=0x7f050000;
         public static final int load=0x7f05000e;
         public static final int me=0x7f050009;
