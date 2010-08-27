@@ -335,7 +335,8 @@ public class ContactsSyncAdapterService extends Service {
 
 	private static void updateContact(String uri, long rawId) {
 
-		Log.i(TAG, "updating contact: " + uri);
+		Log.i(TAG, "updating contact <" + uri + "> with rawId: '" + rawId
+				+ "'.");
 
 		try {
 
@@ -448,12 +449,16 @@ public class ContactsSyncAdapterService extends Service {
 				String column;
 				String mimeType;
 
+				HashMap<String, HashMap<String, String>> changeList = new HashMap<String, HashMap<String, String>>();
+
 				while (cc.moveToNext()) {
 
 					String sourcId = cc.getString(cc
 							.getColumnIndex(RawContacts.SOURCE_ID));
 
 					if (!cc.isNull(cc.getColumnIndex(Entity.DATA_ID))) {
+
+						boolean isSame = false;
 
 						// for one value kinds:
 						// should get the current value of a field
@@ -480,7 +485,7 @@ public class ContactsSyncAdapterService extends Service {
 							if (data.get(Entity.DATA_ID) == null) {
 								dataIterator = data.keySet().iterator();
 
-								boolean isSame = true;
+								isSame = true;
 
 								while (dataIterator.hasNext()) {
 									column = dataIterator.next();
@@ -494,9 +499,18 @@ public class ContactsSyncAdapterService extends Service {
 									}
 								}
 
-								if (isSame && data.size() > 0) {
-									Log.v(TAG, "Found same rows, dataList ("
-											+ key + ") with :");
+								if (data.size() < 1) {
+									isSame = false;
+								}
+
+								if (isSame) {
+									Log.v(TAG,
+											"Found same rows, dataList ("
+													+ key
+													+ ") and ContactContract ("
+													+ cc.getString(cc
+															.getColumnIndex(Entity.DATA_ID))
+													+ ")");
 
 									for (int i = 0; i < cc.getColumnCount(); i++) {
 										Log.v(TAG,
@@ -511,8 +525,10 @@ public class ContactsSyncAdapterService extends Service {
 																.getColumnName(i))
 														+ ".");
 									}
+
 									data.put(Entity.DATA_ID, cc.getString(cc
 											.getColumnIndex(Entity.DATA_ID)));
+									dataList.put(key, data);
 									break;
 								}
 
@@ -521,46 +537,86 @@ public class ContactsSyncAdapterService extends Service {
 							}
 						}
 
-						// now write the data sets, which didn't fit a contacts
-						// dataset (with data_id = null) to ContactsContract
+						// if the while-loop ran through without success there
+						// is no
+						if (!isSame) {
 
-						// maybe find also entries in ContactsContract, which
-						// are not fited by a dataset from foaf and them to
-						// local model
-						if (false) {
-							if (mimeType
-									.equals(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)) {
-								String ccName = cc
-										.getString(cc
-												.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
-								String rcName = rc.getString(rc
-										.getColumnIndex("objectReadable"));
-								if (!ccName.equals(rcName)) {
-									Log.v(TAG, "Updating name from " + ccName
-											+ " to " + rcName + " of " + uri);
+							// TODO maybe find also entries in ContactsContract,
+							// which are not fitted by a data set from foaf and
+							// add them to local model
 
-									ContentProviderOperation.Builder builder = ContentProviderOperation
-											.newUpdate(ContactsContract.Data.CONTENT_URI);
-									builder.withSelection(
-											BaseColumns._ID
-													+ " = '"
-													+ cc.getLong(cc
-															.getColumnIndex(Entity.DATA_ID))
-													+ "'", null);
-									builder.withValue(
-											ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
-											rcName);
-									operationList.add(builder.build());
+							data = new HashMap<String, String>();
 
-								} else {
-									Log.v(TAG, "Doesn't need to update " + uri);
-								}
+							Log.v(TAG, "New Data found: ");
+							for (int i = 0; i < cc.getColumnCount(); i++) {
+
+								data.put(cc.getColumnName(i), cc.getString(i));
+
+								Log.v(TAG,
+										"contactRows: (" + i + ", "
+												+ cc.getColumnName(i) + ") "
+												+ cc.getString(i) + ".");
 							}
+
+							changeList.put(uri, data);
 						}
+
 					}
 				}
 				// reset cc
 				// cc.moveToPosition(-1);
+
+				// TODO now write the data sets, which didn't fit a contacts
+				// dataset (with data_id = null) to ContactsContract
+
+				dataListIterator = dataList.keySet().iterator();
+
+				while (dataListIterator.hasNext()) {
+
+					key = dataListIterator.next();
+					data = dataList.get(key);
+
+					if (data.get(Entity.DATA_ID) == null) {
+						dataIterator = data.keySet().iterator();
+
+						ContentProviderOperation.Builder builder = ContentProviderOperation
+								.newInsert(ContactsContract.Data.CONTENT_URI);
+
+						Log.v(TAG, "New insert to <" + ContactsContract.Data.CONTENT_URI + ">");
+						
+						builder.withValue(ContactsContract.Data.RAW_CONTACT_ID,
+								rawId);
+
+						Log.v(TAG, "with value " + ContactsContract.Data.RAW_CONTACT_ID + " = " + rawId + ".");
+
+						while (dataIterator.hasNext()) {
+							column = dataIterator.next();
+							String myData = data.get(column);
+
+							// TODO write to ContactContract
+
+							// ContentProviderOperation.Builder builder =
+							// ContentProviderOperation
+							// .newUpdate(ContactsContract.Data.CONTENT_URI);
+
+							// builder.withSelection(
+							// BaseColumns._ID
+							// + " = '"
+							// + cc.getLong(cc
+							// .getColumnIndex(Entity.DATA_ID))
+							// + "'", null);
+
+							builder.withValue(column, myData);
+
+							Log.v(TAG, "with value " + column + " = " + myData + ".");
+						}
+						
+
+						operationList.add(builder.build());
+					}
+				}
+
+				// TODO write changeList to foaf
 
 				cc.close();
 
