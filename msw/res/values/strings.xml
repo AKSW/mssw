@@ -2,6 +2,12 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
     <string name="hello">Hello World!</string>
     <string name="app_name">msw</string>
+    <string name="foaf_ssl">FOAF+SSL</string>
     <string name="privatekey_password">Privatekey Password</string>
+	<string name="update">Update Resources</string>
     <string name="pref_privatekey_password">Enter the password for your private Key, which is on the SD-Card in \'/Android/org.aksw.msw/files/certs/privatekey.p12\'.</string>
+	<string name="pref_update_desc">Click this to update all resources from the web.</string>
+	<string name="syncing_toast">Synchronizing Resources from Web (one-way, from web to device).</string>
+	<string name="syncing_toast_success">Synchronizing Resources from Web. Done successfully!</string>
+	<string name="syncing_toast_failed">Synchronizing Resources from Web. Failed!</string>
 </resources>

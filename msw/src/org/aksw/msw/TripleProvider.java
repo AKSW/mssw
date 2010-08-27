@@ -300,11 +300,13 @@ public class TripleProvider extends ContentProvider {
 	private Resource getBlankNode(String id, String uri, boolean persistant) {
 		boolean inferenced = true;
 		Resource resource = mm.getModel(uri, persistant, inferenced).createResource(new AnonId(id));
+/*
 		StmtIterator iterator = resource.listProperties();
 		while (iterator.hasNext()) {
 			String triple = iterator.next().asTriple().toString();
 			Log.v(TAG, "BNode (" + id + ") has triple: " + triple);
 		}
+		*/
 		return resource;
 	}
 
@@ -332,13 +334,13 @@ public class TripleProvider extends ContentProvider {
 		boolean inferenced = true;
 
 		Resource resource = mm.getModel(uri, persistant, inferenced).getResource(uri);
-
+/*
 		StmtIterator iterator = resource.listProperties();
 		while (iterator.hasNext()) {
 			String triple = iterator.next().asTriple().toString();
 			Log.v(TAG, "Resource (" + uri + ") has triple: " + triple);
 		}
-		
+	*/	
 		return resource;
 	}
 
