@@ -106,6 +106,9 @@ public class ContactsSyncAdapterService extends Service {
 				// changed (Data Diff) [1]
 				updateContact(uri, localContacts.get(uri));
 			}
+			// TODO maybe find also contacts in ContactsContract which are not
+			// in foaf and get whose uri to fetch there data from web. (would
+			// maybe happen in two sync cycles)
 		}
 
 	}
@@ -370,8 +373,8 @@ public class ContactsSyncAdapterService extends Service {
 					} else if (predicat.equals(Constants.PROP_rdfType)
 							&& object.startsWith(Constants.DATA_KINDS_PREFIX)) {
 						// check mimetype
-						if (!dataList.containsKey(object)) {
-							dataList.put(object, new HashMap<String, String>());
+						if (!dataList.containsKey(subject)) {
+							dataList.put(subject, new HashMap<String, String>());
 						}
 
 						Log.v(TAG, "rdf:type = " + object + ".");
@@ -379,9 +382,9 @@ public class ContactsSyncAdapterService extends Service {
 						String type = (String) forUri(object, false).getField(
 								"CONTENT_ITEM_TYPE").get(null);
 
-						data = dataList.get(object);
+						data = dataList.get(subject);
 						data.put(Entity.MIMETYPE, type);
-						dataList.put(object, data);
+						dataList.put(subject, data);
 					} else if (predicat.startsWith(Constants.DATA_KINDS_PREFIX)) {
 
 						String fieldName = extractFieldName(predicat);
@@ -392,8 +395,8 @@ public class ContactsSyncAdapterService extends Service {
 								&& object
 										.startsWith(Constants.DATA_KINDS_PREFIX)) {
 
-							if (dataList.containsKey(object)) {
-								data = dataList.get(object);
+							if (dataList.containsKey(subject)) {
+								data = dataList.get(subject);
 							} else {
 								data = new HashMap<String, String>();
 							}
@@ -422,15 +425,15 @@ public class ContactsSyncAdapterService extends Service {
 												+ object + "'.");
 							}
 
-							dataList.put(object, data);
+							dataList.put(subject, data);
 						} else {
-							if (dataList.containsKey(object)) {
-								data = dataList.get(object);
+							if (dataList.containsKey(subject)) {
+								data = dataList.get(subject);
 							} else {
 								data = new HashMap<String, String>();
 							}
 							data.put(column, object);
-							dataList.put(object, data);
+							dataList.put(subject, data);
 						}
 					} else {
 						Log.v(TAG, "Unknown predicat <" + predicat
@@ -438,6 +441,12 @@ public class ContactsSyncAdapterService extends Service {
 					}
 
 				}
+
+				Iterator<String> dataListIterator;
+				String key;
+				Iterator<String> dataIterator;
+				String column;
+				String mimeType;
 
 				while (cc.moveToNext()) {
 
@@ -459,43 +468,99 @@ public class ContactsSyncAdapterService extends Service {
 						// it
 						// else do nothing
 
-						String mimeType = cc.getString(cc.getColumnIndex(Entity.MIMETYPE));
-						
+						// compare
+						dataListIterator = dataList.keySet().iterator();
 
 						// search dataList for entries, which could fit
+						while (dataListIterator.hasNext()) {
 
-						if (mimeType
-								.equals(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)) {
-							String ccName = cc
-									.getString(cc
-											.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
-							String rcName = rc.getString(rc
-									.getColumnIndex("objectReadable"));
-							if (!ccName.equals(rcName)) {
-								Log.v(TAG, "Updating name from " + ccName
-										+ " to " + rcName + " of " + uri);
+							key = dataListIterator.next();
+							data = dataList.get(key);
 
-								ContentProviderOperation.Builder builder = ContentProviderOperation
-										.newUpdate(ContactsContract.Data.CONTENT_URI);
-								builder.withSelection(
-										BaseColumns._ID
-												+ " = '"
-												+ cc.getLong(cc
-														.getColumnIndex(Entity.DATA_ID))
-												+ "'", null);
-								builder.withValue(
-										ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
-										rcName);
-								operationList.add(builder.build());
+							if (data.get(Entity.DATA_ID) == null) {
+								dataIterator = data.keySet().iterator();
 
-							} else {
-								Log.v(TAG, "Doesn't need to update " + uri);
+								boolean isSame = true;
+
+								while (dataIterator.hasNext()) {
+									column = dataIterator.next();
+									String contactsData = cc.getString(cc
+											.getColumnIndex(column));
+									String myData = data.get(column);
+
+									if (!myData.equals(contactsData)) {
+										isSame = false;
+										break;
+									}
+								}
+
+								if (isSame && data.size() > 0) {
+									Log.v(TAG, "Found same rows, dataList ("
+											+ key + ") with :");
+
+									for (int i = 0; i < cc.getColumnCount(); i++) {
+										Log.v(TAG,
+												"contactRows: ("
+														+ i
+														+ ", "
+														+ cc.getColumnName(i)
+														+ ") "
+														+ cc.getString(i)
+														+ ", dataRow: "
+														+ data.get(cc
+																.getColumnName(i))
+														+ ".");
+									}
+									data.put(Entity.DATA_ID, cc.getString(cc
+											.getColumnIndex(Entity.DATA_ID)));
+									break;
+								}
+
+								// if not the same, than procede with next
+								// dataset
+							}
+						}
+
+						// now write the data sets, which didn't fit a contacts
+						// dataset (with data_id = null) to ContactsContract
+
+						// maybe find also entries in ContactsContract, which
+						// are not fited by a dataset from foaf and them to
+						// local model
+						if (false) {
+							if (mimeType
+									.equals(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)) {
+								String ccName = cc
+										.getString(cc
+												.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
+								String rcName = rc.getString(rc
+										.getColumnIndex("objectReadable"));
+								if (!ccName.equals(rcName)) {
+									Log.v(TAG, "Updating name from " + ccName
+											+ " to " + rcName + " of " + uri);
+
+									ContentProviderOperation.Builder builder = ContentProviderOperation
+											.newUpdate(ContactsContract.Data.CONTENT_URI);
+									builder.withSelection(
+											BaseColumns._ID
+													+ " = '"
+													+ cc.getLong(cc
+															.getColumnIndex(Entity.DATA_ID))
+													+ "'", null);
+									builder.withValue(
+											ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
+											rcName);
+									operationList.add(builder.build());
+
+								} else {
+									Log.v(TAG, "Doesn't need to update " + uri);
+								}
 							}
 						}
 					}
 				}
 				// reset cc
-				cc.moveToPosition(-1);
+				// cc.moveToPosition(-1);
 
 				cc.close();
 
