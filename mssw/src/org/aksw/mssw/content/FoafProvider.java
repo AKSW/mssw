@@ -56,7 +56,7 @@ public class FoafProvider extends ContentProvider {
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
 	static {
-		uriMatcher.addURI(AUTHORITY, "me/friend/add/*", ME_FRIEND_ADD);
+		uriMatcher.addURI(AUTHORITY, "me/friend/add", ME_FRIEND_ADD);
 		uriMatcher.addURI(AUTHORITY, "me/friends", ME_FRIENDS);
 		uriMatcher.addURI(AUTHORITY, "me/mecard", ME_MECARD);
 		uriMatcher.addURI(AUTHORITY, "me", ME);
@@ -220,6 +220,27 @@ public class FoafProvider extends ContentProvider {
 			// return 1;
 		default:
 			return 0;
+		}
+	}
+	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.content.ContentProvider#insert(android.net.Uri,
+	 * android.content.ContentValues)
+	 */
+	@Override
+	public Uri insert(Uri uri, ContentValues values) {
+
+		int match = uriMatcher.match(uri);
+		switch (match) {
+		case ME_FRIEND_ADD:
+			Log.i(TAG,
+					"Adding new friends to your WebID is not yet implemented. uri <" + (String)values.get("uri") + ">.");
+			return Uri.parse((String)values.get("uri"));
+		default:
+			return null;
 		}
 	}
 
@@ -478,18 +499,6 @@ public class FoafProvider extends ContentProvider {
 	}
 
 	/*------------ the following methods are not supported by this ContentProvider -----------*/
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.content.ContentProvider#insert(android.net.Uri,
-	 * android.content.ContentValues)
-	 */
-	@Override
-	public Uri insert(Uri uri, ContentValues values) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	/*
 	 * (non-Javadoc)

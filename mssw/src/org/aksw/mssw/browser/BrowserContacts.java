@@ -4,12 +4,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import org.aksw.mssw.Constants;
-import org.aksw.mssw.MsswPreferenceActivity;
 import org.aksw.mssw.R;
 
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,27 +18,36 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
-public class BrowserContacts extends ListActivity {
+public class BrowserContacts extends ListActivity implements OnSharedPreferenceChangeListener {
 
 	private static final String TAG = "msswBrowserContacts";
 
 	/**
 	 * should be replaced by something saved in the Application Context to use it also in MeCard
-	 * @deprecated
 	 */
 	private static String selectedWebID;
 	
 	private static ResourceCursorAdapter rca; 
 
+	private MenuManager menuManager;
+	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.browser_contacts);
 		
+		Intent intent = getIntent();
+		if (intent != null) {
+			String data = intent.getDataString();
+			if (data != null) {
+				selectedWebID = data;
+			}
+		}
 
 		/**
 		 * retrieve WebID first from savedInstanceState than from SharedPreferences
@@ -49,11 +58,11 @@ public class BrowserContacts extends ListActivity {
 			selectedWebID = sharedPreferences.getString("me", Constants.EXAMPLE_webId);
 		}
 
+		menuManager = new MenuManager();
+		
 		try {
-			String enc = "UTF-8";
-
 			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/person/friends/"
-					+ URLEncoder.encode(selectedWebID, enc));
+					+ URLEncoder.encode(selectedWebID, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
@@ -87,18 +96,30 @@ public class BrowserContacts extends ListActivity {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		Intent i;
-		switch (item.getItemId()) {
-		case R.id.itemPref:
-			i = new Intent(this, MsswPreferenceActivity.class);
-			startActivity(i);
+
+		boolean ret = menuManager.itemSelected(this, item, selectedWebID);
+		if (ret) {
 			return true;
-		case R.id.itemMe:
-			i = new Intent(this, BrowserMeCard.class);
-			startActivity(i);
-			return true;
-		default:
+		} else {
 			return super.onOptionsItemSelected(item);
 		}
 	}
+	
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		if (key == "me") {
+			selectedWebID = sharedPreferences.getString(key, Constants.EXAMPLE_webId);
+		}
+	}
+
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		String uri;
+		uri = "http://sebastian.tramp.name";
+		Intent i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(uri));
+		startActivity(i);
+		super.onListItemClick(l, v, position, id);
+	}
+	
 }

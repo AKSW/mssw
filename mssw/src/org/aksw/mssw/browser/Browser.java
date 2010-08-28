@@ -1,57 +1,114 @@
 package org.aksw.mssw.browser;
 
+import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
 import android.app.TabActivity;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
+import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 
-public class Browser extends TabActivity implements OnTabChangeListener {
+public class Browser extends TabActivity implements OnTabChangeListener,
+		OnSharedPreferenceChangeListener {
 	/** Called when the activity is first created. */
 
 	private static final String TAG = "msswBrowser";
-	
+
 	private TabHost tabHost;
+
+	protected static String selectedWebID;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		// important!! don't set the content because else no tab-content would be displayed. 
+		Log.v(TAG, "================ onCreate Browser =====================");
+		// important!! don't set the content because else no tab-content would
+		// be displayed.
 		setContentView(R.layout.browser);
-		
+
 		tabHost = getTabHost();
 		tabHost.setOnTabChangedListener(this);
 
+		SharedPreferences sharedPreferences = PreferenceManager
+				.getDefaultSharedPreferences(getApplicationContext());
+		selectedWebID = sharedPreferences.getString("me",
+				Constants.EXAMPLE_webId);
+
 		Resources res = getResources(); // Resource object to get Drawables
-		TabHost.TabSpec spec;			// Reusable TabSpec for each tab
-		Intent intent;					// Reusable Intent for each tab
+		TabHost.TabSpec spec; // Reusable TabSpec for each tab
+		Intent intent; // Reusable Intent for each tab
+		int selectedTab = 0;
+
+		intent = getIntent();
+		if (intent != null) {
+			String action = intent.getAction();
+			String data;
+			if (action.equals(Constants.INTENT_ADD_WEBID)) {
+				data = intent.getDataString();
+				if (data != null) {
+					try {
+						Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+								+ "/me/friend/add");
+
+						Log.v(TAG,
+								"Starting Query with uri: <"
+										+ contentUri.toString() + ">.");
+
+						ContentValues values = new ContentValues();
+						values.put("uri", data);
+
+						getContentResolver().insert(contentUri, values);
+					} catch (Exception e) {
+						Log.e(TAG, "Error on adding new Friend.", e);
+					}
+				}
+				selectedTab = 1;
+			} else if (action.equals(Constants.INTENT_VIEW_WEBID)) {
+				data = intent.getDataString();
+				if (data != null) {
+					selectedWebID = data;
+				}
+				selectedTab = 0;
+			}
+		}
 
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserMeCard.class);
+		intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("meCard");
-		spec.setIndicator(getString(R.string.me), res.getDrawable(android.R.drawable.ic_menu_myplaces));
+		spec.setIndicator(getString(R.string.me),
+				res.getDrawable(android.R.drawable.ic_menu_myplaces));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
-		
+
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserContacts.class);
+		intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("Contacts");
-		spec.setIndicator(getString(R.string.contacts), res.getDrawable(android.R.drawable.ic_menu_help));
+		spec.setIndicator(getString(R.string.contacts),
+				res.getDrawable(android.R.drawable.ic_menu_help));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
-		
+
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserBrowse.class);
+		intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("Browser");
-		spec.setIndicator(getString(R.string.browse), res.getDrawable(android.R.drawable.ic_menu_compass));
+		spec.setIndicator(getString(R.string.browse),
+				res.getDrawable(android.R.drawable.ic_menu_compass));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
-		
-		tabHost.setCurrentTab(0);
+
+		tabHost.setCurrentTab(selectedTab);
+
 	}
 
 	@Override
@@ -61,20 +118,26 @@ public class Browser extends TabActivity implements OnTabChangeListener {
 		// onWindowFocusChanged() to let them know when they're active. This may
 		// seem to duplicate the purpose of onResume(), but it's needed because
 		// onResume() can't reliably check if a keyguard is active.
-/*
-		Activity activity = getLocalActivityManager().getActivity(tabId);
-		if (activity != null) {
-			activity.onWindowFocusChanged(true);
-		}
-*/
+		/*
+		 * Activity activity = getLocalActivityManager().getActivity(tabId); if
+		 * (activity != null) { activity.onWindowFocusChanged(true); }
+		 */
 		// Remember this tab index. This function is also called, if the tab is
 		// set automatically
 		// in which case the setter (setCurrentTab) has to set this to its old
 		// value afterwards
 
-	//	lastManuallySelectedTab = tabHost.getCurrentTab();
+		// lastManuallySelectedTab = tabHost.getCurrentTab();
 		// TODO Auto-generated method stub
 		Log.v(TAG, "onTabChange id: " + tabId);
 	}
 
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		if (key == "me") {
+			selectedWebID = sharedPreferences.getString(key,
+					Constants.EXAMPLE_webId);
+		}
+	}
 }

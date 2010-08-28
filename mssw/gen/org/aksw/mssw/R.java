@@ -25,9 +25,8 @@ public final class R {
         public static final int firstLine=0x7f070008;
         public static final int icon=0x7f070007;
         public static final int itemAdd=0x7f07000e;
-        public static final int itemBrowse=0x7f070010;
         public static final int itemMe=0x7f07000f;
-        public static final int itemPref=0x7f070011;
+        public static final int itemPref=0x7f070010;
         public static final int key=0x7f07000a;
         public static final int mecard_icon=0x7f070005;
         public static final int mecard_name=0x7f070006;

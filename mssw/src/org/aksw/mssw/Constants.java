@@ -31,4 +31,7 @@ public final class Constants {
 	public static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
 	public static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
 			+ TRIPLE_AUTHORITY);
+	
+	public static final String INTENT_ADD_WEBID = "org.aksw.mssw.ADD_WEBID";
+	public static final String INTENT_VIEW_WEBID = "org.aksw.mssw.VIEW_WEBID";
 }
