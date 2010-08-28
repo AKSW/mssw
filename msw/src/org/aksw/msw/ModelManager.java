@@ -116,7 +116,7 @@ public class ModelManager {
 				model = modelMakers.get(makerKey).openModel(uri);
 			} else {
 				model = createModel(uri, makerKey);
-				if (model != null) {
+				if (model != null && makerKey.equals("web")) {
 					readSSL(uri, model);
 				}
 			}

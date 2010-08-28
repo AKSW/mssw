@@ -475,6 +475,7 @@ public class ContactsSyncAdapterService extends Service {
 							key = dataListIterator.next();
 							data = dataList.get(key);
 
+							// TODO special treatment for StructuredName, Photo and maybe Note (those without TYPE field)
 							if (data.get(Entity.DATA_ID) == null) {
 								dataIterator = data.keySet().iterator();
 

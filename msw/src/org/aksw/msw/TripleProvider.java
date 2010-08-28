@@ -15,6 +15,7 @@ import android.util.Log;
 import com.hp.hpl.jena.rdf.model.AnonId;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.shared.JenaException;
 
@@ -347,7 +348,8 @@ public class TripleProvider extends ContentProvider {
 			String value;
 			String propUri;
 			Property property;
-			
+			RDFNode valueNode;
+
 			if (model.supportsTransactions()) {
 				model.begin();
 			}
@@ -363,14 +365,18 @@ public class TripleProvider extends ContentProvider {
 				if (Constants.DATA_COLUMNS.containsKey(key)) {
 					propUri = Constants.DATA_COLUMNS.get(key);
 					property = model.getProperty(propUri);
-					
-					value = (String) dataEntry.getValue();
-					
-					if (propUri.equals(Constants.PROP_rdfType)) {
-						value = Constants.MIME_TYPES.get(value);
-					}
 
-					bNode.addProperty(property, model.getResource(value));
+					value = (String) dataEntry.getValue();
+					if (value != null) {
+						if (propUri.equals(Constants.PROP_rdfType)) {
+							value = Constants.MIME_TYPES.get(value);
+							valueNode = model.getResource(value);
+						} else {
+							valueNode = model.createLiteral(value);
+						}
+
+						bNode.addProperty(property, valueNode);
+					}
 				}
 			}
 
