@@ -40,14 +40,6 @@ public class ContactsSyncAdapterService extends Service {
 	private static Context context;
 	private static ContentResolver content;
 
-	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
-	private static final Uri CONTENT_URI = Uri.parse("content://"
-			+ CONTENT_AUTHORITY);
-
-	private static final String CONTACT_AUTHORITY = "org.aksw.mssw.contact.contactprovider";
-	private static final Uri CONTACT_URI = Uri.parse("content://"
-			+ CONTACT_AUTHORITY);
-
 	@Override
 	public IBinder onBind(Intent intent) {
 		if (syncAdapter == null) {
@@ -71,7 +63,7 @@ public class ContactsSyncAdapterService extends Service {
 		// maybe should also tell Foaf/TripleProvider to pull the latest
 		// versions from the Web
 		// get the friend list from FoafProvider
-		Uri contentUri = Uri.parse(CONTENT_URI + "/me/friends/");
+		Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/me/friends/");
 		Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
 		Cursor rc = content.query(contentUri, null, null, null, null);
 
@@ -143,7 +135,7 @@ public class ContactsSyncAdapterService extends Service {
 			builder.withValue(RawContacts.SYNC1, uri);
 			builderList.put(uri, builder);
 
-			Uri contentUri = Uri.parse(CONTACT_URI + "/data/"
+			Uri contentUri = Uri.parse(Constants.CONTACT_CONTENT_URI + "/data/"
 					+ URLEncoder.encode(uri, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
@@ -337,7 +329,7 @@ public class ContactsSyncAdapterService extends Service {
 
 		try {
 
-			Uri contactUri = Uri.parse(CONTACT_URI + "/data/"
+			Uri contactUri = Uri.parse(Constants.CONTACT_CONTENT_URI + "/data/"
 					+ URLEncoder.encode(uri, Constants.ENC));
 
 			Cursor rc = content.query(contactUri, null, null, null, null);

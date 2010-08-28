@@ -3,8 +3,14 @@ package org.aksw.msw;
 import java.io.File;
 import java.util.HashMap;
 
+import android.net.Uri;
+
 public final class Constants {
 
+	public static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
+	public static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
+			+ TRIPLE_AUTHORITY);
+	
 	public static final String FILES_PATH = "Android" + File.separator + "data"
 			+ File.separator + "org.aksw.msw" + File.separator + "files";
 

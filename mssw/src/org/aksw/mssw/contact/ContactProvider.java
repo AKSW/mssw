@@ -30,13 +30,6 @@ public class ContactProvider extends ContentProvider {
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
 	/**
-	 * Static values for querying the TripleProvider
-	 */
-	private static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
-	private static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
-			+ TRIPLE_AUTHORITY);
-
-	/**
 	 * Static values which represent the different pathes of the query uris
 	 */
 	private static final int WORLD = 42;
@@ -189,7 +182,7 @@ public class ContactProvider extends ContentProvider {
 
 		try {
 			Uri contentUri;
-			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
 					+ URLEncoder.encode(uri, Constants.ENC));
 
 			String[] projection = new String[] { Constants.PROP_hasData };
@@ -228,7 +221,7 @@ public class ContactProvider extends ContentProvider {
 						// query for objects properties
 						if (oIsBlankNode) {
 							contentUri = Uri
-									.parse(TRIPLE_CONTENT_URI
+									.parse(Constants.TRIPLE_CONTENT_URI
 											+ "/bnode/"
 											+ URLEncoder.encode(uri,
 													Constants.ENC)
@@ -237,7 +230,7 @@ public class ContactProvider extends ContentProvider {
 													Constants.ENC));
 						} else {
 							contentUri = Uri
-									.parse(TRIPLE_CONTENT_URI
+									.parse(Constants.TRIPLE_CONTENT_URI
 											+ "/resource/"
 											+ URLEncoder.encode(subject,
 													Constants.ENC));
@@ -298,7 +291,7 @@ public class ContactProvider extends ContentProvider {
 	private int addData(String uri, ContentValues data) {
 		Uri contentUri;
 		try {
-			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/addData/"
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/addData/"
 					+ URLEncoder.encode(uri, Constants.ENC));
 
 			return getContentResolver().update(contentUri, data, null, null);

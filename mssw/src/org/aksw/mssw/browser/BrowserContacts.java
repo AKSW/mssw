@@ -27,10 +27,6 @@ public class BrowserContacts extends ListActivity {
 
 	private static final String TAG = "msswBrowserContacts";
 
-	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
-	private static final Uri CONTENT_URI = Uri.parse("content://"
-			+ CONTENT_AUTHORITY);
-
 	/**
 	 * should be replaced by something saved in the Application Context to use it also in MeCard
 	 * @deprecated
@@ -56,7 +52,7 @@ public class BrowserContacts extends ListActivity {
 		try {
 			String enc = "UTF-8";
 
-			Uri contentUri = Uri.parse(CONTENT_URI + "/person/friends/"
+			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/person/friends/"
 					+ URLEncoder.encode(selectedWebID, enc));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
@@ -74,10 +70,10 @@ public class BrowserContacts extends ListActivity {
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG,
 					"Could not encode URI and so couldn't get Resource from "
-							+ CONTENT_AUTHORITY + ".", e);
+							+ Constants.FOAF_AUTHORITY + ".", e);
 			TextView empty = (TextView) this.findViewById(android.R.id.empty);
 			empty.setText("Could not encode URI and so couldn't get Resource from "
-					+ CONTENT_AUTHORITY + ".");
+					+ Constants.FOAF_AUTHORITY + ".");
 		}
 	}
 
