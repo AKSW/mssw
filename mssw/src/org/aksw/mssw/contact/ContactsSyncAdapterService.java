@@ -605,32 +605,8 @@ public class ContactsSyncAdapterService extends Service {
 				}
 
 				cc.close();
-				
-				// TODO write changeList to foaf
-				dataListIterator = changeList.keySet().iterator();
-				ContentValues values;
-				while (dataListIterator.hasNext()) {
-					key = dataListIterator.next();
-					data = dataList.get(key);
-					values = new ContentValues();
 
-					dataIterator = data.keySet().iterator();
-					while (dataIterator.hasNext()) {
-						column = dataIterator.next();
-						myData = data.get(column);
-						
-						values.put(column, myData);
-					}
-					
-					int result = content.update(contactUri, values, null, null);
-					
-					if (result > 0) {
-						Log.v(TAG, "Updated contact <" + uri + "> sucessfully.");
-					} else {
-						Log.v(TAG, "Error on updating contact <" + uri + ">.");
-					}
-				}
-
+				// apply changes to ContactsContract
 				try {
 					if (operationList.size() > 0) {
 						content.applyBatch(ContactsContract.AUTHORITY,
@@ -639,6 +615,40 @@ public class ContactsSyncAdapterService extends Service {
 				} catch (Exception e) {
 					Log.e(TAG,
 							"Error on batch applying changes on the contacts list.",
+							e);
+				}
+
+				try {
+					// TODO write changeList to foaf
+					dataListIterator = changeList.keySet().iterator();
+					ContentValues values;
+					while (dataListIterator.hasNext()) {
+						key = dataListIterator.next();
+						data = changeList.get(key);
+						values = new ContentValues();
+
+						dataIterator = data.keySet().iterator();
+						while (dataIterator.hasNext()) {
+							column = dataIterator.next();
+							myData = data.get(column);
+
+							values.put(column, myData);
+						}
+
+						int result = content.update(contactUri, values, null,
+								null);
+
+						if (result > 0) {
+							Log.v(TAG, "Updated contact <" + uri
+									+ "> sucessfully.");
+						} else {
+							Log.v(TAG, "Error on updating contact <" + uri
+									+ ">.");
+						}
+					}
+				} catch (Exception e) {
+					Log.e(TAG,
+							"An error occured on writing changes back to foaf.",
 							e);
 				}
 			} else {
@@ -655,10 +665,18 @@ public class ContactsSyncAdapterService extends Service {
 
 	/**
 	 * Get a Class object, from the class which is represented by the given uri.
-	 * @param uri the uri, which represents the class you want to get. This uri has to start with Constants.DATA_KINDS_PREFIX.
-	 * @param isField set to true if the given uri is not a class, but a field of this class, so the part after the last Point "." will be ignored.
+	 * 
+	 * @param uri
+	 *            the uri, which represents the class you want to get. This uri
+	 *            has to start with Constants.DATA_KINDS_PREFIX.
+	 * @param isField
+	 *            set to true if the given uri is not a class, but a field of
+	 *            this class, so the part after the last Point "." will be
+	 *            ignored.
 	 * @return a Class object of a final class
-	 * @throws ClassNotFoundException if the given uri doesn't start with Constants.DATA_KINDS_PREFIX or could not be found.
+	 * @throws ClassNotFoundException
+	 *             if the given uri doesn't start with
+	 *             Constants.DATA_KINDS_PREFIX or could not be found.
 	 */
 	private static Class<? extends Object> forUri(String uri, boolean isField)
 			throws ClassNotFoundException {

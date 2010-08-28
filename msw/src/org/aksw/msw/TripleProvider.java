@@ -365,6 +365,10 @@ public class TripleProvider extends ContentProvider {
 					property = model.getProperty(propUri);
 					
 					value = (String) dataEntry.getValue();
+					
+					if (propUri.equals(Constants.PROP_rdfType)) {
+						value = Constants.MIME_TYPES.get(value);
+					}
 
 					bNode.addProperty(property, model.getResource(value));
 				}
