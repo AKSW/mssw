@@ -3,7 +3,7 @@
 	android:id="@+id/browser_browse_view" android:layout_width="wrap_content"
 	android:layout_height="wrap_content" android:orientation="vertical">
 	
-	<EditText android:id="@+id/UriInput" android:layout_height="wrap_content"
+	<EditText android:id="@+id/SearchInput" android:layout_height="wrap_content"
 		android:layout_width="fill_parent" android:text="" android:inputType="textUri" />
 	<Button android:text="@string/load" android:id="@+id/Load"
 		android:layout_height="wrap_content" android:layout_width="fill_parent" />

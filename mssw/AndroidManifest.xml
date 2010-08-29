@@ -7,14 +7,24 @@
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
+
+			<intent-filter>
+				<action android:name="org.aksw.mssw.VIEW_WEBID" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:scheme="http" />
+			</intent-filter>
+
+			<intent-filter>
+				<action android:name="org.aksw.mssw.ADD_WEBID" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:scheme="http" />
+			</intent-filter>
 		</activity>
 		<activity android:name=".MsswPreferenceActivity"
 			android:label="MSSW Preferences">
-
 			<intent-filter>
 				<action android:name="org.aksw.mssw.PREFERENCE" />
 				<category android:name="android.intent.category.DEFAULT" />
-				<category android:name="android.intent.category.PREFERENCE" />
 			</intent-filter>
 		</activity>
 		<activity android:name=".browser.BrowserMeCard"

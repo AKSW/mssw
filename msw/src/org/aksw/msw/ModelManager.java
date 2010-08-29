@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +16,12 @@ import javax.net.ssl.SSLSocketFactory;
 import org.aksw.msw.foafssl.FoafsslURLConnection;
 import org.aksw.msw.foafssl.TrustManagerFactory;
 
-import com.hp.hpl.jena.rdf.model.InfModel;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Environment;
+import android.preference.PreferenceManager;
+import android.util.Log;
+
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.ModelMaker;
@@ -31,13 +34,6 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
 import com.hp.hpl.jena.shared.DoesNotExistException;
 import com.hp.hpl.jena.shared.JenaException;
-import com.hp.hpl.jena.util.iterator.ExtendedIterator;
-
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.os.Environment;
-import android.preference.PreferenceManager;
-import android.util.Log;
 
 public class ModelManager {
 
@@ -112,6 +108,28 @@ public class ModelManager {
 		return modelMakers.get("cache").createDefaultModel();
 	}
 
+	public Model getModel(String uri, String makerKey) {
+		Model model = null;
+		String state = Environment.getExternalStorageState();
+		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
+			if (modelExists(uri, makerKey)) {
+				model = modelMakers.get(makerKey).openModel(uri);
+			} else {
+				model = createModel(uri, makerKey);
+				if (model != null && makerKey.equals("web")) {
+					readSSL(uri, model);
+				}
+			}
+		} else if (uri == null) {
+			Log.v(TAG,
+					"You have to give an uri, to get a Model, that is the deal. Returning 'null'.");
+		} else {
+			Log.v(TAG,
+					"ExternalStorrage not mounted, couldn't get model, returning 'null'.");
+		}
+		return model;
+	}
+
 	public Model getModel(String uri, boolean persistant, boolean inferenced) {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
@@ -144,7 +162,8 @@ public class ModelManager {
 			// add the according inference model
 			if (inferenced) {
 				Model infModel;
-				if (modelExists(uri, "inf") && !modelMakers.get("inf").openModel(uri).isEmpty()) {
+				if (modelExists(uri, "inf")
+						&& !modelMakers.get("inf").openModel(uri).isEmpty()) {
 					infModel = modelMakers.get("inf").openModel(uri);
 				} else {
 					infModel = createModel(uri, "inf");
@@ -167,10 +186,10 @@ public class ModelManager {
 			}
 		} else if (uri == null) {
 			Log.v(TAG,
-					"You have to give an uri, to get a Model, that is the deal. Returning 'null'");
+					"You have to give an uri, to get a Model, that is the deal. Returning 'null'.");
 		} else {
 			Log.v(TAG,
-					"ExternalStorrage not mounted, couldn't get model, returning 'null'");
+					"ExternalStorrage not mounted, couldn't get model, returning 'null'.");
 		}
 		return model;
 	}
