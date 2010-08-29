@@ -31,9 +31,9 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	/**
 	 * should be replaced by something saved in the Application Context to use it also in MeCard
 	 */
-	private static String selectedWebID;
+	private String selectedWebID;
 	
-	private static ResourceCursorAdapter rca; 
+	private ResourceCursorAdapter rca; 
 
 	private MenuManager menuManager;
 	
@@ -116,9 +116,17 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		String uri;
-		uri = "http://sebastian.tramp.name";
+		
+		Cursor rc = rca.getCursor();
+		if (rc.moveToPosition(position)) {
+		uri = rc.getString(rc.getColumnIndex("object"));
+		
+		//uri = "http://sebastian.tramp.name";
 		Intent i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(uri));
 		startActivity(i);
+		} else {
+			Log.v(TAG, "Error on finding selected item at position: '" + position + "' with id: '" + id + "'");
+		}
 		super.onListItemClick(l, v, position, id);
 	}
 	

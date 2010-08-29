@@ -24,7 +24,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 	private TabHost tabHost;
 
-	protected static String selectedWebID;
+	protected String selectedWebID;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {

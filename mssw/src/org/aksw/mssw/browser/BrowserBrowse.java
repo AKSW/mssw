@@ -9,11 +9,9 @@ import org.aksw.mssw.R;
 
 import android.app.ListActivity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -45,8 +43,8 @@ public class BrowserBrowse extends ListActivity {
 	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
 		setContentView(R.layout.browser_browse);
-
 
 		menuManager = new MenuManager();
 		
@@ -55,14 +53,10 @@ public class BrowserBrowse extends ListActivity {
 
 		properties = (ListView) findViewById(android.R.id.list);
 		status = (TextView) findViewById(R.id.Status);
-		uriInput = (EditText) findViewById(R.id.UriInput);
-
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+		uriInput = (EditText) findViewById(R.id.SearchInput);
 		
 		properties.setAdapter(aa);
-		status.setText("Activity ist erstmal da, soweit gut. Die Liste fehlt aber immernoch, das ist sehr doof und ich weiß nicht, wass ich machen soll.");
-		uriInput.setText(sharedPreferences.getString("me", Constants.EXAMPLE_webId));
-
+	
 		this.loadButton = (Button) this.findViewById(R.id.Load);
 
 		this.loadButton.setOnClickListener(new OnClickListener() {
@@ -72,14 +66,14 @@ public class BrowserBrowse extends ListActivity {
 			}
 		});
 
-		loadRes("offline");
+		//loadRes("offline");
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.browser, menu);
+		inflater.inflate(R.menu.search, menu);
 		return true;
 	}
 

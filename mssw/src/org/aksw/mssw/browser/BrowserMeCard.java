@@ -31,12 +31,12 @@ public class BrowserMeCard extends ListActivity {
 	 * it also in Contacts
 	 * 
 	 */
-	private static String selectedWebID;
+	private String selectedWebID;
 
 	private TextView name;
 	private TextView empty;
 
-	private static ResourceCursorAdapter rca;
+	private ResourceCursorAdapter rca;
 
 	private MenuManager menuManager;
 
@@ -99,17 +99,17 @@ public class BrowserMeCard extends ListActivity {
 					+ ">.");
 
 			rc = managedQuery(contentUri, null, null, null, null);
+			if (rc != null && rc.moveToFirst()) {
+				this.name = (TextView) this.findViewById(R.id.mecard_name);
+				this.name.setText(rc.getString(rc.getColumnIndex("object")));
 
-			rc.moveToFirst();
-
-			this.name = (TextView) this.findViewById(R.id.mecard_name);
-			this.name.setText(rc.getString(rc.getColumnIndex("object")));
-
-			/*
-			 * this.photo = (ImageView) this.findViewById(R.id.mecard_picture);
-			 * this.photo.setImageDrawable(res.getDrawable(R.drawable.icon));
-			 */
-
+				/*
+				 * this.photo = (ImageView)
+				 * this.findViewById(R.id.mecard_picture);
+				 * this.photo.setImageDrawable
+				 * (res.getDrawable(R.drawable.icon));
+				 */
+			}
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG,
 					"Could not encode URI and so couldn't get Resource from "
