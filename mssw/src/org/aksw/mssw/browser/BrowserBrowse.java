@@ -4,37 +4,31 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
-import org.aksw.mssw.MsswPreferenceActivity;
+import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
-import android.app.Activity;
+import android.app.ListActivity;
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class BrowserBrowse extends Activity {
+public class BrowserBrowse extends ListActivity {
 
 	private static final String TAG = "msswBrowserMeCard";
-	
-	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
-	private static final Uri CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
 	private final ArrayList<Property> items = new ArrayList<Property>();
 
@@ -44,24 +38,25 @@ public class BrowserBrowse extends Activity {
 	private TextView status;
 	private EditText uriInput;
 	private Button loadButton;
+
+	private MenuManager menuManager;
 	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
 		setContentView(R.layout.browser_browse);
 
+		menuManager = new MenuManager();
+		
 		aa = new PropertiesAdapter(this,
 				android.R.layout.simple_list_item_1, items);
 
 		properties = (ListView) findViewById(android.R.id.list);
 		status = (TextView) findViewById(R.id.Status);
-		uriInput = (EditText) findViewById(R.id.UriInput);
-
-		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+		uriInput = (EditText) findViewById(R.id.SearchInput);
 		
 		properties.setAdapter(aa);
-		status.setText("Activity ist erstmal da, soweit gut. Die Liste fehlt aber immernoch, das ist sehr doof und ich weiß nciht, wass ich machen soll.");
-		uriInput.setText(sharedPreferences.getString("me", "noPref"));
-
+	
 		this.loadButton = (Button) this.findViewById(R.id.Load);
 
 		this.loadButton.setOnClickListener(new OnClickListener() {
@@ -71,30 +66,24 @@ public class BrowserBrowse extends Activity {
 			}
 		});
 
-		loadRes("offline");
+		//loadRes("offline");
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.browser, menu);
+		inflater.inflate(R.menu.search, menu);
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		Intent i;
-		switch (item.getItemId()) {
-		case R.id.itemPref:
-			i = new Intent(this, MsswPreferenceActivity.class);
-			startActivity(i);
+
+		boolean ret = menuManager.itemSelected(this, item, "");
+		if (ret) {
 			return true;
-		case R.id.itemMe:
-			i = new Intent(this, BrowserMeCard.class);
-			startActivity(i);
-			return true;
-		default:
+		} else {
 			return super.onOptionsItemSelected(item);
 		}
 	}
@@ -122,7 +111,7 @@ public class BrowserBrowse extends Activity {
 				String enc = "UTF-8";
 				
 				Uri contentUri;
-				contentUri = Uri.parse(CONTENT_URI
+				contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
 						+ "/person/"
 						+ URLEncoder.encode(uri, enc));
 

@@ -3,7 +3,7 @@ package org.aksw.mssw.browser;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-import org.aksw.mssw.MsswPreferenceActivity;
+import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
 import android.app.ListActivity;
@@ -26,86 +26,96 @@ public class BrowserMeCard extends ListActivity {
 
 	private static final String TAG = "msswBrowserMeCard";
 
-	private static final String CONTENT_AUTHORITY = "org.aksw.mssw.content.foafprovider";
-	private static final Uri CONTENT_URI = Uri.parse("content://"
-			+ CONTENT_AUTHORITY);
-
-	private static final String DEFAULT_ME = "http://people.comiles.eu/example";
-	
 	/**
-	 * should be replaced by something saved in the Application Context to use it also in Contacts
-	 * @deprecated
+	 * should be replaced by something saved in the Application Context to use
+	 * it also in Contacts
+	 * 
 	 */
-	private static String selectedWebID;
+	private String selectedWebID;
 
 	private TextView name;
 	private TextView empty;
-	
-	private static ResourceCursorAdapter rca; 
+
+	private ResourceCursorAdapter rca;
+
+	private MenuManager menuManager;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		/**
 		 * Load View for MeCard
 		 */
 		setContentView(R.layout.browser_mecard);
-		//empty = (TextView) this.findViewById(android.R.id.empty);
-		//empty.setText("");
+		// empty = (TextView) this.findViewById(android.R.id.empty);
+		// empty.setText("");
+
+		Intent intent = getIntent();
+		if (intent != null) {
+			String data = intent.getDataString();
+			if (data != null) {
+				selectedWebID = data;
+			}
+		}
 
 		/**
-		 * retrieve WebID first from savedInstanceState than from SharedPreferences
+		 * retrieve WebID first from savedInstanceState than from
+		 * SharedPreferences
 		 */
 		if (selectedWebID == null) {
 			SharedPreferences sharedPreferences = PreferenceManager
 					.getDefaultSharedPreferences(getApplicationContext());
-			selectedWebID = sharedPreferences.getString("me", DEFAULT_ME);
+			selectedWebID = sharedPreferences.getString("me",
+					Constants.EXAMPLE_webId);
 		}
 
-		try {
-			String enc = "UTF-8";
+		menuManager = new MenuManager();
 
-			Uri contentUri = Uri.parse(CONTENT_URI + "/person/mecard/"
-					+ URLEncoder.encode(selectedWebID, enc));
+		try {
+			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+					+ "/person/mecard/"
+					+ URLEncoder.encode(selectedWebID, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
 
 			Cursor rc = managedQuery(contentUri, null, null, null, null);
-			
-			String[] from = new String[]{"predicatReadable", "objectReadable"};
-			int[] to = {R.id.key,R.id.value};
-			rca = new SimpleCursorAdapter(getApplicationContext(), R.layout.mecard_properties, rc, from, to);
-			
+
+			String[] from = new String[] { "predicatReadable", "objectReadable" };
+			int[] to = { R.id.key, R.id.value };
+			rca = new SimpleCursorAdapter(getApplicationContext(),
+					R.layout.mecard_properties, rc, from, to);
+
 			ListView list = (ListView) this.findViewById(android.R.id.list);
 			list.setAdapter(rca);
 
-//			Resources res = getResources(); // Resource object to get Drawables
+			// Resources res = getResources(); // Resource object to get
+			// Drawables
 
-			contentUri = Uri.parse(CONTENT_URI + "/person/name/"
-					+ URLEncoder.encode(selectedWebID, enc));
+			contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/person/name/"
+					+ URLEncoder.encode(selectedWebID, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
-			
+
 			rc = managedQuery(contentUri, null, null, null, null);
+			if (rc != null && rc.moveToFirst()) {
+				this.name = (TextView) this.findViewById(R.id.mecard_name);
+				this.name.setText(rc.getString(rc.getColumnIndex("object")));
 
-			rc.moveToFirst();
-			
-			this.name = (TextView) this.findViewById(R.id.mecard_name);
-			this.name.setText(rc.getString(rc.getColumnIndex("object")));
-			
-			/*
-			this.photo = (ImageView) this.findViewById(R.id.mecard_picture);
-			this.photo.setImageDrawable(res.getDrawable(R.drawable.icon));
-			*/
-
+				/*
+				 * this.photo = (ImageView)
+				 * this.findViewById(R.id.mecard_picture);
+				 * this.photo.setImageDrawable
+				 * (res.getDrawable(R.drawable.icon));
+				 */
+			}
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG,
 					"Could not encode URI and so couldn't get Resource from "
-							+ CONTENT_AUTHORITY + ".", e);
+							+ Constants.FOAF_AUTHORITY + ".", e);
 			empty.setText("Could not encode URI and so couldn't get Resource from "
-					+ CONTENT_AUTHORITY + ".");
+					+ Constants.FOAF_AUTHORITY + ".");
 		}
 
 	}
@@ -114,24 +124,21 @@ public class BrowserMeCard extends ListActivity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		MenuInflater inflater = getMenuInflater();
+		// don't show addWebId if the actualy selecte WebId is already a friend
+		// don't show the me button of you show my WenId
 		inflater.inflate(R.menu.browser, menu);
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		Intent i;
-		switch (item.getItemId()) {
-		case R.id.itemPref:
-			i = new Intent(this, MsswPreferenceActivity.class);
-			startActivity(i);
+
+		boolean ret = menuManager.itemSelected(this, item, selectedWebID);
+		if (ret) {
 			return true;
-		case R.id.itemMe:
-			i = new Intent(this, BrowserMeCard.class);
-			startActivity(i);
-			return true;
-		default:
+		} else {
 			return super.onOptionsItemSelected(item);
 		}
 	}
+
 }

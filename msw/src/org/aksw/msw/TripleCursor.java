@@ -76,7 +76,6 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public int getCount() {
-		// TODO Auto-generated method stub
 		return this.properties.size();
 	}
 
@@ -105,7 +104,7 @@ public class TripleCursor extends AbstractCursor {
 		case 6:
 			Log.v(TAG, "asks if the object is a Resource, I would say: '"
 					+ stmt.getObject().isResource() + "'.");
-			if(stmt.getObject().isResource()) {
+			if (stmt.getObject().isResource()) {
 				return 1;
 			} else {
 				return 0;
@@ -113,7 +112,7 @@ public class TripleCursor extends AbstractCursor {
 		case 7:
 			Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
 					+ stmt.getObject().isAnon() + "'.");
-			if(stmt.getObject().isAnon()) {
+			if (stmt.getObject().isAnon()) {
 				return 1;
 			} else {
 				return 0;
@@ -139,7 +138,7 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public String getString(int column) {
-		//Log.v(TAG, "getString(" + column + "," + mPos + ").");
+		// Log.v(TAG, "getString(" + column + "," + mPos + ").");
 		Statement stmt = properties.get(mPos);
 		switch (column) {
 		case 1:
@@ -176,14 +175,14 @@ public class TripleCursor extends AbstractCursor {
 				// I don't know
 				return null;
 			}
-			case 6:
-				//Log.v(TAG, "asks if the object is a Resource, I would say: '"
-				//		+ stmt.getObject().isResource() + "'.");
-				return stmt.getObject().isResource() ? "true" : "false";
-			case 7:
-				//Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
-				//		+ stmt.getObject().isAnon() + "'.");
-				return stmt.getObject().isAnon() ? "true" : "false";
+		case 6:
+			// Log.v(TAG, "asks if the object is a Resource, I would say: '"
+			// + stmt.getObject().isResource() + "'.");
+			return stmt.getObject().isResource() ? "true" : "false";
+		case 7:
+			// Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
+			// + stmt.getObject().isAnon() + "'.");
+			return stmt.getObject().isAnon() ? "true" : "false";
 		default:
 			return null;
 		}

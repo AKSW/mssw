@@ -15,13 +15,13 @@
 		<TextView android:id="@+id/mecard_name" android:layout_width="fill_parent"
 			android:layout_height="26dip" android:layout_toRightOf="@id/mecard_icon"
 			android:layout_centerVertical="true" android:layout_alignParentRight="true"
-			android:singleLine="true" android:ellipsize="marquee" android:text="My Name"
+			android:singleLine="true" android:ellipsize="marquee" android:text="@string/my_name"
 			android:textStyle="bold" android:textColor="#fff"
 			android:paddingLeft="6dip" />
 	</RelativeLayout>
 
 	<TextView android:id="@id/android:empty" android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:text="@string/no_result" />
+		android:layout_height="wrap_content" android:text="@string/no_webid" />
 
 	<ListView android:id="@id/android:list" android:layout_width="fill_parent"
 		android:layout_height="fill_parent" />

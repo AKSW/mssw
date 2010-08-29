@@ -13,10 +13,6 @@ public class MswPreferenceActivity extends PreferenceActivity {
 
 	private static final String TAG = "MswPreferenceActivity";
 	
-	private static final String CONTENT_AUTHORITY = "org.aksw.msw.tripleprovider";
-	private static final Uri CONTENT_URI = Uri.parse("content://"
-			+ CONTENT_AUTHORITY);
-	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
@@ -33,7 +29,7 @@ public class MswPreferenceActivity extends PreferenceActivity {
 		public boolean onPreferenceClick(Preference preference) {
 			Toast.makeText(getApplicationContext(), R.string.syncing_toast, Toast.LENGTH_LONG).show();
 			
-			Uri contentUri = Uri.parse(CONTENT_URI + "/update/");
+			Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/update/");
 			
 			ContentResolver cr = getContentResolver();
 			

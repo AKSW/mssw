@@ -7,6 +7,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
+import org.aksw.mssw.Constants;
+
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -56,7 +58,7 @@ public class FoafProvider extends ContentProvider {
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
 	static {
-		uriMatcher.addURI(AUTHORITY, "me/friend/add/*", ME_FRIEND_ADD);
+		uriMatcher.addURI(AUTHORITY, "me/friend/add", ME_FRIEND_ADD);
 		uriMatcher.addURI(AUTHORITY, "me/friends", ME_FRIENDS);
 		uriMatcher.addURI(AUTHORITY, "me/mecard", ME_MECARD);
 		uriMatcher.addURI(AUTHORITY, "me", ME);
@@ -223,6 +225,27 @@ public class FoafProvider extends ContentProvider {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.content.ContentProvider#insert(android.net.Uri,
+	 * android.content.ContentValues)
+	 */
+	@Override
+	public Uri insert(Uri uri, ContentValues values) {
+
+		int match = uriMatcher.match(uri);
+		switch (match) {
+		case ME_FRIEND_ADD:
+			Log.i(TAG,
+					"Adding new friends to your WebID is not yet implemented. uri <"
+							+ (String) values.get("uri") + ">.");
+			return Uri.parse((String) values.get("uri"));
+		default:
+			return null;
+		}
+	}
+
 	/*------------- private ----------------*/
 
 	private String[] relations = { "http://xmlns.com/foaf/0.1/knows",
@@ -337,11 +360,9 @@ public class FoafProvider extends ContentProvider {
 		Log.v(TAG, "getName: <" + uri + ">");
 
 		try {
-			String enc = "UTF-8";
-
 			Uri contentUri;
 			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, enc));
+					+ URLEncoder.encode(uri, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
@@ -351,37 +372,41 @@ public class FoafProvider extends ContentProvider {
 			}
 			Cursor rc = getContentResolver().query(contentUri, nameProps, null,
 					null, null);
+
 			if (rc != null) {
-				rc.moveToFirst();
+				if (rc.moveToFirst()) {
 
-				String[] names = new String[nameProps.length];
-				String predicat = "";
-				String object = "";
-				String subject = rc.getString(rc.getColumnIndex("subject"));
-
-				for (rc.moveToFirst(); !rc.isLast(); rc.moveToNext()) {
-					predicat = rc.getString(rc.getColumnIndex("predicat"));
-					object = rc.getString(rc.getColumnIndex("object"));
-					for (int i = 0; i < nameProps.length; i++) {
-						if (nameProps[i].compareToIgnoreCase(predicat) == 0) {
-							names[i] = object;
+					String[] names = new String[nameProps.length];
+					String predicat = "";
+					String object = "";
+					String subject = rc.getString(rc.getColumnIndex("subject"));
+					rc.moveToPosition(-1);
+					while (rc.moveToNext()) {
+						predicat = rc.getString(rc.getColumnIndex("predicat"));
+						object = rc.getString(rc.getColumnIndex("object"));
+						for (int i = 0; i < nameProps.length; i++) {
+							if (nameProps[i].compareToIgnoreCase(predicat) == 0) {
+								names[i] = object;
+							}
 						}
 					}
-				}
 
-				for (int i = 0; i < names.length; i++) {
-					if (names[i] != null && names[i].length() > 0) {
-						object = names[i];
-						predicat = nameProps[i];
-						if (i == 1) {
-							object = object + " " + names[i + 1];
+					for (int i = 0; i < names.length; i++) {
+						if (names[i] != null && names[i].length() > 0) {
+							object = names[i];
+							predicat = nameProps[i];
+							if (i == 1) {
+								object = object + " " + names[i + 1];
+							}
+							break;
 						}
-						break;
 					}
-				}
 
-				Cursor out = new PropertyCursor(subject, predicat, object);
-				return out;
+					Cursor out = new PropertyCursor(subject, predicat, object);
+					return out;
+				} else {
+					return null;
+				}
 			} else {
 				Log.v(TAG, "Resourcecursor was empty, returning 'null'");
 				return null;
@@ -478,18 +503,6 @@ public class FoafProvider extends ContentProvider {
 	}
 
 	/*------------ the following methods are not supported by this ContentProvider -----------*/
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.content.ContentProvider#insert(android.net.Uri,
-	 * android.content.ContentValues)
-	 */
-	@Override
-	public Uri insert(Uri uri, ContentValues values) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	/*
 	 * (non-Javadoc)
