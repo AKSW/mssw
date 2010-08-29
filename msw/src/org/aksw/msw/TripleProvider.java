@@ -62,7 +62,9 @@ public class TripleProvider extends ContentProvider {
 	private static final int RESOURCE_OFFLINE = 13;
 	private static final int RESOURCE_ADD_DATA = 14;
 
-	private static final int BNODE = 20;
+	private static final int RESOURCES = 20;
+
+	private static final int BNODE = 30;
 
 	private static final int SPARQL = 40;
 
@@ -72,6 +74,7 @@ public class TripleProvider extends ContentProvider {
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
 	static {
+		uriMatcher.addURI(AUTHORITY, "resources/", RESOURCES);
 		uriMatcher.addURI(AUTHORITY, "resource/tmp/*", RESOURCE_TMP);
 		uriMatcher.addURI(AUTHORITY, "resource/save/*", RESOURCE_SAVE);
 		uriMatcher.addURI(AUTHORITY, "resource/offline/*", RESOURCE_OFFLINE);
@@ -151,12 +154,11 @@ public class TripleProvider extends ContentProvider {
 	 *            unused
 	 */
 	@Override
-	public Cursor query(Uri uri, String[] projection, String selection,
+	public Cursor query(Uri uri, String[] properties, String selection,
 			String[] selectionArgs, String sortOrder) {
 		Log.v(TAG, "Starting query");
 
 		Resource res = null;
-		String[] properties = projection;
 
 		boolean complement;
 
@@ -306,15 +308,20 @@ public class TripleProvider extends ContentProvider {
 	}
 
 	private Resource getResource(String uri, int mode) {
-		switch (mode) {
-		case TMP:
-			return queryResource(uri, false);
-		case SAV:
-			return queryResource(uri, true);
-		case OFF:
-			return queryResource(uri, true);
-		default:
-			return queryResource(uri, true);
+		if (uri.startsWith("http:")) {
+			switch (mode) {
+			case TMP:
+				return queryResource(uri, false);
+			case SAV:
+				return queryResource(uri, true);
+			case OFF:
+				return queryResource(uri, true);
+			default:
+				return queryResource(uri, true);
+			}
+		} else {
+			Log.e(TAG, "The Resource <" + uri + "> starts with an unsupportet scheme.");
+			return null;
 		}
 	}
 
