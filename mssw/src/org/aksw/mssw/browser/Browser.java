@@ -79,12 +79,14 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				selectedTab = 0;
 			}
 		}
+		
+		setTitle(selectedWebID);
 
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserMeCard.class);
 		intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("meCard");
-		spec.setIndicator(getString(R.string.me),
+		spec.setIndicator(getString(R.string.profile),
 				res.getDrawable(android.R.drawable.ic_menu_myplaces));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
