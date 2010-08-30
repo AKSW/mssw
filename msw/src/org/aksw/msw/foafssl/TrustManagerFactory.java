@@ -25,7 +25,7 @@ public class TrustManagerFactory {
 	private static String TAG = "MswTrustManagerFactory";
 	private static String KEY_ALGORITHM = "X509";
 	private static String KEYSTORE_TYPE = "PKCS12";
-	private static String SSL_PROTOCOL = "SSL";
+	private static String SSL_PROTOCOL = "TLS";
 	
 	// TODO need to import the CA somewhere
 	
@@ -54,6 +54,9 @@ public class TrustManagerFactory {
 		} catch (CertificateException e) {
 			Log.e(TAG, "Error on loading key into the keystore.", e);
 		} catch (IOException e) {
+			if (e.getMessage().contains("wrong password")) {
+				Log.e(TAG, "Problem while reading from keyfile, maybe Password is wrong.");
+			}
 			Log.e(TAG, "Problem while reading from keyfile: '" + keyFile.getAbsolutePath() + "'.", e);
 		} catch (UnrecoverableKeyException e) {
 			Log.e(TAG, "Could not recover key.", e);

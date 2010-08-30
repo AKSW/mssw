@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,12 +55,14 @@ public class ModelManager {
 
 	private static HashMap<String, ModelMaker> modelMakers;
 
-	private static Context context;
+	private Context context;
+	private SharedPreferences sharedPreferences;
 
 	private static FoafMapper fm;
 
-	public ModelManager(Context context) {
-		fm = new FoafMapper(context);
+	public ModelManager(Context contextIn) {
+		fm = new FoafMapper(contextIn);
+		context = contextIn;
 
 		File storage = Environment.getExternalStorageDirectory();
 		webModelsFiles = new File(storage, Constants.WEB_MODELS_DIR);
@@ -279,34 +282,63 @@ public class ModelManager {
 				// storage.getAbsolutePath();
 				if (keyFile.isFile()) {
 
-					SharedPreferences prefs = PreferenceManager
-							.getDefaultSharedPreferences(context);
+					SharedPreferences prefs = getConfiguration();
 
 					SSLSocketFactory socketFactory = TrustManagerFactory
 							.getFactory(keyFile,
 									prefs.getString("privatekey_password", ""));
+					if (socketFactory != null) {
+						try {
+							if (false) {
+								FoafsslURLConnection
+										.setDefaultSSLSocketFactory(socketFactory);
+								FoafsslURLConnection.setDefaultRequestProperty(
+										"accept", Constants.REQUEST_PROPERTY);
+								FoafsslURLConnection conn = new FoafsslURLConnection(
+										new URL(url));
+							}
 
-					try {
-						FoafsslURLConnection
-								.setDefaultSSLSocketFactory(socketFactory);
-						HttpsURLConnection conn = new FoafsslURLConnection(
-								new URL(url));
+							HttpsURLConnection
+									.setDefaultSSLSocketFactory(socketFactory);
+							HttpsURLConnection.setDefaultRequestProperty(
+									"accept", Constants.REQUEST_PROPERTY);
 
-						read(url, model, conn.getInputStream());
-					} catch (FileNotFoundException e) {
-						Log.e(TAG, "Couldn't find File.", e);
-					} catch (IOException e) {
-						Log.e(TAG,
-								"Input/Output Error while creating or using Socket.",
-								e);
+							//URL connectUrl = new URL(url);
+							
+							HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+							
+							conn.setDoOutput(true);
+							conn.setDoInput(true);
+							
+							conn.connect();
+
+							// if (conn.isConnected()) {
+							Log.v(TAG, "Start reading from SSL connection.");
+							read(url, model, conn.getInputStream());
+							// } else {
+							// Log.v(TAG,
+							// "FOAF+SSL Connection is not jet esablished.");
+							// }
+						} catch (MalformedURLException e) {
+							Log.e(TAG, "URL not formed correctly", e);
+						} catch (FileNotFoundException e) {
+							Log.e(TAG, "Couldn't find File.", e);
+						} catch (IOException e) {
+							Log.e(TAG,
+									"Input/Output Error while creating or using Socket.",
+									e);
+							read(url, model, null);
+						}
+					} else {
+						Log.v(TAG, "Socket Factory is null.");
 						read(url, model, null);
 					}
 
 				} else {
 					Log.i(TAG,
 							"Couldn't get private Key, reading without FOAF+SSL features.");
+					read(url, model, null);
 				}
-				read(url, model, null);
 			} catch (DoesNotExistException e) {
 				Log.e(TAG, "Jena couldn't find the model: '" + url + "'.'", e);
 			}
@@ -329,9 +361,16 @@ public class ModelManager {
 			}
 		} catch (DoesNotExistException e) {
 			Log.e(TAG, "Could not get <" + uri + "> into temp model,"
-					+ "check the existence with your webbrowser.", e);
+					+ "check the existence with your webbrowser. (rollback)", e);
+			if (model.supportsTransactions()) {
+				tmp.abort();
+			}
 		} catch (JenaException e) {
-			Log.e(TAG, "Error on reading <" + uri + "> into temp model.", e);
+			Log.e(TAG, "Error on reading <" + uri
+					+ "> into temp model. (rollback)", e);
+			if (model.supportsTransactions()) {
+				tmp.abort();
+			}
 		}
 
 		// TODO should include also all blanknodes in the connected graph
@@ -450,5 +489,16 @@ public class ModelManager {
 		} else {
 			return null;
 		}
+	}
+
+	private SharedPreferences getConfiguration() {
+
+		if (context == null) {
+			Log.v(TAG, "Context is null");
+		}
+		sharedPreferences = PreferenceManager
+				.getDefaultSharedPreferences(context);
+
+		return sharedPreferences;
 	}
 }
