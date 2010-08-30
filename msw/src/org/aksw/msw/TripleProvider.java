@@ -61,6 +61,7 @@ public class TripleProvider extends ContentProvider {
 	private static final int RESOURCE_TMP = 12;
 	private static final int RESOURCE_OFFLINE = 13;
 	private static final int RESOURCE_ADD_DATA = 14;
+	private static final int RESOURCE_ADD_TRIPLE = 15;
 
 	private static final int RESOURCES = 20;
 
@@ -79,6 +80,8 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "resource/save/*", RESOURCE_SAVE);
 		uriMatcher.addURI(AUTHORITY, "resource/offline/*", RESOURCE_OFFLINE);
 		uriMatcher.addURI(AUTHORITY, "resource/addData/*", RESOURCE_ADD_DATA);
+		uriMatcher.addURI(AUTHORITY, "resource/addTriple/*",
+				RESOURCE_ADD_TRIPLE);
 		uriMatcher.addURI(AUTHORITY, "resource/*", RESOURCE);
 		uriMatcher.addURI(AUTHORITY, "bnode/*/*", BNODE);
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
@@ -235,9 +238,24 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
-		throw new UnsupportedOperationException(
-				"The TripleProvider is not capable of inserting Resources, sorry.");
-		// return null;
+
+		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
+
+		int match = uriMatcher.match(uri);
+
+		switch (match) {
+		case RESOURCE_ADD_TRIPLE:
+			if (path.size() > 2) {
+				return addTriple(path.get(2), values);
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				return null;
+			}
+		default:
+			return null;
+		}
+
 	}
 
 	@Override
@@ -320,7 +338,8 @@ public class TripleProvider extends ContentProvider {
 				return queryResource(uri, true);
 			}
 		} else {
-			Log.e(TAG, "The Resource <" + uri + "> starts with an unsupportet scheme.");
+			Log.e(TAG, "The Resource <" + uri
+					+ "> starts with an unsupportet scheme.");
 			return null;
 		}
 	}
@@ -399,6 +418,41 @@ public class TripleProvider extends ContentProvider {
 			}
 		}
 		return 0;
+	}
+
+	private Uri addTriple(String uri, ContentValues values) {
+
+		Model model = mm.getModel(uri, "web");
+
+		try {
+			String subject = values.getAsString("subject");
+			String predicat = values.getAsString("predicat");
+			String object = values.getAsString("object");
+
+			if (model.supportsTransactions()) {
+				model.begin();
+			}
+			Resource resource = model.getResource(subject);
+			Property property = model.getProperty(predicat);
+			RDFNode objectRes;
+			if (object.startsWith("http:")) {
+				objectRes = model.getResource(object);
+			} else {
+				objectRes = model.createLiteral(object);
+			}
+			resource.addProperty(property, objectRes);
+			if (model.supportsTransactions()) {
+				model.commit();
+			}
+		} catch (JenaException e) {
+			Log.e(TAG, "Exception on adding triple to resource <" + uri
+					+ ">. (rollback)", e);
+			if (model.supportsTransactions()) {
+				model.abort();
+			}
+		}
+
+		return Uri.parse(uri);
 	}
 
 	public static String getName(Resource person) {

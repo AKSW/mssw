@@ -63,7 +63,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 										+ contentUri.toString() + ">.");
 
 						ContentValues values = new ContentValues();
-						values.put("uri", data);
+						values.put("webid", data);
 
 						getContentResolver().insert(contentUri, values);
 					} catch (Exception e) {
@@ -79,7 +79,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				selectedTab = 0;
 			}
 		}
-		
+
 		setTitle(selectedWebID);
 
 		/* This is bad, because I repeat very similar code three times */
@@ -137,9 +137,10 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
-		if (key == "me") {
+		/*if (key == "me") {
 			selectedWebID = sharedPreferences.getString(key,
 					Constants.EXAMPLE_webId);
-		}
+			
+		}*/
 	}
 }

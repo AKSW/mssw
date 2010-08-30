@@ -18,7 +18,7 @@ public class NameHelper {
 
 	private static HashMap<String, String> names;
 	private static LinkedList<String> projection;
-	private static Context context;
+	private Context context;
 
 	static {
 		projection = new LinkedList<String>();
