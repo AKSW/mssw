@@ -86,7 +86,7 @@ public class ContactsSyncAdapterService extends Service {
 		// Diff) [1]
 		String uri;
 		while (rc.moveToNext()) {
-			uri = rc.getString(rc.getColumnIndex("object"));
+			uri = rc.getString(rc.getColumnIndex("webid"));
 			if (localContacts.get(uri) == null) {
 				// add missing persons to contacts
 				addContact(uri, account);
@@ -134,173 +134,182 @@ public class ContactsSyncAdapterService extends Service {
 			builder.withValue(RawContacts.ACCOUNT_TYPE, account.type);
 			builder.withValue(RawContacts.SYNC1, uri);
 			builderList.put(uri, builder);
+			if (uri != null) {
+				Uri contentUri = Uri.parse(Constants.CONTACT_CONTENT_URI
+						+ "/data/" + URLEncoder.encode(uri, Constants.ENC));
 
-			Uri contentUri = Uri.parse(Constants.CONTACT_CONTENT_URI + "/data/"
-					+ URLEncoder.encode(uri, Constants.ENC));
+				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+						+ ">.");
+				Cursor rc = content.query(contentUri, null, null, null, null);
 
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
-			Cursor rc = content.query(contentUri, null, null, null, null);
+				if (rc != null) {
+					String subject, predicat, object;
 
-			if (rc != null) {
-				String subject, predicat, object;
+					Log.i(TAG, "== Initializing hasData properties. ==");
+					/**
+					 * Initializing all hasData Properties of this contact
+					 */
+					while (rc.moveToNext()) {
+						predicat = rc.getString(rc.getColumnIndex("predicat"));
+						Log.v(TAG, "predicat = " + predicat);
 
-				Log.i(TAG, "== Initializing hasData properties. ==");
-				/**
-				 * Initializing all hasData Properties of this contact
-				 */
-				while (rc.moveToNext()) {
-					predicat = rc.getString(rc.getColumnIndex("predicat"));
-					Log.v(TAG, "predicat = " + predicat);
+						if (predicat != null
+								&& predicat.equals(Constants.PROP_hasData)) {
+							object = rc.getString(rc.getColumnIndex("object"));
 
-					if (predicat != null
-							&& predicat.equals(Constants.PROP_hasData)) {
-						object = rc.getString(rc.getColumnIndex("object"));
-
-						if (!builderList.containsKey(object)) {
-							builder = ContentProviderOperation
-									.newInsert(ContactsContract.Data.CONTENT_URI);
-							builder.withValueBackReference(
-									ContactsContract.RawContactsEntity.RAW_CONTACT_ID,
-									0);
-							builderList.put(object, builder);
-						} else {
-							Log.i(TAG, "Builder List already has this data: "
-									+ object);
+							if (!builderList.containsKey(object)) {
+								builder = ContentProviderOperation
+										.newInsert(ContactsContract.Data.CONTENT_URI);
+								builder.withValueBackReference(
+										ContactsContract.RawContactsEntity.RAW_CONTACT_ID,
+										0);
+								builderList.put(object, builder);
+							} else {
+								Log.i(TAG,
+										"Builder List already has this data: "
+												+ object);
+							}
 						}
 					}
-				}
 
-				// reset cursor before first element, as if it would be new
-				rc.moveToPosition(-1);
+					// reset cursor before first element, as if it would be new
+					rc.moveToPosition(-1);
 
-				Log.i(TAG, "== Initializing propertys of hasData objects. ==");
-				/**
-				 * get the properties of the nodes, which are the in the range
-				 * of a hasData property
-				 */
-				while (rc.moveToNext()) {
-					predicat = rc.getString(rc.getColumnIndex("predicat"));
-					Log.v(TAG, "predicat = " + predicat);
+					Log.i(TAG,
+							"== Initializing propertys of hasData objects. ==");
+					/**
+					 * get the properties of the nodes, which are the in the
+					 * range of a hasData property
+					 */
+					while (rc.moveToNext()) {
+						predicat = rc.getString(rc.getColumnIndex("predicat"));
+						Log.v(TAG, "predicat = " + predicat);
 
-					if (predicat != null
-							&& !predicat.equals(Constants.PROP_hasData)) {
-						subject = rc.getString(rc.getColumnIndex("subject"));
-						object = rc.getString(rc.getColumnIndex("object"));
-						builder = builderList.get(subject);
+						if (predicat != null
+								&& !predicat.equals(Constants.PROP_hasData)) {
+							subject = rc
+									.getString(rc.getColumnIndex("subject"));
+							object = rc.getString(rc.getColumnIndex("object"));
+							builder = builderList.get(subject);
 
-						try {
-							if (predicat.equals(Constants.PROP_rdfType)
-									&& object
-											.startsWith(Constants.DATA_KINDS_PREFIX)) {
-								Log.v(TAG, "rdf:type = " + object + ".");
-								// this is the place of magic
-								String type = (String) forUri(object, false)
-										.getField("CONTENT_ITEM_TYPE")
-										.get(null);
-
-								Log.v(TAG, "Goind to Add Mimetype: " + type
-										+ ".");
-								builder.withValue(
-										ContactsContract.Data.MIMETYPE, type);
-
-							} else if (predicat
-									.startsWith(Constants.DATA_KINDS_PREFIX)) {
-								boolean isResource;
-								if (rc.getString(
-										rc.getColumnIndex("oIsResource"))
-										.equals("true")) {
-									isResource = true;
-								} else {
-									isResource = false;
-								}
-
-								/**
-								 * this is the place of magic extract the last
-								 * part of the URI, which determines a property
-								 * of the given class and get a Class object
-								 * representing the class given in the uri. than
-								 * get the specified property from this class.
-								 */
-								String fieldName = extractFieldName(predicat);
-								String column = (String) forUri(predicat, true)
-										.getField(fieldName).get(null);
-
-								if (isResource
+							try {
+								if (predicat.equals(Constants.PROP_rdfType)
 										&& object
 												.startsWith(Constants.DATA_KINDS_PREFIX)) {
+									Log.v(TAG, "rdf:type = " + object + ".");
 									// this is the place of magic
-									fieldName = extractFieldName(object);
-									Field valueField = forUri(object, true)
-											.getField(fieldName);
+									String type = (String) forUri(object, false)
+											.getField("CONTENT_ITEM_TYPE").get(
+													null);
 
-									// Type is int
-									// Protocol is string
-									if (valueField.getType().getName()
-											.equalsIgnoreCase("int")) {
-										int value = (Integer) valueField
-												.get(null);
-										builder.withValue(column, value);
+									Log.v(TAG, "Goind to Add Mimetype: " + type
+											+ ".");
+									builder.withValue(
+											ContactsContract.Data.MIMETYPE,
+											type);
 
-										Log.v(TAG, "Added value: " + value
-												+ " to column: " + column + ".");
-									} else if (valueField
-											.getType()
-											.getName()
-											.equalsIgnoreCase(
-													"java.lang.String")) {
-										String value = (java.lang.String) valueField
-												.get(null);
-										builder.withValue(column, value);
+								} else if (predicat
+										.startsWith(Constants.DATA_KINDS_PREFIX)) {
+									boolean isResource;
+									if (rc.getString(
+											rc.getColumnIndex("oIsResource"))
+											.equals("true")) {
+										isResource = true;
 									} else {
-										Log.e(TAG,
-												"I don't know the Type of the field: '"
-														+ object + "'.");
+										isResource = false;
 									}
 
+									/**
+									 * this is the place of magic extract the
+									 * last part of the URI, which determines a
+									 * property of the given class and get a
+									 * Class object representing the class given
+									 * in the uri. than get the specified
+									 * property from this class.
+									 */
+									String fieldName = extractFieldName(predicat);
+									String column = (String) forUri(predicat,
+											true).getField(fieldName).get(null);
+
+									if (isResource
+											&& object
+													.startsWith(Constants.DATA_KINDS_PREFIX)) {
+										// this is the place of magic
+										fieldName = extractFieldName(object);
+										Field valueField = forUri(object, true)
+												.getField(fieldName);
+
+										// Type is int
+										// Protocol is string
+										if (valueField.getType().getName()
+												.equalsIgnoreCase("int")) {
+											int value = (Integer) valueField
+													.get(null);
+											builder.withValue(column, value);
+
+											Log.v(TAG, "Added value: " + value
+													+ " to column: " + column
+													+ ".");
+										} else if (valueField
+												.getType()
+												.getName()
+												.equalsIgnoreCase(
+														"java.lang.String")) {
+											String value = (java.lang.String) valueField
+													.get(null);
+											builder.withValue(column, value);
+										} else {
+											Log.e(TAG,
+													"I don't know the Type of the field: '"
+															+ object + "'.");
+										}
+
+									} else {
+										builder.withValue(column, object);
+									}
+								} else if (predicat
+										.equals(Constants.PROP_rdfType)) {
+									Log.v(TAG,
+											"The given object <"
+													+ object
+													+ "> is not a valide type. (ignorring this triple)");
 								} else {
-									builder.withValue(column, object);
+									Log.v(TAG,
+											"The given predicat <"
+													+ predicat
+													+ "> is not valide. (ignorring this triple)");
 								}
-							} else if (predicat.equals(Constants.PROP_rdfType)) {
-								Log.v(TAG,
-										"The given object <"
-												+ object
-												+ "> is not a valide type. (ignorring this triple)");
-							} else {
-								Log.v(TAG,
-										"The given predicat <"
+
+							} catch (ClassNotFoundException e) {
+								Log.e(TAG,
+										"There was a error to find the according Class. (ignorring this triple)",
+										e);
+							} catch (Exception e) {
+								Log.e(TAG,
+										"Couldn't interpres the Triple subject = '"
+												+ subject
+												+ "', predicat = '"
 												+ predicat
-												+ "> is not valide. (ignorring this triple)");
+												+ "', object = '"
+												+ object
+												+ "' I'll ignorre it and am proceding with next Property.",
+										e);
 							}
 
-						} catch (ClassNotFoundException e) {
-							Log.e(TAG,
-									"There was a error to find the according Class. (ignorring this triple)",
-									e);
-						} catch (Exception e) {
-							Log.e(TAG,
-									"Couldn't interpres the Triple subject = '"
-											+ subject
-											+ "', predicat = '"
-											+ predicat
-											+ "', object = '"
-											+ object
-											+ "' I'll ignorre it and am proceding with next Property.",
-									e);
+							builderList.put(subject, builder);
 						}
-
-						builderList.put(subject, builder);
 					}
+
+				} else {
+					Log.e(TAG,
+							"Contentprovider returned an empty Cursor, couldn't add Data to contact '"
+									+ uri + "'.");
+					Log.v(TAG,
+							"Destroy builders, to avoid '(Unknown)'-Contacts.");
+					builderList.clear();
 				}
-
-			} else {
-				Log.e(TAG,
-						"Contentprovider returned an empty Cursor, couldn't add Data to contact '"
-								+ uri + "'.");
-				Log.v(TAG, "Destroy builders, to avoid '(Unknown)'-Contacts.");
-				builderList.clear();
 			}
-
+			
 			if (builderList.size() > 1) {
 				ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 				Iterator<String> builderIterator = builderList.keySet()
@@ -467,7 +476,8 @@ public class ContactsSyncAdapterService extends Service {
 							key = dataListIterator.next();
 							data = dataList.get(key);
 
-							// TODO special treatment for StructuredName, Photo and maybe Note (those without TYPE field)
+							// TODO special treatment for StructuredName, Photo
+							// and maybe Note (those without TYPE field)
 							if (data.get(Entity.DATA_ID) == null) {
 								dataIterator = data.keySet().iterator();
 
