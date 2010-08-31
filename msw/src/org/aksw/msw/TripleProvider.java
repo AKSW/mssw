@@ -326,7 +326,7 @@ public class TripleProvider extends ContentProvider {
 	}
 
 	private Resource getResource(String uri, int mode) {
-		if (uri.startsWith("http:")) {
+		if (uri.startsWith("http:") || uri.startsWith("https:")) {
 			switch (mode) {
 			case TMP:
 				return queryResource(uri, false);
@@ -435,7 +435,7 @@ public class TripleProvider extends ContentProvider {
 			Resource resource = model.getResource(subject);
 			Property property = model.getProperty(predicat);
 			RDFNode objectRes;
-			if (object.startsWith("http:")) {
+			if (object.startsWith("http:") || object.startsWith("https:")) {
 				objectRes = model.getResource(object);
 			} else {
 				objectRes = model.createLiteral(object);

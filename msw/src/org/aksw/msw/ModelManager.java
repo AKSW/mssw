@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -289,45 +292,44 @@ public class ModelManager {
 									prefs.getString("privatekey_password", ""));
 					if (socketFactory != null) {
 						try {
-							if (false) {
-								FoafsslURLConnection
-										.setDefaultSSLSocketFactory(socketFactory);
-								FoafsslURLConnection.setDefaultRequestProperty(
-										"accept", Constants.REQUEST_PROPERTY);
-								FoafsslURLConnection conn = new FoafsslURLConnection(
-										new URL(url));
-							}
+							URLConnection conn = new URL(url).openConnection();
 
-							HttpsURLConnection
-									.setDefaultSSLSocketFactory(socketFactory);
-							HttpsURLConnection.setDefaultRequestProperty(
-									"accept", Constants.REQUEST_PROPERTY);
-
-							//URL connectUrl = new URL(url);
-							
-							HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
-							
+							conn.setRequestProperty("accept",
+									Constants.REQUEST_PROPERTY);
 							conn.setDoOutput(true);
 							conn.setDoInput(true);
-							
-							conn.connect();
+							conn.setUseCaches(true);
 
-							// if (conn.isConnected()) {
+							InputStream iStream;
+
+							if (conn instanceof HttpsURLConnection) {
+								Log.v(TAG, "HTTPS Connection.");
+								HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
+								httpsConn.setSSLSocketFactory(socketFactory);
+
+								conn.connect();
+								iStream = conn.getInputStream();
+							} else {
+								Log.v(TAG, "HTTP/URL Connection.");
+
+								conn.connect();
+								iStream = conn.getInputStream();
+							}
+
 							Log.v(TAG, "Start reading from SSL connection.");
-							read(url, model, conn.getInputStream());
-							// } else {
-							// Log.v(TAG,
-							// "FOAF+SSL Connection is not jet esablished.");
-							// }
+							read(url, model, iStream);
 						} catch (MalformedURLException e) {
 							Log.e(TAG, "URL not formed correctly", e);
 						} catch (FileNotFoundException e) {
 							Log.e(TAG, "Couldn't find File.", e);
+						} catch (ConnectException e) {
+							Log.e(TAG,
+									"Jena couldn't connect to the server for: '"
+											+ url + "'.'", e);
 						} catch (IOException e) {
 							Log.e(TAG,
 									"Input/Output Error while creating or using Socket.",
 									e);
-							read(url, model, null);
 						}
 					} else {
 						Log.v(TAG, "Socket Factory is null.");
@@ -362,15 +364,9 @@ public class ModelManager {
 		} catch (DoesNotExistException e) {
 			Log.e(TAG, "Could not get <" + uri + "> into temp model,"
 					+ "check the existence with your webbrowser. (rollback)", e);
-			if (model.supportsTransactions()) {
-				tmp.abort();
-			}
 		} catch (JenaException e) {
 			Log.e(TAG, "Error on reading <" + uri
 					+ "> into temp model. (rollback)", e);
-			if (model.supportsTransactions()) {
-				tmp.abort();
-			}
 		}
 
 		// TODO should include also all blanknodes in the connected graph
