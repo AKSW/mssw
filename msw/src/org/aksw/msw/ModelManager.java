@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -270,8 +271,7 @@ public class ModelManager {
 
 		String state = Environment.getExternalStorageState();
 
-		String certPath = Constants.CERT_DIR + File.separator
-				+ "privatekey.p12";
+		String certPath = Constants.CERT_FILE;
 
 		if (model == null) {
 			model = modelMakers.get("cache").createDefaultModel();
@@ -290,8 +290,15 @@ public class ModelManager {
 					SSLSocketFactory socketFactory = TrustManagerFactory
 							.getFactory(keyFile,
 									prefs.getString("privatekey_password", ""));
+					
+					HostnameVerifier hostNameVerifier = TrustManagerFactory.getVerifier();
+					
 					if (socketFactory != null) {
 						try {
+							
+							HttpsURLConnection.setDefaultSSLSocketFactory(socketFactory);
+							HttpsURLConnection.setDefaultHostnameVerifier(hostNameVerifier);
+							
 							URLConnection conn = new URL(url).openConnection();
 
 							conn.setRequestProperty("accept",
@@ -300,24 +307,20 @@ public class ModelManager {
 							conn.setDoInput(true);
 							conn.setUseCaches(true);
 
-							InputStream iStream;
-
 							if (conn instanceof HttpsURLConnection) {
 								Log.v(TAG, "HTTPS Connection.");
-								HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
-								httpsConn.setSSLSocketFactory(socketFactory);
-
-								conn.connect();
-								iStream = conn.getInputStream();
 							} else {
 								Log.v(TAG, "HTTP/URL Connection.");
-
-								conn.connect();
-								iStream = conn.getInputStream();
 							}
+							
+							conn.connect();
+							InputStream iStream = conn.getInputStream();
 
-							Log.v(TAG, "Start reading from SSL connection.");
 							read(url, model, iStream);
+							
+							if (conn instanceof HttpsURLConnection) {
+								((HttpsURLConnection) conn).disconnect();
+							}
 						} catch (MalformedURLException e) {
 							Log.e(TAG, "URL not formed correctly", e);
 						} catch (FileNotFoundException e) {
@@ -363,10 +366,10 @@ public class ModelManager {
 			}
 		} catch (DoesNotExistException e) {
 			Log.e(TAG, "Could not get <" + uri + "> into temp model,"
-					+ "check the existence with your webbrowser. (rollback)", e);
+					+ "check the existence with your webbrowser.", e);
 		} catch (JenaException e) {
 			Log.e(TAG, "Error on reading <" + uri
-					+ "> into temp model. (rollback)", e);
+					+ "> into temp model.", e);
 		}
 
 		// TODO should include also all blanknodes in the connected graph

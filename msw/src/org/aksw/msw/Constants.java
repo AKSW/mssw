@@ -14,7 +14,9 @@ public final class Constants {
 	public static final String FILES_PATH = "Android" + File.separator + "data"
 			+ File.separator + "org.aksw.msw" + File.separator + "files";
 
-	public static final String CERT_DIR = FILES_PATH + File.separator + "certs";
+	public static final String CERT_FILE = FILES_PATH + File.separator + "privatekey.p12";
+	public static final String RULE_FILE = FILES_PATH + File.separator + "rules.n3";
+	
 	public static final String WEB_MODELS_DIR = FILES_PATH + File.separator
 			+ "models" + File.separator + "web";
 
