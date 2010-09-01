@@ -39,6 +39,7 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
 import com.hp.hpl.jena.shared.DoesNotExistException;
 import com.hp.hpl.jena.shared.JenaException;
+import com.hp.hpl.jena.shared.RulesetNotFoundException;
 
 public class ModelManager {
 
@@ -65,10 +66,33 @@ public class ModelManager {
 	private static FoafMapper fm;
 
 	public ModelManager(Context contextIn) {
-		fm = new FoafMapper(contextIn);
 		context = contextIn;
 
 		File storage = Environment.getExternalStorageDirectory();
+
+		String state = Environment.getExternalStorageState();
+		if (Environment.MEDIA_MOUNTED.equals(state)
+				|| Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+			try {
+				fm = new FoafMapper(storage, Constants.RULE_FILE);
+			} catch (RulesetNotFoundException e) {
+				if (Environment.MEDIA_MOUNTED.equals(state)) {
+					Log.v(TAG, "The ruleset file does not exists at '"
+							+ Constants.RULE_FILE
+							+ "' will create new one with default rules.", e);
+					fm = new FoafMapper(storage, Constants.RULE_FILE, context);
+				} else {
+					Log.v(TAG, "The ruleset file does not exists at '"
+							+ Constants.RULE_FILE
+							+ "' and can't create new one with default rules.",
+							e);
+				}
+			}
+		} else {
+			Log.v(TAG,
+					"Can not get ruleset file, because external storrage is not mounted.");
+		}
+
 		webModelsFiles = new File(storage, Constants.WEB_MODELS_DIR);
 		infModelsFiles = new File(storage, Constants.INF_MODELS_DIR);
 		localModelsFiles = new File(storage, Constants.LOCAL_MODELS_DIR);
@@ -271,8 +295,6 @@ public class ModelManager {
 
 		String state = Environment.getExternalStorageState();
 
-		String certPath = Constants.CERT_FILE;
-
 		if (model == null) {
 			model = modelMakers.get("cache").createDefaultModel();
 		}
@@ -281,7 +303,7 @@ public class ModelManager {
 				// We can read and write the media
 				File storage = Environment.getExternalStorageDirectory();
 
-				File keyFile = new File(storage, certPath);
+				File keyFile = new File(storage, Constants.CERT_FILE);
 				// storage.getAbsolutePath();
 				if (keyFile.isFile()) {
 
@@ -290,15 +312,18 @@ public class ModelManager {
 					SSLSocketFactory socketFactory = TrustManagerFactory
 							.getFactory(keyFile,
 									prefs.getString("privatekey_password", ""));
-					
-					HostnameVerifier hostNameVerifier = TrustManagerFactory.getVerifier();
-					
+
+					HostnameVerifier hostNameVerifier = TrustManagerFactory
+							.getVerifier();
+
 					if (socketFactory != null) {
 						try {
-							
-							HttpsURLConnection.setDefaultSSLSocketFactory(socketFactory);
-							HttpsURLConnection.setDefaultHostnameVerifier(hostNameVerifier);
-							
+
+							HttpsURLConnection
+									.setDefaultSSLSocketFactory(socketFactory);
+							HttpsURLConnection
+									.setDefaultHostnameVerifier(hostNameVerifier);
+
 							URLConnection conn = new URL(url).openConnection();
 
 							conn.setRequestProperty("accept",
@@ -312,12 +337,12 @@ public class ModelManager {
 							} else {
 								Log.v(TAG, "HTTP/URL Connection.");
 							}
-							
+
 							conn.connect();
 							InputStream iStream = conn.getInputStream();
 
 							read(url, model, iStream);
-							
+
 							if (conn instanceof HttpsURLConnection) {
 								((HttpsURLConnection) conn).disconnect();
 							}
@@ -368,8 +393,7 @@ public class ModelManager {
 			Log.e(TAG, "Could not get <" + uri + "> into temp model,"
 					+ "check the existence with your webbrowser.", e);
 		} catch (JenaException e) {
-			Log.e(TAG, "Error on reading <" + uri
-					+ "> into temp model.", e);
+			Log.e(TAG, "Error on reading <" + uri + "> into temp model.", e);
 		}
 
 		// TODO should include also all blanknodes in the connected graph
