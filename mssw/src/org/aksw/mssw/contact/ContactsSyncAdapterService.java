@@ -1,5 +1,6 @@
 package org.aksw.mssw.contact;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
@@ -10,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Stack;
 
 import org.aksw.mssw.Constants;
+import org.aksw.mssw.tools.Base64;
 
 import android.accounts.Account;
 import android.accounts.OperationCanceledException;
@@ -30,6 +32,7 @@ import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.RawContacts.Entity;
+import android.provider.ContactsContract.RawContactsEntity;
 import android.util.Log;
 
 public class ContactsSyncAdapterService extends Service {
@@ -265,7 +268,16 @@ public class ContactsSyncAdapterService extends Service {
 										}
 
 									} else {
-										builder.withValue(column, object);
+										if (column
+												.equals(RawContactsEntity.DATA15)) {
+
+											builder.withValue(column,
+													Base64.decode(object));
+											Log.v(TAG, "wrote blob.");
+										} else {
+											builder.withValue(column, object);
+										}
+
 									}
 								} else if (predicat
 										.equals(Constants.PROP_rdfType)) {
@@ -309,7 +321,7 @@ public class ContactsSyncAdapterService extends Service {
 					builderList.clear();
 				}
 			}
-			
+
 			if (builderList.size() > 1) {
 				ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 				Iterator<String> builderIterator = builderList.keySet()
@@ -347,6 +359,16 @@ public class ContactsSyncAdapterService extends Service {
 					rawId);
 			Uri entityUri = Uri.withAppendedPath(rawUri,
 					Entity.CONTENT_DIRECTORY);
+			String[] projection = { RawContacts._ID, RawContacts.CONTACT_ID,
+					RawContactsEntity.DATA_ID, RawContacts.CONTENT_ITEM_TYPE,
+					RawContactsEntity.DATA1, RawContactsEntity.DATA2,
+					RawContactsEntity.DATA3, RawContactsEntity.DATA4,
+					RawContactsEntity.DATA5, RawContactsEntity.DATA6,
+					RawContactsEntity.DATA7, RawContactsEntity.DATA8,
+					RawContactsEntity.DATA9, RawContactsEntity.DATA10,
+					RawContactsEntity.DATA11, RawContactsEntity.DATA12,
+					RawContactsEntity.DATA13, RawContactsEntity.DATA14,
+					RawContactsEntity.DATA15 };
 			Cursor cc = content.query(entityUri, null, null, null, null);
 
 			if (rc != null && cc != null) {
@@ -476,8 +498,6 @@ public class ContactsSyncAdapterService extends Service {
 							key = dataListIterator.next();
 							data = dataList.get(key);
 
-							// TODO special treatment for StructuredName, Photo
-							// and maybe Note (those without TYPE field)
 							if (data.get(Entity.DATA_ID) == null) {
 								dataIterator = data.keySet().iterator();
 
@@ -549,6 +569,8 @@ public class ContactsSyncAdapterService extends Service {
 
 					}
 				}
+
+				cc.close();
 				// reset cc
 				// cc.moveToPosition(-1);
 
@@ -557,6 +579,8 @@ public class ContactsSyncAdapterService extends Service {
 
 				dataListIterator = dataList.keySet().iterator();
 				String myData;
+
+				ContentProviderOperation.Builder builder;
 
 				while (dataListIterator.hasNext()) {
 
@@ -568,9 +592,92 @@ public class ContactsSyncAdapterService extends Service {
 						dataIterator = data.keySet().iterator();
 
 						// write to ContactContract
+						String mimetype = data
+								.get(ContactsContract.Data.MIMETYPE);
+						if (mimetype
+								.equals(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)) {
 
-						ContentProviderOperation.Builder builder = ContentProviderOperation
-								.newInsert(ContactsContract.Data.CONTENT_URI);
+							rawUri = ContentUris.withAppendedId(
+									RawContacts.CONTENT_URI, rawId);
+							entityUri = Uri.withAppendedPath(rawUri,
+									Entity.CONTENT_DIRECTORY);
+							projection = new String[] { RawContacts._ID };
+							String[] selectionArgs = {
+									String.valueOf(rawId),
+									ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE };
+							cc = content.query(entityUri, projection,
+									RawContacts.CONTACT_ID + "=? AND "
+											+ ContactsContract.Data.MIMETYPE
+											+ "=?", selectionArgs, null);
+							if (cc != null) {
+								if (cc.getCount() > 1) {
+									Log.v(TAG,
+											"Contact <"
+													+ uri
+													+ "> has more than one StructuredName, thats not so good.");
+									// maybe remove all except one
+								}
+
+								if (cc.moveToFirst()) {
+
+									builder = ContentProviderOperation
+											.newUpdate(ContactsContract.Data.CONTENT_URI);
+									builder.withValue(
+											ContactsContract.Data._ID,
+											cc.getString(cc
+													.getColumnIndex(RawContacts._ID)));
+								} else {
+									builder = ContentProviderOperation
+											.newInsert(ContactsContract.Data.CONTENT_URI);
+								}
+							} else {
+								builder = ContentProviderOperation
+										.newInsert(ContactsContract.Data.CONTENT_URI);
+							}
+						} else if (mimetype
+								.equals(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)) {
+
+							rawUri = ContentUris.withAppendedId(
+									RawContacts.CONTENT_URI, rawId);
+							entityUri = Uri.withAppendedPath(rawUri,
+									Entity.CONTENT_DIRECTORY);
+							projection = new String[] { RawContacts._ID };
+							String[] selectionArgs = {
+									String.valueOf(rawId),
+									ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE };
+							cc = content.query(entityUri, projection,
+									RawContacts.CONTACT_ID + "=? AND "
+											+ ContactsContract.Data.MIMETYPE
+											+ "=?", selectionArgs, null);
+							if (cc != null) {
+								if (cc.getCount() > 1) {
+									Log.v(TAG,
+											"Contact <"
+													+ uri
+													+ "> has more than one Photo, thats not so good.");
+									// maybe remove all except one
+								}
+
+								if (cc.moveToFirst()) {
+
+									builder = ContentProviderOperation
+											.newUpdate(ContactsContract.Data.CONTENT_URI);
+									builder.withValue(
+											ContactsContract.Data._ID,
+											cc.getString(cc
+													.getColumnIndex(RawContacts._ID)));
+								} else {
+									builder = ContentProviderOperation
+											.newInsert(ContactsContract.Data.CONTENT_URI);
+								}
+							} else {
+								builder = ContentProviderOperation
+										.newInsert(ContactsContract.Data.CONTENT_URI);
+							}
+						} else {
+							builder = ContentProviderOperation
+									.newInsert(ContactsContract.Data.CONTENT_URI);
+						}
 
 						Log.v(TAG, "New insert to <"
 								+ ContactsContract.Data.CONTENT_URI + ">");
@@ -586,6 +693,23 @@ public class ContactsSyncAdapterService extends Service {
 							column = dataIterator.next();
 							myData = data.get(column);
 
+							if (column.equals(RawContactsEntity.DATA15)) {
+								try {
+									builder.withValue(column,
+											Base64.decode(myData));
+									Log.v(TAG, "with value " + column
+											+ " = <blob>.");
+								} catch (IOException e) {
+									Log.e(TAG, "Error on decoding blob: "
+											+ myData, e);
+								}
+							} else {
+								builder.withValue(column, myData);
+
+								Log.v(TAG, "with value " + column + " = "
+										+ myData + ".");
+							}
+
 							// ContentProviderOperation.Builder builder =
 							// ContentProviderOperation
 							// .newUpdate(ContactsContract.Data.CONTENT_URI);
@@ -597,17 +721,11 @@ public class ContactsSyncAdapterService extends Service {
 							// .getColumnIndex(Entity.DATA_ID))
 							// + "'", null);
 
-							builder.withValue(column, myData);
-
-							Log.v(TAG, "with value " + column + " = " + myData
-									+ ".");
 						}
 
 						operationList.add(builder.build());
 					}
 				}
-
-				cc.close();
 
 				// apply changes to ContactsContract
 				try {

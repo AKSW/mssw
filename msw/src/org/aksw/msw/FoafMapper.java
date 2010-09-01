@@ -36,6 +36,7 @@ public class FoafMapper {
 				ruleFile.createNewFile();
 			}
 
+			
 			out = new FileOutputStream(ruleFile);
 
 			byte[] b = new byte[0xfff];
