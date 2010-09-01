@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -18,7 +17,6 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.aksw.msw.foafssl.FoafsslURLConnection;
 import org.aksw.msw.foafssl.TrustManagerFactory;
 
 import android.content.Context;
@@ -79,13 +77,12 @@ public class ModelManager {
 				if (Environment.MEDIA_MOUNTED.equals(state)) {
 					Log.v(TAG, "The ruleset file does not exists at '"
 							+ Constants.RULE_FILE
-							+ "' will create new one with default rules.", e);
+							+ "' will create new one with default rules.");
 					fm = new FoafMapper(storage, Constants.RULE_FILE, context);
 				} else {
 					Log.v(TAG, "The ruleset file does not exists at '"
 							+ Constants.RULE_FILE
-							+ "' and can't create new one with default rules.",
-							e);
+							+ "' and can't create new one with default rules.", e);
 				}
 			}
 		} else {

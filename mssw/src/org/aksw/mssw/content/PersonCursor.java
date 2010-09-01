@@ -1,7 +1,6 @@
 package org.aksw.mssw.content;
 
 import java.util.LinkedList;
-import java.util.Map.Entry;
 
 import android.database.AbstractCursor;
 

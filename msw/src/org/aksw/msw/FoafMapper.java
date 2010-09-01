@@ -1,14 +1,9 @@
 package org.aksw.msw;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
 
 import android.content.Context;
@@ -30,7 +25,7 @@ public class FoafMapper {
 	Reasoner reasoner;
 
 	public FoafMapper(File storage, String fileName, Context context) {
-		InputStream in = (BufferedInputStream) context.getResources()
+		InputStream in = context.getResources()
 				.openRawResource(R.raw.defaultmapping);
 
 		File ruleFile = new File(storage, fileName);
@@ -74,9 +69,13 @@ public class FoafMapper {
 
 	public FoafMapper(File storage, String fileName)
 			throws RulesetNotFoundException {
-		fileName = new File(storage, fileName).getAbsolutePath();
-		rules = Rule.rulesFromURL(fileName);
-		reasoner = new GenericRuleReasoner(rules);
+		try {
+			String fileNameUrl = new File(storage, fileName).getAbsolutePath();
+			rules = Rule.rulesFromURL(fileNameUrl);
+			reasoner = new GenericRuleReasoner(rules);
+		} catch (NullPointerException e) {
+			throw new RulesetNotFoundException(fileName);
+		}
 	}
 
 	public InfModel map(Model model) {
