@@ -14,9 +14,11 @@ public final class Constants {
 	public static final String FILES_PATH = "Android" + File.separator + "data"
 			+ File.separator + "org.aksw.msw" + File.separator + "files";
 
-	public static final String CERT_FILE = FILES_PATH + File.separator + "privatekey.p12";
-	public static final String RULE_FILE = FILES_PATH + File.separator + "rules.n3";
-	
+	public static final String CERT_FILE = FILES_PATH + File.separator
+			+ "privatekey.p12";
+	public static final String RULE_FILE = FILES_PATH + File.separator
+			+ "rules.n3";
+
 	public static final String WEB_MODELS_DIR = FILES_PATH + File.separator
 			+ "models" + File.separator + "web";
 
@@ -75,36 +77,37 @@ public final class Constants {
 	public static final HashMap<String, String> MIME_TYPES = new HashMap<String, String>();
 
 	static {
-		MIME_TYPES.put("vnd.android.cursor.item/email", DATA_KINDS_PREFIX
-				+ "Email");
-		MIME_TYPES.put("vnd.android.cursor.item/email_v2", DATA_KINDS_PREFIX
-				+ "Email");
+		MIME_TYPES.put("vnd.android.cursor.item/email",
+				COMMON_DATA_KINDS_PREFIX + "Email");
+		MIME_TYPES.put("vnd.android.cursor.item/email_v2",
+				COMMON_DATA_KINDS_PREFIX + "Email");
 		MIME_TYPES.put("vnd.android.cursor.item/contact_event",
-				DATA_KINDS_PREFIX + "Event");
+				COMMON_DATA_KINDS_PREFIX + "Event");
 		MIME_TYPES.put("vnd.android.cursor.item/group_membership",
-				DATA_KINDS_PREFIX + "GroupMembership");
-		MIME_TYPES.put("vnd.android.cursor.item/im", DATA_KINDS_PREFIX + "Im");
-		MIME_TYPES.put("vnd.android.cursor.item/nickname", DATA_KINDS_PREFIX
-				+ "Nickname");
-		MIME_TYPES.put("vnd.android.cursor.item/note", DATA_KINDS_PREFIX
+				COMMON_DATA_KINDS_PREFIX + "GroupMembership");
+		MIME_TYPES.put("vnd.android.cursor.item/im", COMMON_DATA_KINDS_PREFIX
+				+ "Im");
+		MIME_TYPES.put("vnd.android.cursor.item/nickname",
+				COMMON_DATA_KINDS_PREFIX + "Nickname");
+		MIME_TYPES.put("vnd.android.cursor.item/note", COMMON_DATA_KINDS_PREFIX
 				+ "Note");
 		MIME_TYPES.put("vnd.android.cursor.item/organization",
-				DATA_KINDS_PREFIX + "Organization");
-		MIME_TYPES.put("vnd.android.cursor.item/phone", DATA_KINDS_PREFIX
-				+ "Phone");
-		MIME_TYPES.put("vnd.android.cursor.item/phone_v2", DATA_KINDS_PREFIX
-				+ "Phone");
-		MIME_TYPES.put("vnd.android.cursor.item/photo", DATA_KINDS_PREFIX
-				+ "Photo");
-		MIME_TYPES.put("vnd.android.cursor.item/relation", DATA_KINDS_PREFIX
-				+ "Relation");
-		MIME_TYPES.put("vnd.android.cursor.item/name", DATA_KINDS_PREFIX
+				COMMON_DATA_KINDS_PREFIX + "Organization");
+		MIME_TYPES.put("vnd.android.cursor.item/phone",
+				COMMON_DATA_KINDS_PREFIX + "Phone");
+		MIME_TYPES.put("vnd.android.cursor.item/phone_v2",
+				COMMON_DATA_KINDS_PREFIX + "Phone");
+		MIME_TYPES.put("vnd.android.cursor.item/photo",
+				COMMON_DATA_KINDS_PREFIX + "Photo");
+		MIME_TYPES.put("vnd.android.cursor.item/relation",
+				COMMON_DATA_KINDS_PREFIX + "Relation");
+		MIME_TYPES.put("vnd.android.cursor.item/name", COMMON_DATA_KINDS_PREFIX
 				+ "StructuredName");
 		MIME_TYPES.put("vnd.android.cursor.item/postal-address",
-				DATA_KINDS_PREFIX + "StructuredPostal");
+				COMMON_DATA_KINDS_PREFIX + "StructuredPostal");
 		MIME_TYPES.put("vnd.android.cursor.item/postal-address_v2",
-				DATA_KINDS_PREFIX + "StructuredPostal");
-		MIME_TYPES.put("vnd.android.cursor.item/website", DATA_KINDS_PREFIX
-				+ "Website");
+				COMMON_DATA_KINDS_PREFIX + "StructuredPostal");
+		MIME_TYPES.put("vnd.android.cursor.item/website",
+				COMMON_DATA_KINDS_PREFIX + "Website");
 	}
 }

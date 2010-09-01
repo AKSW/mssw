@@ -130,6 +130,8 @@ public class ContactsSyncAdapterService extends Service {
 
 			LinkedHashMap<String, ContentProviderOperation.Builder> builderList;
 			builderList = new LinkedHashMap<String, ContentProviderOperation.Builder>();
+			LinkedHashMap<String, Boolean> builderHasMimeTypeList;
+			builderHasMimeTypeList = new LinkedHashMap<String, Boolean>();
 
 			ContentProviderOperation.Builder builder = ContentProviderOperation
 					.newInsert(RawContacts.CONTENT_URI);
@@ -137,6 +139,8 @@ public class ContactsSyncAdapterService extends Service {
 			builder.withValue(RawContacts.ACCOUNT_TYPE, account.type);
 			builder.withValue(RawContacts.SYNC1, uri);
 			builderList.put(uri, builder);
+			builderHasMimeTypeList.put(uri, Boolean.TRUE);
+
 			if (uri != null) {
 				Uri contentUri = Uri.parse(Constants.CONTACT_CONTENT_URI
 						+ "/data/" + URLEncoder.encode(uri, Constants.ENC));
@@ -167,6 +171,8 @@ public class ContactsSyncAdapterService extends Service {
 										ContactsContract.RawContactsEntity.RAW_CONTACT_ID,
 										0);
 								builderList.put(object, builder);
+								builderHasMimeTypeList.put(object,
+										Boolean.FALSE);
 							} else {
 								Log.i(TAG,
 										"Builder List already has this data: "
@@ -210,6 +216,8 @@ public class ContactsSyncAdapterService extends Service {
 									builder.withValue(
 											ContactsContract.Data.MIMETYPE,
 											type);
+									builderHasMimeTypeList.put(subject,
+											Boolean.TRUE);
 
 								} else if (predicat
 										.startsWith(Constants.DATA_KINDS_PREFIX)) {
@@ -328,8 +336,14 @@ public class ContactsSyncAdapterService extends Service {
 						.iterator();
 
 				while (builderIterator.hasNext()) {
-					builder = builderList.get(builderIterator.next());
-					operationList.add(builder.build());
+					String key = builderIterator.next();
+					if (builderHasMimeTypeList.get(key)) {
+						builder = builderList.get(key);
+						operationList.add(builder.build());
+					} else {
+						Log.v(TAG, "Found dataset <" + key
+								+ "> without mimetype.");
+					}
 				}
 
 				content.applyBatch(ContactsContract.AUTHORITY, operationList);
@@ -360,7 +374,7 @@ public class ContactsSyncAdapterService extends Service {
 			Uri entityUri = Uri.withAppendedPath(rawUri,
 					Entity.CONTENT_DIRECTORY);
 			String[] projection = { RawContacts._ID, RawContacts.CONTACT_ID,
-					RawContactsEntity.DATA_ID, RawContacts.CONTENT_ITEM_TYPE,
+					RawContactsEntity.DATA_ID, RawContactsEntity.MIMETYPE,
 					RawContactsEntity.DATA1, RawContactsEntity.DATA2,
 					RawContactsEntity.DATA3, RawContactsEntity.DATA4,
 					RawContactsEntity.DATA5, RawContactsEntity.DATA6,
@@ -369,7 +383,7 @@ public class ContactsSyncAdapterService extends Service {
 					RawContactsEntity.DATA11, RawContactsEntity.DATA12,
 					RawContactsEntity.DATA13, RawContactsEntity.DATA14,
 					RawContactsEntity.DATA15 };
-			Cursor cc = content.query(entityUri, null, null, null, null);
+			Cursor cc = content.query(entityUri, projection, null, null, null);
 
 			if (rc != null && cc != null) {
 
@@ -400,12 +414,20 @@ public class ContactsSyncAdapterService extends Service {
 
 						Log.v(TAG, "rdf:type = " + object + ".");
 						// this is the place of magic
-						String type = (String) forUri(object, false).getField(
-								"CONTENT_ITEM_TYPE").get(null);
+						try {
+							String type = (String) forUri(object, false)
+									.getField("CONTENT_ITEM_TYPE").get(null);
 
-						data = dataList.get(subject);
-						data.put(Entity.MIMETYPE, type);
-						dataList.put(subject, data);
+							data = dataList.get(subject);
+							data.put(Entity.MIMETYPE, type);
+							dataList.put(subject, data);
+						} catch (ClassNotFoundException e) {
+							Log.v(TAG,
+									"Could not find Class '"
+											+ object
+											+ "' (ignoring), check the file 'rules.n3' on your sdcard if everything is spelled right.");
+							dataList.remove(subject);
+						}
 					} else if (predicat.startsWith(Constants.DATA_KINDS_PREFIX)) {
 
 						String fieldName = extractFieldName(predicat);
@@ -467,6 +489,8 @@ public class ContactsSyncAdapterService extends Service {
 				String key;
 				Iterator<String> dataIterator;
 				String column;
+				String contactsData;
+				String myData;
 
 				HashMap<String, HashMap<String, String>> changeList = new HashMap<String, HashMap<String, String>>();
 
@@ -495,54 +519,78 @@ public class ContactsSyncAdapterService extends Service {
 						// search dataList for entries, which could fit
 						while (dataListIterator.hasNext()) {
 
-							key = dataListIterator.next();
-							data = dataList.get(key);
+							try {
+								key = dataListIterator.next();
+								data = dataList.get(key);
 
-							if (data.get(Entity.DATA_ID) == null) {
-								dataIterator = data.keySet().iterator();
+								if (data.get(Entity.DATA_ID) == null
+										&& data.get(Entity.MIMETYPE) != null) {
+									dataIterator = data.keySet().iterator();
 
-								isSame = true;
+									isSame = true;
 
-								while (dataIterator.hasNext()) {
-									column = dataIterator.next();
-									String contactsData = cc.getString(cc
-											.getColumnIndex(column));
-									String myData = data.get(column);
+									while (dataIterator.hasNext()) {
+										column = dataIterator.next();
+										if (column.equals(Entity.DATA15)) {
+											byte[] contactsDataBlob = cc
+													.getBlob(cc
+															.getColumnIndex(column));
+											if (contactsDataBlob != null) {
+												contactsData = Base64
+														.encodeBytes(contactsDataBlob);
+											} else {
+												contactsData = null;
+											}
+										} else {
+											contactsData = cc.getString(cc
+													.getColumnIndex(column));
+										}
+										myData = data.get(column);
 
-									if (!myData.equals(contactsData)) {
+										if (!myData.equals(contactsData)) {
+											isSame = false;
+											break;
+										}
+									}
+
+									if (data.size() < 1) {
 										isSame = false;
+									}
+
+									if (isSame) {
+										Log.v(TAG,
+												"Found same rows, dataList ("
+														+ key
+														+ ") and ContactContract ("
+														+ cc.getString(cc
+																.getColumnIndex(Entity.DATA_ID))
+														+ ")");
+										/*
+										 * for (int i = 0; i <
+										 * cc.getColumnCount(); i++) {
+										 * Log.v(TAG, "contactRows: (" + i +
+										 * ", " + cc.getColumnName(i) + ") " +
+										 * cc.getString(i) + ", dataRow: " +
+										 * data.get(cc .getColumnName(i)) +
+										 * "."); }
+										 */
+
+										data.put(
+												Entity.DATA_ID,
+												cc.getString(cc
+														.getColumnIndex(Entity.DATA_ID)));
+										dataList.put(key, data);
 										break;
 									}
+
+									// if not the same, than procede with next
+									// dataset
 								}
-
-								if (data.size() < 1) {
-									isSame = false;
-								}
-
-								if (isSame) {
-									Log.v(TAG,
-											"Found same rows, dataList ("
-													+ key
-													+ ") and ContactContract ("
-													+ cc.getString(cc
-															.getColumnIndex(Entity.DATA_ID))
-													+ ")");
-									/*
-									 * for (int i = 0; i < cc.getColumnCount();
-									 * i++) { Log.v(TAG, "contactRows: (" + i +
-									 * ", " + cc.getColumnName(i) + ") " +
-									 * cc.getString(i) + ", dataRow: " +
-									 * data.get(cc .getColumnName(i)) + "."); }
-									 */
-
-									data.put(Entity.DATA_ID, cc.getString(cc
-											.getColumnIndex(Entity.DATA_ID)));
-									dataList.put(key, data);
-									break;
-								}
-
-								// if not the same, than procede with next
-								// dataset
+							} catch (Exception e) {
+								Log.v(TAG,
+										"An error occured while trying to compare datasets.",
+										e);
+								isSame = false;
 							}
 						}
 
@@ -550,21 +598,46 @@ public class ContactsSyncAdapterService extends Service {
 						// is no fitting dataset in the webid so save them to
 						// the local model
 						if (!isSame) {
+							try {
 
-							data = new HashMap<String, String>();
+								data = new HashMap<String, String>();
 
-							Log.v(TAG, "New Data found: ");
-							for (int i = 0; i < cc.getColumnCount(); i++) {
+								Log.v(TAG, "New Data found: ");
 
-								data.put(cc.getColumnName(i), cc.getString(i));
+								if (cc.getString(
+										cc.getColumnIndex(Entity.MIMETYPE))
+										.equals(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)) {
+									Log.v(TAG,
+											"But is Photo, will not save it back");
+								} else {
+									for (int i = 0; i < cc.getColumnCount(); i++) {
 
-								Log.v(TAG,
-										"contactRows: (" + i + ", "
-												+ cc.getColumnName(i) + ") "
-												+ cc.getString(i) + ".");
+										if (cc.getColumnName(i).equals(
+												Entity.DATA15)) {
+											Log.v(TAG,
+													"Don't save BLOB (DATA15).");
+										} else {
+											data.put(cc.getColumnName(i),
+													cc.getString(i));
+
+											Log.v(TAG,
+													"contactRows: ("
+															+ i
+															+ ", "
+															+ cc.getColumnName(i)
+															+ ") "
+															+ cc.getString(i)
+															+ ".");
+										}
+									}
+
+									changeList.put(uri, data);
+								}
+							} catch (Exception e) {
+								Log.e(TAG,
+										"An Exception occured while trying to get a changed dataset.",
+										e);
 							}
-
-							changeList.put(uri, data);
 						}
 
 					}
@@ -576,9 +649,9 @@ public class ContactsSyncAdapterService extends Service {
 
 				// now write the data sets, which didn't fit a contacts data set
 				// (with data_id = null) to ContactsContract
+				Log.v(TAG, "=== Now write new datasets for <" + uri + "> to contacts. ===");
 
 				dataListIterator = dataList.keySet().iterator();
-				String myData;
 
 				ContentProviderOperation.Builder builder;
 
@@ -596,6 +669,7 @@ public class ContactsSyncAdapterService extends Service {
 								.get(ContactsContract.Data.MIMETYPE);
 						if (mimetype
 								.equals(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)) {
+							Log.v(TAG, "Special treatment for Structured Name");
 
 							rawUri = ContentUris.withAppendedId(
 									RawContacts.CONTENT_URI, rawId);
@@ -636,6 +710,7 @@ public class ContactsSyncAdapterService extends Service {
 							}
 						} else if (mimetype
 								.equals(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)) {
+							Log.v(TAG, "Special treatment for Photo");
 
 							rawUri = ContentUris.withAppendedId(
 									RawContacts.CONTENT_URI, rawId);
