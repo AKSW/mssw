@@ -2,6 +2,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 	<string name="hello">Hello World, browser!</string>
 	<string name="app_name">MSSW</string>
+	<string name="account_name">WebID</string>
 	<string name="browser_name">FOAF-Browser</string>
 	<string name="your_webid">Your WebID</string>
 	<string name="new_WebID">New WebID</string>

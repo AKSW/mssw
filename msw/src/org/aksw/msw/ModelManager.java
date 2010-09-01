@@ -340,6 +340,8 @@ public class ModelManager {
 
 							read(url, model, iStream);
 
+							iStream.close();
+							
 							if (conn instanceof HttpsURLConnection) {
 								((HttpsURLConnection) conn).disconnect();
 							}
