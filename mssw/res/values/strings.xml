@@ -7,7 +7,6 @@
 	<string name="your_webid">Your WebID</string>
 	<string name="new_WebID">New WebID</string>
 	<string name="add_WebID">Add WebID</string>
-	<string name="add_WebID_QR">Add WebID from ...</string>
 	<string name="add_to_WebID">Add to your WebID</string>
 	<string name="add">Add</string>
 	<string name="preferences">Preferences</string>
@@ -16,6 +15,7 @@
 	<string name="contacts">Contacts</string>
 	<string name="browse">Browse</string>
 	<string name="search">Search</string>
+	<string name="scan">Scan a Code</string>
 	<string name="sync">Synchronize</string>
 	<string name="load">Load</string>
 	<string name="name">Name</string>
@@ -33,4 +33,6 @@
 	<string name="no_webid">There is no data for this WebIDs</string>
 	<string name="example_webid">http://people.comiles.eu/example</string>
 	<string name="my_name">My Name</string>
+	<string name="search_hint">Enter WebID (don\'t forget the scheme e.g. \'http://\')</string>
+	<string name="scan_webid">Scan WebID</string>
 </resources>

@@ -2,71 +2,67 @@ package org.aksw.mssw.browser;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
 import android.app.ListActivity;
-import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ResourceCursorAdapter;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 public class BrowserBrowse extends ListActivity {
 
 	private static final String TAG = "msswBrowserMeCard";
 
-	private final ArrayList<Property> items = new ArrayList<Property>();
-
-	private PropertiesAdapter aa;
-
-	private ListView properties;
-	private TextView status;
-	private EditText uriInput;
-	private Button loadButton;
+	private ListView results;
+	private Button search;
+	private Button scan;
+	
+	private ResourceCursorAdapter rca;
 
 	private MenuManager menuManager;
+	
+	private String searchTerm;
 	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		setContentView(R.layout.browser_browse);
 
+		searchTerm = null;
+
+		
 		menuManager = new MenuManager();
-		
-		aa = new PropertiesAdapter(this,
-				android.R.layout.simple_list_item_1, items);
 
-		properties = (ListView) findViewById(android.R.id.list);
-		status = (TextView) findViewById(R.id.Status);
-		uriInput = (EditText) findViewById(R.id.SearchInput);
+		search = (Button) findViewById(R.id.search);
+		scan = (Button) findViewById(R.id.scan_code);
+		results = (ListView) this.findViewById(android.R.id.list);
 		
-		properties.setAdapter(aa);
-	
-		this.loadButton = (Button) this.findViewById(R.id.Load);
-
-		this.loadButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				loadRes();
+		search.setOnClickListener(new searchClickListener());
+		scan.setOnClickListener(new scanClickListener());
+		
+		
+		Intent intent = getIntent();
+		if (intent != null) {
+			String data = intent.getDataString();
+			if (data != null) {
+				searchTerm = data;
+				search();
 			}
-		});
-
-		//loadRes("offline");
+		}
 	}
 
 	@Override
@@ -88,132 +84,53 @@ public class BrowserBrowse extends ListActivity {
 		}
 	}
 	
-	/*----------------- private -------------------*/
-	
-
-	private void loadRes() {
-		loadRes("tmp");
+	@Override
+	public boolean onSearchRequested() {
+		Log.v(TAG, "onSearchRequest is called");
+		startSearch(null, false, null, false);
+	    return true;
 	}
-
-	private void loadRes(String mode) {
-
-		aa.clear();
-
-		// String uri = "http://comiles.eu/~natanael/foaf.rdf#me";
-		String uri = uriInput.getText().toString();
+	
+	private void search() {
 		
+		try {
+			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/search/"
+					+ URLEncoder.encode(searchTerm, Constants.ENC));
 
-		if (uri.length() > 0) {
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
 
-			status.setText("Loading (" + mode + ") URI: <" + uri + ">.");
+			Cursor rc = managedQuery(contentUri, null, null, null, null);
+			
+			String[] from = new String[]{"name", "webid"};
+			int[] to = {R.id.firstLine,R.id.secondLine};
+			rca = new SimpleCursorAdapter(getApplicationContext(), R.layout.contact_row, rc, from, to);
+			
+			results.setAdapter(rca);
 
-			try {
-				String enc = "UTF-8";
-				
-				Uri contentUri;
-				contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-						+ "/person/"
-						+ URLEncoder.encode(uri, enc));
-
-				// ResourceCursor rc = (ResourceCursor) managedQuery(contentUri,
-				// null,
-				// null, null, null);
-
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-						+ ">.");
-
-				Cursor rc = managedQuery(contentUri, null, null, null, null);
-
-				if (rc != null) {
-					if (!rc.isFirst()) {
-						rc.moveToFirst();
-					}
-
-					String[] predicates = rc.getColumnNames();
-
-					for (int i = 0; i < predicates.length; i++) {
-						Property prop = new Property();
-						prop.setPredicat(predicates[i]);
-						prop.setObject(rc.getString(i));
-						items.add(prop);
-						Log.v(TAG, "Added new Triple ?s <" + predicates[i] + "> '" + rc.getString(i) + "' to List.");
-					}
-				} else {
-					if(mode == "offline") {
-						status.setText("No resource found, try to cache or import this resource.");
-					} else {
-						status.setText("No resource found.");
-					}
-				}
-
-			} catch (UnsupportedEncodingException e) {
-				Log.e(TAG, "Problem with encoding uri for the query.", e);
-				status.append("Error retriving Data from Contentprovider.");
-			}
-		} else {
-			status.append("No URI inserted.");
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG,
+					"Could not encode searchterm and so couldn't get Resource from "
+							+ Constants.FOAF_AUTHORITY + ".", e);
+			TextView empty = (TextView) this.findViewById(android.R.id.empty);
+			empty.setText("Could not encode Searchterm and so couldn't get Resource from "
+					+ Constants.FOAF_AUTHORITY + ".");
 		}
-
-		aa.notifyDataSetChanged();
 	}
 	
-	private class PropertiesAdapter extends ArrayAdapter<Property> {
-
-		private ArrayList<Property> items;
-
-		public PropertiesAdapter(Context context, int textViewResourceId,
-				ArrayList<Property> objects) {
-			super(context, textViewResourceId, objects);
-			this.items = objects;
-		}
-
+	class searchClickListener implements OnClickListener {
+		
 		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			View v = convertView;
-			if (v == null) {
-				LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-				v = vi.inflate(R.layout.properties_row, null);
-			}
-			Property p = items.get(position);
-			if (p != null) {
-				TextView fl = (TextView) v.findViewById(R.id.firstLine);
-				TextView sl = (TextView) v.findViewById(R.id.secondLine);
-				if (fl != null) {
-					fl.setText("o: " + p.getObject());
-					Log.v(TAG,"TextView firstLine found and filled with '" + p.getObject() + "'.");
-				} else {
-					Log.v(TAG,"TextView firstLine not found.");
-				}
-				if (sl != null) {
-					sl.setText("p: " + p.getPredicat());
-					Log.v(TAG,"TextView secondLine found and filled with '" + p.getPredicat() + "'.");
-				} else {
-					Log.v(TAG,"TextView secondLine not found.");
-				}
-			}
-			return v;
+		public void onClick(View v) {
+			onSearchRequested();
 		}
-
 	}
-
-	private class Property {
-		private String predicat;
-		private String object;
+	
+	class scanClickListener implements OnClickListener {
 		
-		public void setPredicat(String predicat) {
-			this.predicat = predicat;
+		@Override
+		public void onClick(View v) {
+			
 		}
-		public String getPredicat() {
-			return predicat;
-		}
-		public void setObject(String object) {
-			this.object = object;
-		}
-		public String getObject() {
-			return object;
-		}
-		
-		
 	}
-
 }

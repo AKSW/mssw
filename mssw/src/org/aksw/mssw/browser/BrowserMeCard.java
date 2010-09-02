@@ -133,5 +133,11 @@ public class BrowserMeCard extends ListActivity {
 			return super.onOptionsItemSelected(item);
 		}
 	}
-
+	
+	@Override
+	public boolean onSearchRequested() {
+		Log.v(TAG, "onSearchRequest is called");
+		startSearch(null, false, null, false);
+	    return true;
+	}
 }

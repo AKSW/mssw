@@ -47,6 +47,7 @@ public class FoafProvider extends ContentProvider implements
 	private static final int PERSON_PICTURE = 220;
 	private static final int PERSON_MECARD = 230;
 	private static final int PERSON_FRIENDS = 240;
+	private static final int SEARCH = 300;
 
 	/**
 	 * The UriMatcher, which parses the incoming querie-uris
@@ -63,6 +64,7 @@ public class FoafProvider extends ContentProvider implements
 		uriMatcher.addURI(AUTHORITY, "person/name/*", PERSON_NAME);
 		uriMatcher.addURI(AUTHORITY, "person/picture/*", PERSON_PICTURE);
 		uriMatcher.addURI(AUTHORITY, "person/*", PERSON);
+		uriMatcher.addURI(AUTHORITY, "search/*", SEARCH);
 	}
 
 	/**
@@ -190,6 +192,11 @@ public class FoafProvider extends ContentProvider implements
 		case PERSON_PICTURE:
 			if (path.size() > 2) {
 				return getPicture(path.get(2), projection);
+			}
+			break;
+		case SEARCH:
+			if (path.size() > 1) {
+				return search(path.get(1));
 			}
 			break;
 		default:
@@ -501,11 +508,55 @@ public class FoafProvider extends ContentProvider implements
 			values.put("object", webid);
 
 			Log.i(TAG, "Adding new friends to your WebID uri <" + webid + ">.");
-			
+
 			return getContentResolver().insert(contentUri, values);
 
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Error on adding Friend to your WebID.", e);
+			return null;
+		}
+	}
+
+	private Cursor search(String searchTerm) {
+		// explicit search
+		if (searchTerm.startsWith("http:") || searchTerm.startsWith("https:")) {
+			try {
+				Uri contentUri;
+				contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
+						+ "/resource/"
+						+ URLEncoder.encode(searchTerm, Constants.ENC));
+
+				Log.i(TAG, "Getting WebID <" + searchTerm + ">.");
+
+				String[] projection = { Constants.PROP_rdfType };
+
+				Cursor rc = getContentResolver().query(contentUri, projection,
+						null, null, null);
+
+				if (rc != null) {
+					NameHelper nh = new NameHelper(getContext());
+					PersonCursor pc = new PersonCursor();
+					String webid;
+					while (rc.moveToNext()) {
+
+						webid = rc.getString(rc.getColumnIndex("subject"));
+						if (webid.equals(searchTerm)) {
+							pc.addPerson(webid, null, nh.getName(webid), null,
+									null);
+							break;
+						}
+					}
+					return pc;
+				} else {
+					return null;
+				}
+			} catch (UnsupportedEncodingException e) {
+				Log.e(TAG, "Error on adding Friend to your WebID.", e);
+				return null;
+			}
+		} else {
+			Log.v(TAG, "Free search not yet supported");
+
 			return null;
 		}
 	}

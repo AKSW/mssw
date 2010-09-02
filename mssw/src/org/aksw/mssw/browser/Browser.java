@@ -3,6 +3,7 @@ package org.aksw.mssw.browser;
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
+import android.app.SearchManager;
 import android.app.TabActivity;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -41,6 +42,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				.getDefaultSharedPreferences(getApplicationContext());
 		selectedWebID = sharedPreferences.getString("me",
 				Constants.EXAMPLE_webId);
+		String searchTerm = null;
 
 		Resources res = getResources(); // Resource object to get Drawables
 		TabHost.TabSpec spec; // Reusable TabSpec for each tab
@@ -77,6 +79,11 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 					selectedWebID = data;
 				}
 				selectedTab = 0;
+			} else if (action.equals(Intent.ACTION_SEARCH)) {
+				data = intent.getStringExtra(SearchManager.QUERY);
+				if (data != null) {
+					searchTerm = data;
+				}
 			}
 		}
 
@@ -102,7 +109,9 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserBrowse.class);
-		intent.setData(Uri.parse(selectedWebID));
+		if (searchTerm != null) {
+			intent.setData(Uri.parse(searchTerm));
+		}
 		spec = tabHost.newTabSpec("Browser");
 		spec.setIndicator(getString(R.string.browse),
 				res.getDrawable(android.R.drawable.ic_menu_compass));
@@ -137,10 +146,19 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
-		/*if (key == "me") {
-			selectedWebID = sharedPreferences.getString(key,
-					Constants.EXAMPLE_webId);
-			
-		}*/
+		/*
+		 * if (key == "me") { selectedWebID = sharedPreferences.getString(key,
+		 * Constants.EXAMPLE_webId);
+		 * 
+		 * }
+		 */
+	}
+	
+	
+	@Override
+	public boolean onSearchRequested() {
+		Log.v(TAG, "onSearchRequest is called");
+		startSearch(null, false, null, false);
+	    return true;
 	}
 }

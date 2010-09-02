@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 	<item android:id="@+id/itemAdd" android:title="@string/add_WebID" android:icon="@drawable/android:ic_menu_add" />
+	<item android:id="@+id/itemSearch" android:title="@string/search" android:icon="@drawable/android:ic_menu_search" />
 	<item android:id="@+id/itemMe" android:title="@string/me" android:icon="@drawable/android:ic_menu_myplaces" />
 	<item android:id="@+id/itemPref" android:title="@string/preferences" android:icon="@drawable/android:ic_menu_preferences" />
 </menu>
