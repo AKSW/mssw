@@ -129,11 +129,4 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 		}
 		super.onListItemClick(l, v, position, id);
 	}
-	
-	@Override
-	public boolean onSearchRequested() {
-		Log.v(TAG, "onSearchRequest is called");
-		startSearch(null, false, null, false);
-	    return true;
-	}
 }

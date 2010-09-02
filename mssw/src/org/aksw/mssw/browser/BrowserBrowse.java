@@ -84,13 +84,6 @@ public class BrowserBrowse extends ListActivity {
 		}
 	}
 	
-	@Override
-	public boolean onSearchRequested() {
-		Log.v(TAG, "onSearchRequest is called");
-		startSearch(null, false, null, false);
-	    return true;
-	}
-	
 	private void search() {
 		
 		try {
@@ -132,5 +125,22 @@ public class BrowserBrowse extends ListActivity {
 		public void onClick(View v) {
 			
 		}
+	}
+	
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		String uri;
+		
+		Cursor rc = rca.getCursor();
+		if (rc.moveToPosition(position)) {
+		uri = rc.getString(rc.getColumnIndex("webid"));
+		
+		//uri = "http://sebastian.tramp.name";
+		Intent i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(uri));
+		startActivity(i);
+		} else {
+			Log.v(TAG, "Error on finding selected item at position: '" + position + "' with id: '" + id + "'");
+		}
+		super.onListItemClick(l, v, position, id);
 	}
 }

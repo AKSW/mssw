@@ -84,6 +84,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				if (data != null) {
 					searchTerm = data;
 				}
+				selectedTab = 2;
 			}
 		}
 
@@ -119,7 +120,6 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		tabHost.addTab(spec);
 
 		tabHost.setCurrentTab(selectedTab);
-
 	}
 
 	@Override
@@ -152,13 +152,5 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		 * 
 		 * }
 		 */
-	}
-	
-	
-	@Override
-	public boolean onSearchRequested() {
-		Log.v(TAG, "onSearchRequest is called");
-		startSearch(null, false, null, false);
-	    return true;
 	}
 }

@@ -110,6 +110,8 @@ public class BrowserMeCard extends ListActivity {
 			empty.setText("Could not encode URI and so couldn't get Resource from "
 					+ Constants.FOAF_AUTHORITY + ".");
 		}
+		
+		 //setDefaultKeyMode(DEFAULT_KEYS_SEARCH_LOCAL);
 
 	}
 
@@ -132,12 +134,5 @@ public class BrowserMeCard extends ListActivity {
 		} else {
 			return super.onOptionsItemSelected(item);
 		}
-	}
-	
-	@Override
-	public boolean onSearchRequested() {
-		Log.v(TAG, "onSearchRequest is called");
-		startSearch(null, false, null, false);
-	    return true;
 	}
 }
