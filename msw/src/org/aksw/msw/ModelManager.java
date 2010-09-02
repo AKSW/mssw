@@ -4,16 +4,19 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.aksw.msw.foafssl.FoafsslURLConnection;
 import org.aksw.msw.foafssl.TrustManagerFactory;
 
 import android.content.Context;
@@ -34,6 +37,7 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
 import com.hp.hpl.jena.shared.DoesNotExistException;
 import com.hp.hpl.jena.shared.JenaException;
+import com.hp.hpl.jena.shared.RulesetNotFoundException;
 
 public class ModelManager {
 
@@ -54,14 +58,38 @@ public class ModelManager {
 
 	private static HashMap<String, ModelMaker> modelMakers;
 
-	private static Context context;
+	private Context context;
+	private SharedPreferences sharedPreferences;
 
 	private static FoafMapper fm;
 
-	public ModelManager(Context context) {
-		fm = new FoafMapper(context);
+	public ModelManager(Context contextIn) {
+		context = contextIn;
 
 		File storage = Environment.getExternalStorageDirectory();
+
+		String state = Environment.getExternalStorageState();
+		if (Environment.MEDIA_MOUNTED.equals(state)
+				|| Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+			try {
+				fm = new FoafMapper(storage, Constants.RULE_FILE);
+			} catch (RulesetNotFoundException e) {
+				if (Environment.MEDIA_MOUNTED.equals(state)) {
+					Log.v(TAG, "The ruleset file does not exists at '"
+							+ Constants.RULE_FILE
+							+ "' will create new one with default rules.");
+					fm = new FoafMapper(storage, Constants.RULE_FILE, context);
+				} else {
+					Log.v(TAG, "The ruleset file does not exists at '"
+							+ Constants.RULE_FILE
+							+ "' and can't create new one with default rules.", e);
+				}
+			}
+		} else {
+			Log.v(TAG,
+					"Can not get ruleset file, because external storrage is not mounted.");
+		}
+
 		webModelsFiles = new File(storage, Constants.WEB_MODELS_DIR);
 		infModelsFiles = new File(storage, Constants.INF_MODELS_DIR);
 		localModelsFiles = new File(storage, Constants.LOCAL_MODELS_DIR);
@@ -264,9 +292,6 @@ public class ModelManager {
 
 		String state = Environment.getExternalStorageState();
 
-		String certPath = Constants.CERT_DIR + File.separator
-				+ "privatekey.p12";
-
 		if (model == null) {
 			model = modelMakers.get("cache").createDefaultModel();
 		}
@@ -275,38 +300,74 @@ public class ModelManager {
 				// We can read and write the media
 				File storage = Environment.getExternalStorageDirectory();
 
-				File keyFile = new File(storage, certPath);
+				File keyFile = new File(storage, Constants.CERT_FILE);
 				// storage.getAbsolutePath();
 				if (keyFile.isFile()) {
 
-					SharedPreferences prefs = PreferenceManager
-							.getDefaultSharedPreferences(context);
+					SharedPreferences prefs = getConfiguration();
 
 					SSLSocketFactory socketFactory = TrustManagerFactory
 							.getFactory(keyFile,
 									prefs.getString("privatekey_password", ""));
 
-					try {
-						FoafsslURLConnection
-								.setDefaultSSLSocketFactory(socketFactory);
-						HttpsURLConnection conn = new FoafsslURLConnection(
-								new URL(url));
+					HostnameVerifier hostNameVerifier = TrustManagerFactory
+							.getVerifier();
 
-						read(url, model, conn.getInputStream());
-					} catch (FileNotFoundException e) {
-						Log.e(TAG, "Couldn't find File.", e);
-					} catch (IOException e) {
-						Log.e(TAG,
-								"Input/Output Error while creating or using Socket.",
-								e);
+					if (socketFactory != null) {
+						try {
+
+							HttpsURLConnection
+									.setDefaultSSLSocketFactory(socketFactory);
+							HttpsURLConnection
+									.setDefaultHostnameVerifier(hostNameVerifier);
+
+							URLConnection conn = new URL(url).openConnection();
+
+							conn.setRequestProperty("accept",
+									Constants.REQUEST_PROPERTY);
+							conn.setDoOutput(true);
+							conn.setDoInput(true);
+							conn.setUseCaches(true);
+
+							if (conn instanceof HttpsURLConnection) {
+								Log.v(TAG, "HTTPS Connection.");
+							} else {
+								Log.v(TAG, "HTTP/URL Connection.");
+							}
+
+							conn.connect();
+							InputStream iStream = conn.getInputStream();
+
+							read(url, model, iStream);
+
+							iStream.close();
+							
+							if (conn instanceof HttpsURLConnection) {
+								((HttpsURLConnection) conn).disconnect();
+							}
+						} catch (MalformedURLException e) {
+							Log.e(TAG, "URL not formed correctly", e);
+						} catch (FileNotFoundException e) {
+							Log.e(TAG, "Couldn't find File.", e);
+						} catch (ConnectException e) {
+							Log.e(TAG,
+									"Jena couldn't connect to the server for: '"
+											+ url + "'.'", e);
+						} catch (IOException e) {
+							Log.e(TAG,
+									"Input/Output Error while creating or using Socket.",
+									e);
+						}
+					} else {
+						Log.v(TAG, "Socket Factory is null.");
 						read(url, model, null);
 					}
 
 				} else {
 					Log.i(TAG,
 							"Couldn't get private Key, reading without FOAF+SSL features.");
+					read(url, model, null);
 				}
-				read(url, model, null);
 			} catch (DoesNotExistException e) {
 				Log.e(TAG, "Jena couldn't find the model: '" + url + "'.'", e);
 			}
@@ -450,5 +511,16 @@ public class ModelManager {
 		} else {
 			return null;
 		}
+	}
+
+	private SharedPreferences getConfiguration() {
+
+		if (context == null) {
+			Log.v(TAG, "Context is null");
+		}
+		sharedPreferences = PreferenceManager
+				.getDefaultSharedPreferences(context);
+
+		return sharedPreferences;
 	}
 }
