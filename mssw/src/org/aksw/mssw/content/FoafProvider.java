@@ -8,12 +8,14 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 
 import org.aksw.mssw.Constants;
+import org.aksw.mssw.NameHelper;
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
@@ -24,19 +26,13 @@ import android.util.Log;
  * @author Natanael Arndt <arndtn@gmx.de>
  * 
  */
-public class FoafProvider extends ContentProvider {
+public class FoafProvider extends ContentProvider implements
+		OnSharedPreferenceChangeListener {
 
 	private static final String TAG = "FoafProvider";
 	public static final String DISPLAY_NAME = "FoafProvider";
 	public static final String AUTHORITY = "org.aksw.mssw.content.foafprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
-
-	/**
-	 * Static values for querying the TripleProvider
-	 */
-	private static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
-	private static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
-			+ TRIPLE_AUTHORITY);
 
 	/**
 	 * Static values which represent the different pathes of the query uris
@@ -72,7 +68,7 @@ public class FoafProvider extends ContentProvider {
 	/**
 	 * The WebID of the user
 	 */
-	private String me;
+	private static String me;
 
 	/**
 	 * The Application Context in which the ContentProvider is running and the
@@ -92,12 +88,12 @@ public class FoafProvider extends ContentProvider {
 			getConfiguration();
 		}
 
-		this.me = sharedPreferences.getString("me", null);
-		if (this.me == null) {
+		me = sharedPreferences.getString("me", null);
+		if (me == null) {
 			Log.i(TAG,
 					"No URI for \"me\" specified in FoafProvider, please set a URI in configuration.");
 		} else {
-			Log.v(TAG, "URI for \"me\" is: " + this.me);
+			Log.v(TAG, "URI for \"me\" is: " + me);
 		}
 
 		return true;
@@ -217,9 +213,8 @@ public class FoafProvider extends ContentProvider {
 		int match = uriMatcher.match(uri);
 		switch (match) {
 		case ME_FRIEND_ADD:
-			Log.i(TAG,
-					"Adding new friends to your WebID is not yet implemented.");
-			// return 1;
+			addFriend((String) values.get("webid"));
+			return 1;
 		default:
 			return 0;
 		}
@@ -237,10 +232,8 @@ public class FoafProvider extends ContentProvider {
 		int match = uriMatcher.match(uri);
 		switch (match) {
 		case ME_FRIEND_ADD:
-			Log.i(TAG,
-					"Adding new friends to your WebID is not yet implemented. uri <"
-							+ (String) values.get("uri") + ">.");
-			return Uri.parse((String) values.get("uri"));
+			return addFriend((String) values.get("webid"));
+			// return Uri.parse((String) values.get("webid"));
 		default:
 			return null;
 		}
@@ -303,11 +296,9 @@ public class FoafProvider extends ContentProvider {
 		Log.v(TAG, "getPerson: <" + uri + ">");
 
 		try {
-			String enc = "UTF-8";
-
 			Uri contentUri;
-			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, enc));
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
@@ -332,11 +323,9 @@ public class FoafProvider extends ContentProvider {
 		Log.v(TAG, "getMeCard: <" + uri + ">");
 
 		try {
-			String enc = "UTF-8";
-
 			Uri contentUri;
-			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, enc));
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
@@ -361,7 +350,7 @@ public class FoafProvider extends ContentProvider {
 
 		try {
 			Uri contentUri;
-			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
 					+ URLEncoder.encode(uri, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
@@ -422,11 +411,10 @@ public class FoafProvider extends ContentProvider {
 		Log.v(TAG, "getPicture: <" + uri + ">");
 
 		try {
-			String enc = "UTF-8";
 
 			Uri contentUri;
-			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, enc));
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
@@ -455,11 +443,9 @@ public class FoafProvider extends ContentProvider {
 		Log.v(TAG, "getFriends: <" + uri + ">");
 
 		try {
-			String enc = "UTF-8";
-
 			Uri contentUri;
-			contentUri = Uri.parse(TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, enc));
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
+					+ URLEncoder.encode(uri, Constants.ENC));
 
 			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 					+ ">.");
@@ -467,12 +453,59 @@ public class FoafProvider extends ContentProvider {
 			if (projection == null) {
 				projection = relations;
 			}
+
 			Cursor rc = getContentResolver().query(contentUri, relations, null,
 					null, null);
-
-			return rc;
+			if (rc != null) {
+				String relation;
+				String relationReadable;
+				boolean isResource;
+				NameHelper nh = new NameHelper(getContext());
+				PersonCursor pc = new PersonCursor();
+				while (rc.moveToNext()) {
+					isResource = rc.getString(rc.getColumnIndex("oIsResource"))
+							.equals("true");
+					if (isResource) {
+						uri = rc.getString(rc.getColumnIndex("object"));
+						relation = rc.getString(rc.getColumnIndex("predicat"));
+						relationReadable = rc.getString(rc
+								.getColumnIndex("predicatReadable"));
+						pc.addPerson(uri, relation, nh.getName(uri),
+								relationReadable, null);
+					}
+				}
+				return pc;
+			} else {
+				return null;
+			}
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
+			return null;
+		}
+	}
+
+	private Uri addFriend(String webid) {
+
+		String uri = getConfiguration()
+				.getString("me", Constants.EXAMPLE_webId);
+
+		try {
+			Uri contentUri;
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
+					+ "/resource/addTriple/"
+					+ URLEncoder.encode(uri, Constants.ENC));
+
+			ContentValues values = new ContentValues();
+			values.put("subject", me);
+			values.put("predicat", Constants.PROP_knows);
+			values.put("object", webid);
+
+			Log.i(TAG, "Adding new friends to your WebID uri <" + webid + ">.");
+			
+			return getContentResolver().insert(contentUri, values);
+
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Error on adding Friend to your WebID.", e);
 			return null;
 		}
 	}
@@ -514,5 +547,13 @@ public class FoafProvider extends ContentProvider {
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
 		// TODO Auto-generated method stub
 		return 0;
+	}
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		if (key == "me") {
+			me = sharedPreferences.getString(key, Constants.EXAMPLE_webId);
+		}
 	}
 }

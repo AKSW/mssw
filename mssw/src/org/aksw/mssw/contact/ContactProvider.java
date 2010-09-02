@@ -3,11 +3,19 @@
  */
 package org.aksw.mssw.contact;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
 import org.aksw.mssw.Constants;
+import org.aksw.mssw.tools.Base64;
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -259,6 +267,54 @@ public class ContactProvider extends ContentProvider {
 							}
 
 							if (!oIsBlankNode) {
+								if (predicat.equals(Constants.DATA_KINDS_PREFIX
+										+ "CommonDataKinds.Phone.NUMBER")
+										&& object.startsWith("tel:")) {
+									object = object.substring(4);
+									oIsResource = false;
+								} else if (predicat
+										.equals(Constants.DATA_KINDS_PREFIX
+												+ "CommonDataKinds.Photo.PHOTO")) {
+									// TODO get photo and convert it in the
+									// right format
+									if (oIsResource) {
+										try {
+											Log.v(TAG, "Reading Photo from <" + object + ">.");
+											URLConnection photoConnection = new URL(
+													object).openConnection();
+											InputStream photoStream = photoConnection.getInputStream();
+														
+											InputStream photo64Stream = new Base64.InputStream(photoStream, Base64.ENCODE);
+
+											StringBuilder sb = new StringBuilder();
+											BufferedReader reader = new BufferedReader(new InputStreamReader(photo64Stream));
+											String line;
+											
+											while ((line = reader.readLine()) != null) {
+												sb.append(line);
+											}
+											
+											object = sb.toString();
+										} catch (MalformedURLException e) {
+											Log.e(TAG,
+													"The given Photoresource <"
+															+ object
+															+ "> is not valide.",
+													e);
+											object = null;
+										} catch (IOException e) {
+											Log.e(TAG, "Could not read from <"
+													+ object + ">.", e);
+											object = null;
+										} finally {
+											oIsResource = false;
+										}
+									} else {
+										Log.v(TAG,
+												"Using unsupported Datatype for Photo");
+										object = null;
+									}
+								}
 								cc.addTriple(subject, predicat, object,
 										oIsResource, false);
 							} else {
@@ -291,7 +347,8 @@ public class ContactProvider extends ContentProvider {
 	private int addData(String uri, ContentValues data) {
 		Uri contentUri;
 		try {
-			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/addData/"
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
+					+ "/resource/addData/"
 					+ URLEncoder.encode(uri, Constants.ENC));
 
 			return getContentResolver().update(contentUri, data, null, null);

@@ -63,7 +63,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 										+ contentUri.toString() + ">.");
 
 						ContentValues values = new ContentValues();
-						values.put("uri", data);
+						values.put("webid", data);
 
 						getContentResolver().insert(contentUri, values);
 					} catch (Exception e) {
@@ -80,11 +80,13 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 			}
 		}
 
+		setTitle(selectedWebID);
+
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserMeCard.class);
 		intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("meCard");
-		spec.setIndicator(getString(R.string.me),
+		spec.setIndicator(getString(R.string.profile),
 				res.getDrawable(android.R.drawable.ic_menu_myplaces));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
@@ -135,9 +137,10 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
-		if (key == "me") {
+		/*if (key == "me") {
 			selectedWebID = sharedPreferences.getString(key,
 					Constants.EXAMPLE_webId);
-		}
+			
+		}*/
 	}
 }

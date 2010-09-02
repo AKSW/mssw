@@ -4,9 +4,11 @@
 @prefix android: <http://ns.aksw.org/Android/>.
 @prefix acontacts: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.>.
 @prefix name: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.StructuredName.>.
+@prefix photo: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.Photo.>.
 @prefix phone: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.Phone.>.
 @prefix website: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.Website.>.
 
 [name: (?s foaf:name ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:StructuredName), (?d name:DISPLAY_NAME ?o)]
+[photo: (?s foaf:depiction ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Photo), (?d photo:PHOTO ?o)]
 [phone: (?s foaf:phone ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Phone), (?d phone:NUMBER ?o), (?d phone:TYPE phone:TYPE_HOME)]
-[phone: (?s foaf:homepage ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Website), (?d website:URL ?o), (?d website:TYPE website:TYPE_HOMEPAGE)]
+[homepage: (?s foaf:homepage ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Website), (?d website:URL ?o), (?d website:TYPE website:TYPE_HOMEPAGE)]

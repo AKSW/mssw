@@ -12,8 +12,6 @@ public class PropertyCursor extends AbstractCursor {
 
 	@Override
 	public String[] getColumnNames() {
-		// TODO Auto-generated method stub
-		// TODO Auto-generated method stub
 		String[] names = {"_id", "subject", "predicat", "object", "predicatReadable", "objectReadable"};
 		return names;
 	}

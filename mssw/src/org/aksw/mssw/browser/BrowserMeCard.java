@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import org.aksw.mssw.Constants;
+import org.aksw.mssw.NameHelper;
 import org.aksw.mssw.R;
 
 import android.app.ListActivity;
@@ -69,6 +70,11 @@ public class BrowserMeCard extends ListActivity {
 					Constants.EXAMPLE_webId);
 		}
 
+		NameHelper nh = new NameHelper(getApplicationContext());
+
+		this.name = (TextView) this.findViewById(R.id.mecard_name);
+		this.name.setText(nh.getName(selectedWebID));
+		
 		menuManager = new MenuManager();
 
 		try {
@@ -92,24 +98,11 @@ public class BrowserMeCard extends ListActivity {
 			// Resources res = getResources(); // Resource object to get
 			// Drawables
 
-			contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/person/name/"
-					+ URLEncoder.encode(selectedWebID, Constants.ENC));
+			/*
+			 * this.photo = (ImageView) this.findViewById(R.id.mecard_picture);
+			 * this.photo.setImageDrawable (res.getDrawable(R.drawable.icon));
+			 */
 
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
-
-			rc = managedQuery(contentUri, null, null, null, null);
-			if (rc != null && rc.moveToFirst()) {
-				this.name = (TextView) this.findViewById(R.id.mecard_name);
-				this.name.setText(rc.getString(rc.getColumnIndex("object")));
-
-				/*
-				 * this.photo = (ImageView)
-				 * this.findViewById(R.id.mecard_picture);
-				 * this.photo.setImageDrawable
-				 * (res.getDrawable(R.drawable.icon));
-				 */
-			}
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG,
 					"Could not encode URI and so couldn't get Resource from "

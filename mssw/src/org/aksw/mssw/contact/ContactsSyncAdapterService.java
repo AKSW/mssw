@@ -1,5 +1,6 @@
 package org.aksw.mssw.contact;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
@@ -10,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Stack;
 
 import org.aksw.mssw.Constants;
+import org.aksw.mssw.tools.Base64;
 
 import android.accounts.Account;
 import android.accounts.OperationCanceledException;
@@ -30,6 +32,7 @@ import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.RawContacts.Entity;
+import android.provider.ContactsContract.RawContactsEntity;
 import android.util.Log;
 
 public class ContactsSyncAdapterService extends Service {
@@ -86,7 +89,7 @@ public class ContactsSyncAdapterService extends Service {
 		// Diff) [1]
 		String uri;
 		while (rc.moveToNext()) {
-			uri = rc.getString(rc.getColumnIndex("object"));
+			uri = rc.getString(rc.getColumnIndex("webid"));
 			if (localContacts.get(uri) == null) {
 				// add missing persons to contacts
 				addContact(uri, account);
@@ -127,6 +130,8 @@ public class ContactsSyncAdapterService extends Service {
 
 			LinkedHashMap<String, ContentProviderOperation.Builder> builderList;
 			builderList = new LinkedHashMap<String, ContentProviderOperation.Builder>();
+			LinkedHashMap<String, Boolean> builderHasMimeTypeList;
+			builderHasMimeTypeList = new LinkedHashMap<String, Boolean>();
 
 			ContentProviderOperation.Builder builder = ContentProviderOperation
 					.newInsert(RawContacts.CONTENT_URI);
@@ -134,171 +139,195 @@ public class ContactsSyncAdapterService extends Service {
 			builder.withValue(RawContacts.ACCOUNT_TYPE, account.type);
 			builder.withValue(RawContacts.SYNC1, uri);
 			builderList.put(uri, builder);
+			builderHasMimeTypeList.put(uri, Boolean.TRUE);
 
-			Uri contentUri = Uri.parse(Constants.CONTACT_CONTENT_URI + "/data/"
-					+ URLEncoder.encode(uri, Constants.ENC));
+			if (uri != null) {
+				Uri contentUri = Uri.parse(Constants.CONTACT_CONTENT_URI
+						+ "/data/" + URLEncoder.encode(uri, Constants.ENC));
 
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
-			Cursor rc = content.query(contentUri, null, null, null, null);
+				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+						+ ">.");
+				Cursor rc = content.query(contentUri, null, null, null, null);
 
-			if (rc != null) {
-				String subject, predicat, object;
+				if (rc != null) {
+					String subject, predicat, object;
 
-				Log.i(TAG, "== Initializing hasData properties. ==");
-				/**
-				 * Initializing all hasData Properties of this contact
-				 */
-				while (rc.moveToNext()) {
-					predicat = rc.getString(rc.getColumnIndex("predicat"));
-					Log.v(TAG, "predicat = " + predicat);
+					Log.i(TAG, "== Initializing hasData properties. ==");
+					/**
+					 * Initializing all hasData Properties of this contact
+					 */
+					while (rc.moveToNext()) {
+						predicat = rc.getString(rc.getColumnIndex("predicat"));
+						Log.v(TAG, "predicat = " + predicat);
 
-					if (predicat != null
-							&& predicat.equals(Constants.PROP_hasData)) {
-						object = rc.getString(rc.getColumnIndex("object"));
+						if (predicat != null
+								&& predicat.equals(Constants.PROP_hasData)) {
+							object = rc.getString(rc.getColumnIndex("object"));
 
-						if (!builderList.containsKey(object)) {
-							builder = ContentProviderOperation
-									.newInsert(ContactsContract.Data.CONTENT_URI);
-							builder.withValueBackReference(
-									ContactsContract.RawContactsEntity.RAW_CONTACT_ID,
-									0);
-							builderList.put(object, builder);
-						} else {
-							Log.i(TAG, "Builder List already has this data: "
-									+ object);
+							if (!builderList.containsKey(object)) {
+								builder = ContentProviderOperation
+										.newInsert(ContactsContract.Data.CONTENT_URI);
+								builder.withValueBackReference(
+										ContactsContract.RawContactsEntity.RAW_CONTACT_ID,
+										0);
+								builderList.put(object, builder);
+								builderHasMimeTypeList.put(object,
+										Boolean.FALSE);
+							} else {
+								Log.i(TAG,
+										"Builder List already has this data: "
+												+ object);
+							}
 						}
 					}
-				}
 
-				// reset cursor before first element, as if it would be new
-				rc.moveToPosition(-1);
+					// reset cursor before first element, as if it would be new
+					rc.moveToPosition(-1);
 
-				Log.i(TAG, "== Initializing propertys of hasData objects. ==");
-				/**
-				 * get the properties of the nodes, which are the in the range
-				 * of a hasData property
-				 */
-				while (rc.moveToNext()) {
-					predicat = rc.getString(rc.getColumnIndex("predicat"));
-					Log.v(TAG, "predicat = " + predicat);
+					Log.i(TAG,
+							"== Initializing propertys of hasData objects. ==");
+					/**
+					 * get the properties of the nodes, which are the in the
+					 * range of a hasData property
+					 */
+					while (rc.moveToNext()) {
+						predicat = rc.getString(rc.getColumnIndex("predicat"));
+						Log.v(TAG, "predicat = " + predicat);
 
-					if (predicat != null
-							&& !predicat.equals(Constants.PROP_hasData)) {
-						subject = rc.getString(rc.getColumnIndex("subject"));
-						object = rc.getString(rc.getColumnIndex("object"));
-						builder = builderList.get(subject);
+						if (predicat != null
+								&& !predicat.equals(Constants.PROP_hasData)) {
+							subject = rc
+									.getString(rc.getColumnIndex("subject"));
+							object = rc.getString(rc.getColumnIndex("object"));
+							builder = builderList.get(subject);
 
-						try {
-							if (predicat.equals(Constants.PROP_rdfType)
-									&& object
-											.startsWith(Constants.DATA_KINDS_PREFIX)) {
-								Log.v(TAG, "rdf:type = " + object + ".");
-								// this is the place of magic
-								String type = (String) forUri(object, false)
-										.getField("CONTENT_ITEM_TYPE")
-										.get(null);
-
-								Log.v(TAG, "Goind to Add Mimetype: " + type
-										+ ".");
-								builder.withValue(
-										ContactsContract.Data.MIMETYPE, type);
-
-							} else if (predicat
-									.startsWith(Constants.DATA_KINDS_PREFIX)) {
-								boolean isResource;
-								if (rc.getString(
-										rc.getColumnIndex("oIsResource"))
-										.equals("true")) {
-									isResource = true;
-								} else {
-									isResource = false;
-								}
-
-								/**
-								 * this is the place of magic extract the last
-								 * part of the URI, which determines a property
-								 * of the given class and get a Class object
-								 * representing the class given in the uri. than
-								 * get the specified property from this class.
-								 */
-								String fieldName = extractFieldName(predicat);
-								String column = (String) forUri(predicat, true)
-										.getField(fieldName).get(null);
-
-								if (isResource
+							try {
+								if (predicat.equals(Constants.PROP_rdfType)
 										&& object
 												.startsWith(Constants.DATA_KINDS_PREFIX)) {
+									Log.v(TAG, "rdf:type = " + object + ".");
 									// this is the place of magic
-									fieldName = extractFieldName(object);
-									Field valueField = forUri(object, true)
-											.getField(fieldName);
+									String type = (String) forUri(object, false)
+											.getField("CONTENT_ITEM_TYPE").get(
+													null);
 
-									// Type is int
-									// Protocol is string
-									if (valueField.getType().getName()
-											.equalsIgnoreCase("int")) {
-										int value = (Integer) valueField
-												.get(null);
-										builder.withValue(column, value);
+									Log.v(TAG, "Goind to Add Mimetype: " + type
+											+ ".");
+									builder.withValue(
+											ContactsContract.Data.MIMETYPE,
+											type);
+									builderHasMimeTypeList.put(subject,
+											Boolean.TRUE);
 
-										Log.v(TAG, "Added value: " + value
-												+ " to column: " + column + ".");
-									} else if (valueField
-											.getType()
-											.getName()
-											.equalsIgnoreCase(
-													"java.lang.String")) {
-										String value = (java.lang.String) valueField
-												.get(null);
-										builder.withValue(column, value);
+								} else if (predicat
+										.startsWith(Constants.DATA_KINDS_PREFIX)) {
+									boolean isResource;
+									if (rc.getString(
+											rc.getColumnIndex("oIsResource"))
+											.equals("true")) {
+										isResource = true;
 									} else {
-										Log.e(TAG,
-												"I don't know the Type of the field: '"
-														+ object + "'.");
+										isResource = false;
 									}
 
+									/**
+									 * this is the place of magic extract the
+									 * last part of the URI, which determines a
+									 * property of the given class and get a
+									 * Class object representing the class given
+									 * in the uri. than get the specified
+									 * property from this class.
+									 */
+									String fieldName = extractFieldName(predicat);
+									String column = (String) forUri(predicat,
+											true).getField(fieldName).get(null);
+
+									if (isResource
+											&& object
+													.startsWith(Constants.DATA_KINDS_PREFIX)) {
+										// this is the place of magic
+										fieldName = extractFieldName(object);
+										Field valueField = forUri(object, true)
+												.getField(fieldName);
+
+										// Type is int
+										// Protocol is string
+										if (valueField.getType().getName()
+												.equalsIgnoreCase("int")) {
+											int value = (Integer) valueField
+													.get(null);
+											builder.withValue(column, value);
+
+											Log.v(TAG, "Added value: " + value
+													+ " to column: " + column
+													+ ".");
+										} else if (valueField
+												.getType()
+												.getName()
+												.equalsIgnoreCase(
+														"java.lang.String")) {
+											String value = (java.lang.String) valueField
+													.get(null);
+											builder.withValue(column, value);
+										} else {
+											Log.e(TAG,
+													"I don't know the Type of the field: '"
+															+ object + "'.");
+										}
+
+									} else {
+										if (column
+												.equals(RawContactsEntity.DATA15)) {
+
+											builder.withValue(column,
+													Base64.decode(object));
+											Log.v(TAG, "wrote blob.");
+										} else {
+											builder.withValue(column, object);
+										}
+
+									}
+								} else if (predicat
+										.equals(Constants.PROP_rdfType)) {
+									Log.v(TAG,
+											"The given object <"
+													+ object
+													+ "> is not a valide type. (ignorring this triple)");
 								} else {
-									builder.withValue(column, object);
+									Log.v(TAG,
+											"The given predicat <"
+													+ predicat
+													+ "> is not valide. (ignorring this triple)");
 								}
-							} else if (predicat.equals(Constants.PROP_rdfType)) {
-								Log.v(TAG,
-										"The given object <"
-												+ object
-												+ "> is not a valide type. (ignorring this triple)");
-							} else {
-								Log.v(TAG,
-										"The given predicat <"
+
+							} catch (ClassNotFoundException e) {
+								Log.e(TAG,
+										"There was a error to find the according Class. (ignorring this triple)",
+										e);
+							} catch (Exception e) {
+								Log.e(TAG,
+										"Couldn't interpres the Triple subject = '"
+												+ subject
+												+ "', predicat = '"
 												+ predicat
-												+ "> is not valide. (ignorring this triple)");
+												+ "', object = '"
+												+ object
+												+ "' I'll ignorre it and am proceding with next Property.",
+										e);
 							}
 
-						} catch (ClassNotFoundException e) {
-							Log.e(TAG,
-									"There was a error to find the according Class. (ignorring this triple)",
-									e);
-						} catch (Exception e) {
-							Log.e(TAG,
-									"Couldn't interpres the Triple subject = '"
-											+ subject
-											+ "', predicat = '"
-											+ predicat
-											+ "', object = '"
-											+ object
-											+ "' I'll ignorre it and am proceding with next Property.",
-									e);
+							builderList.put(subject, builder);
 						}
-
-						builderList.put(subject, builder);
 					}
-				}
 
-			} else {
-				Log.e(TAG,
-						"Contentprovider returned an empty Cursor, couldn't add Data to contact '"
-								+ uri + "'.");
-				Log.v(TAG, "Destroy builders, to avoid '(Unknown)'-Contacts.");
-				builderList.clear();
+				} else {
+					Log.e(TAG,
+							"Contentprovider returned an empty Cursor, couldn't add Data to contact '"
+									+ uri + "'.");
+					Log.v(TAG,
+							"Destroy builders, to avoid '(Unknown)'-Contacts.");
+					builderList.clear();
+				}
 			}
 
 			if (builderList.size() > 1) {
@@ -307,8 +336,14 @@ public class ContactsSyncAdapterService extends Service {
 						.iterator();
 
 				while (builderIterator.hasNext()) {
-					builder = builderList.get(builderIterator.next());
-					operationList.add(builder.build());
+					String key = builderIterator.next();
+					if (builderHasMimeTypeList.get(key)) {
+						builder = builderList.get(key);
+						operationList.add(builder.build());
+					} else {
+						Log.v(TAG, "Found dataset <" + key
+								+ "> without mimetype.");
+					}
 				}
 
 				content.applyBatch(ContactsContract.AUTHORITY, operationList);
@@ -338,7 +373,17 @@ public class ContactsSyncAdapterService extends Service {
 					rawId);
 			Uri entityUri = Uri.withAppendedPath(rawUri,
 					Entity.CONTENT_DIRECTORY);
-			Cursor cc = content.query(entityUri, null, null, null, null);
+			String[] projection = { RawContacts._ID, RawContacts.CONTACT_ID,
+					RawContactsEntity.DATA_ID, RawContactsEntity.MIMETYPE,
+					RawContactsEntity.DATA1, RawContactsEntity.DATA2,
+					RawContactsEntity.DATA3, RawContactsEntity.DATA4,
+					RawContactsEntity.DATA5, RawContactsEntity.DATA6,
+					RawContactsEntity.DATA7, RawContactsEntity.DATA8,
+					RawContactsEntity.DATA9, RawContactsEntity.DATA10,
+					RawContactsEntity.DATA11, RawContactsEntity.DATA12,
+					RawContactsEntity.DATA13, RawContactsEntity.DATA14,
+					RawContactsEntity.DATA15 };
+			Cursor cc = content.query(entityUri, projection, null, null, null);
 
 			if (rc != null && cc != null) {
 
@@ -369,12 +414,20 @@ public class ContactsSyncAdapterService extends Service {
 
 						Log.v(TAG, "rdf:type = " + object + ".");
 						// this is the place of magic
-						String type = (String) forUri(object, false).getField(
-								"CONTENT_ITEM_TYPE").get(null);
+						try {
+							String type = (String) forUri(object, false)
+									.getField("CONTENT_ITEM_TYPE").get(null);
 
-						data = dataList.get(subject);
-						data.put(Entity.MIMETYPE, type);
-						dataList.put(subject, data);
+							data = dataList.get(subject);
+							data.put(Entity.MIMETYPE, type);
+							dataList.put(subject, data);
+						} catch (ClassNotFoundException e) {
+							Log.v(TAG,
+									"Could not find Class '"
+											+ object
+											+ "' (ignoring), check the file 'rules.n3' on your sdcard if everything is spelled right.");
+							dataList.remove(subject);
+						}
 					} else if (predicat.startsWith(Constants.DATA_KINDS_PREFIX)) {
 
 						String fieldName = extractFieldName(predicat);
@@ -436,6 +489,8 @@ public class ContactsSyncAdapterService extends Service {
 				String key;
 				Iterator<String> dataIterator;
 				String column;
+				String contactsData;
+				String myData;
 
 				HashMap<String, HashMap<String, String>> changeList = new HashMap<String, HashMap<String, String>>();
 
@@ -464,55 +519,78 @@ public class ContactsSyncAdapterService extends Service {
 						// search dataList for entries, which could fit
 						while (dataListIterator.hasNext()) {
 
-							key = dataListIterator.next();
-							data = dataList.get(key);
+							try {
+								key = dataListIterator.next();
+								data = dataList.get(key);
 
-							// TODO special treatment for StructuredName, Photo and maybe Note (those without TYPE field)
-							if (data.get(Entity.DATA_ID) == null) {
-								dataIterator = data.keySet().iterator();
+								if (data.get(Entity.DATA_ID) == null
+										&& data.get(Entity.MIMETYPE) != null) {
+									dataIterator = data.keySet().iterator();
 
-								isSame = true;
+									isSame = true;
 
-								while (dataIterator.hasNext()) {
-									column = dataIterator.next();
-									String contactsData = cc.getString(cc
-											.getColumnIndex(column));
-									String myData = data.get(column);
+									while (dataIterator.hasNext()) {
+										column = dataIterator.next();
+										if (column.equals(Entity.DATA15)) {
+											byte[] contactsDataBlob = cc
+													.getBlob(cc
+															.getColumnIndex(column));
+											if (contactsDataBlob != null) {
+												contactsData = Base64
+														.encodeBytes(contactsDataBlob);
+											} else {
+												contactsData = null;
+											}
+										} else {
+											contactsData = cc.getString(cc
+													.getColumnIndex(column));
+										}
+										myData = data.get(column);
 
-									if (!myData.equals(contactsData)) {
+										if (!myData.equals(contactsData)) {
+											isSame = false;
+											break;
+										}
+									}
+
+									if (data.size() < 1) {
 										isSame = false;
+									}
+
+									if (isSame) {
+										Log.v(TAG,
+												"Found same rows, dataList ("
+														+ key
+														+ ") and ContactContract ("
+														+ cc.getString(cc
+																.getColumnIndex(Entity.DATA_ID))
+														+ ")");
+										/*
+										 * for (int i = 0; i <
+										 * cc.getColumnCount(); i++) {
+										 * Log.v(TAG, "contactRows: (" + i +
+										 * ", " + cc.getColumnName(i) + ") " +
+										 * cc.getString(i) + ", dataRow: " +
+										 * data.get(cc .getColumnName(i)) +
+										 * "."); }
+										 */
+
+										data.put(
+												Entity.DATA_ID,
+												cc.getString(cc
+														.getColumnIndex(Entity.DATA_ID)));
+										dataList.put(key, data);
 										break;
 									}
+
+									// if not the same, than procede with next
+									// dataset
 								}
-
-								if (data.size() < 1) {
-									isSame = false;
-								}
-
-								if (isSame) {
-									Log.v(TAG,
-											"Found same rows, dataList ("
-													+ key
-													+ ") and ContactContract ("
-													+ cc.getString(cc
-															.getColumnIndex(Entity.DATA_ID))
-													+ ")");
-									/*
-									 * for (int i = 0; i < cc.getColumnCount();
-									 * i++) { Log.v(TAG, "contactRows: (" + i +
-									 * ", " + cc.getColumnName(i) + ") " +
-									 * cc.getString(i) + ", dataRow: " +
-									 * data.get(cc .getColumnName(i)) + "."); }
-									 */
-
-									data.put(Entity.DATA_ID, cc.getString(cc
-											.getColumnIndex(Entity.DATA_ID)));
-									dataList.put(key, data);
-									break;
-								}
-
-								// if not the same, than procede with next
-								// dataset
+							} catch (Exception e) {
+								Log.v(TAG,
+										"An error occured while trying to compare datasets.",
+										e);
+								isSame = false;
 							}
 						}
 
@@ -520,33 +598,62 @@ public class ContactsSyncAdapterService extends Service {
 						// is no fitting dataset in the webid so save them to
 						// the local model
 						if (!isSame) {
+							try {
 
-							data = new HashMap<String, String>();
+								data = new HashMap<String, String>();
 
-							Log.v(TAG, "New Data found: ");
-							for (int i = 0; i < cc.getColumnCount(); i++) {
+								Log.v(TAG, "New Data found: ");
 
-								data.put(cc.getColumnName(i), cc.getString(i));
+								if (cc.getString(
+										cc.getColumnIndex(Entity.MIMETYPE))
+										.equals(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)) {
+									Log.v(TAG,
+											"But is Photo, will not save it back");
+								} else {
+									for (int i = 0; i < cc.getColumnCount(); i++) {
 
-								Log.v(TAG,
-										"contactRows: (" + i + ", "
-												+ cc.getColumnName(i) + ") "
-												+ cc.getString(i) + ".");
+										if (cc.getColumnName(i).equals(
+												Entity.DATA15)) {
+											Log.v(TAG,
+													"Don't save BLOB (DATA15).");
+										} else {
+											data.put(cc.getColumnName(i),
+													cc.getString(i));
+
+											Log.v(TAG,
+													"contactRows: ("
+															+ i
+															+ ", "
+															+ cc.getColumnName(i)
+															+ ") "
+															+ cc.getString(i)
+															+ ".");
+										}
+									}
+
+									changeList.put(uri, data);
+								}
+							} catch (Exception e) {
+								Log.e(TAG,
+										"An Exception occured while trying to get a changed dataset.",
+										e);
 							}
-
-							changeList.put(uri, data);
 						}
 
 					}
 				}
+
+				cc.close();
 				// reset cc
 				// cc.moveToPosition(-1);
 
 				// now write the data sets, which didn't fit a contacts data set
 				// (with data_id = null) to ContactsContract
+				Log.v(TAG, "=== Now write new datasets for <" + uri + "> to contacts. ===");
 
 				dataListIterator = dataList.keySet().iterator();
-				String myData;
+
+				ContentProviderOperation.Builder builder;
 
 				while (dataListIterator.hasNext()) {
 
@@ -558,9 +665,94 @@ public class ContactsSyncAdapterService extends Service {
 						dataIterator = data.keySet().iterator();
 
 						// write to ContactContract
+						String mimetype = data
+								.get(ContactsContract.Data.MIMETYPE);
+						if (mimetype
+								.equals(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)) {
+							Log.v(TAG, "Special treatment for Structured Name");
 
-						ContentProviderOperation.Builder builder = ContentProviderOperation
-								.newInsert(ContactsContract.Data.CONTENT_URI);
+							rawUri = ContentUris.withAppendedId(
+									RawContacts.CONTENT_URI, rawId);
+							entityUri = Uri.withAppendedPath(rawUri,
+									Entity.CONTENT_DIRECTORY);
+							projection = new String[] { RawContacts._ID };
+							String[] selectionArgs = {
+									String.valueOf(rawId),
+									ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE };
+							cc = content.query(entityUri, projection,
+									RawContacts.CONTACT_ID + "=? AND "
+											+ ContactsContract.Data.MIMETYPE
+											+ "=?", selectionArgs, null);
+							if (cc != null) {
+								if (cc.getCount() > 1) {
+									Log.v(TAG,
+											"Contact <"
+													+ uri
+													+ "> has more than one StructuredName, thats not so good.");
+									// maybe remove all except one
+								}
+
+								if (cc.moveToFirst()) {
+
+									builder = ContentProviderOperation
+											.newUpdate(ContactsContract.Data.CONTENT_URI);
+									builder.withValue(
+											ContactsContract.Data._ID,
+											cc.getString(cc
+													.getColumnIndex(RawContacts._ID)));
+								} else {
+									builder = ContentProviderOperation
+											.newInsert(ContactsContract.Data.CONTENT_URI);
+								}
+							} else {
+								builder = ContentProviderOperation
+										.newInsert(ContactsContract.Data.CONTENT_URI);
+							}
+						} else if (mimetype
+								.equals(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)) {
+							Log.v(TAG, "Special treatment for Photo");
+
+							rawUri = ContentUris.withAppendedId(
+									RawContacts.CONTENT_URI, rawId);
+							entityUri = Uri.withAppendedPath(rawUri,
+									Entity.CONTENT_DIRECTORY);
+							projection = new String[] { RawContacts._ID };
+							String[] selectionArgs = {
+									String.valueOf(rawId),
+									ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE };
+							cc = content.query(entityUri, projection,
+									RawContacts.CONTACT_ID + "=? AND "
+											+ ContactsContract.Data.MIMETYPE
+											+ "=?", selectionArgs, null);
+							if (cc != null) {
+								if (cc.getCount() > 1) {
+									Log.v(TAG,
+											"Contact <"
+													+ uri
+													+ "> has more than one Photo, thats not so good.");
+									// maybe remove all except one
+								}
+
+								if (cc.moveToFirst()) {
+
+									builder = ContentProviderOperation
+											.newUpdate(ContactsContract.Data.CONTENT_URI);
+									builder.withValue(
+											ContactsContract.Data._ID,
+											cc.getString(cc
+													.getColumnIndex(RawContacts._ID)));
+								} else {
+									builder = ContentProviderOperation
+											.newInsert(ContactsContract.Data.CONTENT_URI);
+								}
+							} else {
+								builder = ContentProviderOperation
+										.newInsert(ContactsContract.Data.CONTENT_URI);
+							}
+						} else {
+							builder = ContentProviderOperation
+									.newInsert(ContactsContract.Data.CONTENT_URI);
+						}
 
 						Log.v(TAG, "New insert to <"
 								+ ContactsContract.Data.CONTENT_URI + ">");
@@ -576,6 +768,23 @@ public class ContactsSyncAdapterService extends Service {
 							column = dataIterator.next();
 							myData = data.get(column);
 
+							if (column.equals(RawContactsEntity.DATA15)) {
+								try {
+									builder.withValue(column,
+											Base64.decode(myData));
+									Log.v(TAG, "with value " + column
+											+ " = <blob>.");
+								} catch (IOException e) {
+									Log.e(TAG, "Error on decoding blob: "
+											+ myData, e);
+								}
+							} else {
+								builder.withValue(column, myData);
+
+								Log.v(TAG, "with value " + column + " = "
+										+ myData + ".");
+							}
+
 							// ContentProviderOperation.Builder builder =
 							// ContentProviderOperation
 							// .newUpdate(ContactsContract.Data.CONTENT_URI);
@@ -587,17 +796,11 @@ public class ContactsSyncAdapterService extends Service {
 							// .getColumnIndex(Entity.DATA_ID))
 							// + "'", null);
 
-							builder.withValue(column, myData);
-
-							Log.v(TAG, "with value " + column + " = " + myData
-									+ ".");
 						}
 
 						operationList.add(builder.build());
 					}
 				}
-
-				cc.close();
 
 				// apply changes to ContactsContract
 				try {

@@ -18,14 +18,14 @@ public class ContactCursor extends AbstractCursor {
 	
 	public void addTriple(Triple tripple) {
 		triples.add(tripple);
-		Log.v(TAG, "added Triple. s = " + tripple.subject + " p = " + tripple.predicat + " o = " + tripple.object + ".");
+		//Log.v(TAG, "added Triple. s = " + tripple.subject + " p = " + tripple.predicat + " o = " + tripple.object + ".");
 	}
 
 	public void addTriple(String subject, String predicat, String object,
 			boolean oIsResource, boolean oIsBlankNode) {
 		triples.add(new Triple(subject, predicat, object, oIsResource,
 				oIsBlankNode));
-		Log.v(TAG, "added Triple. s = " + subject + " p = " + predicat + " o = " + object + ".");
+		//Log.v(TAG, "added Triple. s = " + subject + " p = " + predicat + " o = " + object + ".");
 	}
 
 	public void addDataset() {

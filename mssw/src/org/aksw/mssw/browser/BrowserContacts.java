@@ -69,7 +69,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 
 			Cursor rc = managedQuery(contentUri, null, null, null, null);
 			
-			String[] from = new String[]{"objectReadable", "predicatReadable"};
+			String[] from = new String[]{"name", "relationReadable"};
 			int[] to = {R.id.firstLine,R.id.secondLine};
 			rca = new SimpleCursorAdapter(getApplicationContext(), R.layout.contact_row, rc, from, to);
 			
@@ -119,7 +119,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 		
 		Cursor rc = rca.getCursor();
 		if (rc.moveToPosition(position)) {
-		uri = rc.getString(rc.getColumnIndex("object"));
+		uri = rc.getString(rc.getColumnIndex("webid"));
 		
 		//uri = "http://sebastian.tramp.name";
 		Intent i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(uri));
