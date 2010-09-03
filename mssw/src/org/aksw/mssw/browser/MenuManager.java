@@ -14,6 +14,11 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 public class MenuManager {
+	
+	public MenuManager() {
+		
+	}
+	
 	public boolean itemSelected (Activity context, MenuItem item, String selectedWebID) {
 
 		Intent i;

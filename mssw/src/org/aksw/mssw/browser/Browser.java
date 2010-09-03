@@ -9,6 +9,7 @@ import android.app.TabActivity;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.net.Uri;
@@ -43,20 +44,22 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 		SharedPreferences sharedPreferences = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
-		selectedWebID = sharedPreferences.getString("me",
-				Constants.EXAMPLE_webId);
+
+		selectedWebID = sharedPreferences.getString("selectedWebID", null);
+		if (selectedWebID == null) {
+			selectedWebID = sharedPreferences.getString("me",
+					Constants.EXAMPLE_webId);
+		}
+
+		handleIntent(getIntent());
 
 		Resources res = getResources(); // Resource object to get Drawables
 		TabHost.TabSpec spec; // Reusable TabSpec for each tab
 		Intent intent; // Reusable Intent for each tab
 
-		handleIntent(getIntent());
-
-		setTitle(selectedWebID);
-
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserMeCard.class);
-		intent.setData(Uri.parse(selectedWebID));
+		//intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("meCard");
 		spec.setIndicator(getString(R.string.profile),
 				res.getDrawable(android.R.drawable.ic_menu_myplaces));
@@ -65,7 +68,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserContacts.class);
-		intent.setData(Uri.parse(selectedWebID));
+		//intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("Contacts");
 		spec.setIndicator(getString(R.string.contacts),
 				res.getDrawable(android.R.drawable.ic_menu_help));
@@ -75,7 +78,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		/* This is bad, because I repeat very similar code three times */
 		intent = new Intent().setClass(this, BrowserBrowse.class);
 		if (searchTerm != null) {
-			intent.setData(Uri.parse(searchTerm));
+			//intent.setData(Uri.parse(searchTerm));
 		}
 		spec = tabHost.newTabSpec("Browser");
 		spec.setIndicator(getString(R.string.browse),
@@ -88,6 +91,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 	@Override
 	protected void onNewIntent(Intent intent) {
+		Log.v(TAG, "New intent");
 		setIntent(intent);
 		handleIntent(intent);
 		tabHost.setCurrentTab(selectedTab);
@@ -100,37 +104,82 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 			String data;
 			if (action.equals(Constants.INTENT_ADD_WEBID)) {
 				data = intent.getDataString();
+				Log.v(TAG, "Add WebId <" + data + "> Intent.");
 				if (data != null) {
-					try {
-						Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-								+ "/me/friend/add");
-
-						Log.v(TAG,
-								"Starting Query with uri: <"
-										+ contentUri.toString() + ">.");
-
-						ContentValues values = new ContentValues();
-						values.put("webid", data);
-
-						getContentResolver().insert(contentUri, values);
-					} catch (Exception e) {
-						Log.e(TAG, "Error on adding new Friend.", e);
-					}
+					addWebID(data);
+					selectedTab = 1;
+					SharedPreferences sp = PreferenceManager
+							.getDefaultSharedPreferences(getApplicationContext());
+					selectedWebID = sp.getString("me", Constants.EXAMPLE_webId);
+					selectionChanged();
 				}
-				selectedTab = 1;
 			} else if (action.equals(Constants.INTENT_VIEW_WEBID)) {
 				data = intent.getDataString();
+				Log.v(TAG, "View WebId <" + data + "> Intent.");
 				if (data != null) {
 					selectedWebID = data;
+					selectedTab = 0;
+					selectionChanged();
 				}
-				selectedTab = 0;
 			} else if (action.equals(Intent.ACTION_SEARCH)) {
 				data = intent.getStringExtra(SearchManager.QUERY);
+				Log.v(TAG, "Search WebId <" + data + "> Intent.");
 				if (data != null) {
 					searchTerm = data;
+					selectedTab = 2;
+					searchTermChanged();
 				}
-				selectedTab = 2;
 			}
+		}
+
+		setTitle(selectedWebID);
+	}
+
+	private void selectionChanged() {
+		SharedPreferences sp = PreferenceManager
+				.getDefaultSharedPreferences(getApplicationContext());
+		Log.v(TAG, "Selection changed <" + selectedWebID + ">.");
+		if (selectedWebID != null || !selectedWebID.equals(sp.getString("selectedWebID", null))) {
+			Log.v(TAG, "Writing selectedWebID <" + selectedWebID + "> to config.");
+			Editor spEdit = sp.edit();
+			spEdit.putString("selectedWebID", selectedWebID);
+			spEdit.commit();
+		}
+	}
+
+	private void searchTermChanged() {
+		SharedPreferences sp = PreferenceManager
+				.getDefaultSharedPreferences(getApplicationContext());
+		Log.v(TAG, "SearchTerm changed <" + searchTerm + ">.");
+		if (searchTerm == null || !searchTerm.equals(sp.getString("searchTerm", null))) {
+			Log.v(TAG, "Writing searchTerm <" + searchTerm + "> to config.");
+			Editor spEdit = sp.edit();
+			spEdit.putString("searchTerm", searchTerm);
+			spEdit.commit();
+		}
+
+	}
+
+	private boolean addWebID(String webid) {
+		try {
+			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+					+ "/me/friend/add");
+
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+					+ ">.");
+
+			ContentValues values = new ContentValues();
+			values.put("webid", webid);
+
+			Uri result = getContentResolver().insert(contentUri, values);
+			if (result != null) {
+				return true;
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			Log.e(TAG, "Error on adding new Friend.", e);
+			return false;
 		}
 	}
 
@@ -158,11 +207,15 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
-		/*
-		 * if (key == "me") { selectedWebID = sharedPreferences.getString(key,
-		 * Constants.EXAMPLE_webId);
-		 * 
-		 * }
-		 */
+
+		if (key == "me") {
+			String me = sharedPreferences.getString(key,
+					Constants.EXAMPLE_webId);
+			if (!selectedWebID.equals(me)) {
+				selectedWebID = me;
+				selectionChanged();
+			}
+
+		}
 	}
 }

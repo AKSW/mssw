@@ -9,9 +9,12 @@ import org.aksw.mssw.R;
 import android.app.ListActivity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,7 +28,8 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class BrowserBrowse extends ListActivity {
+public class BrowserBrowse extends ListActivity implements WebIdSearcher,
+		OnSharedPreferenceChangeListener {
 
 	private static final String TAG = "msswBrowserMeCard";
 
@@ -54,6 +58,10 @@ public class BrowserBrowse extends ListActivity {
 
 		search.setOnClickListener(new searchClickListener());
 		scan.setOnClickListener(new scanClickListener());
+
+		SharedPreferences sharedPreferences = PreferenceManager
+				.getDefaultSharedPreferences(getApplicationContext());
+		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
 		Intent intent = getIntent();
 		if (intent != null) {
@@ -86,31 +94,35 @@ public class BrowserBrowse extends ListActivity {
 
 	private void search() {
 
-		try {
-			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/search/"
-					+ URLEncoder.encode(searchTerm, Constants.ENC));
+		if (searchTerm != null) {
+			try {
+				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+						+ "/search/"
+						+ URLEncoder.encode(searchTerm, Constants.ENC));
 
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
+				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+						+ ">.");
 
-			Cursor rc = managedQuery(contentUri, null, null, null, null);
+				Cursor rc = managedQuery(contentUri, null, null, null, null);
 
-			if (rc != null) {
-			String[] from = new String[] { "name", "webid" };
-			int[] to = { R.id.firstLine, R.id.secondLine };
-			rca = new SimpleCursorAdapter(getApplicationContext(),
-					R.layout.contact_row, rc, from, to);
+				if (rc != null) {
+					String[] from = new String[] { "name", "webid" };
+					int[] to = { R.id.firstLine, R.id.secondLine };
+					rca = new SimpleCursorAdapter(getApplicationContext(),
+							R.layout.contact_row, rc, from, to);
 
-			results.setAdapter(rca);
+					results.setAdapter(rca);
+				}
+
+			} catch (UnsupportedEncodingException e) {
+				Log.e(TAG,
+						"Could not encode searchterm and so couldn't get Resource from "
+								+ Constants.FOAF_AUTHORITY + ".", e);
+				TextView empty = (TextView) this
+						.findViewById(android.R.id.empty);
+				empty.setText("Could not encode Searchterm and so couldn't get Resource from "
+						+ Constants.FOAF_AUTHORITY + ".");
 			}
-
-		} catch (UnsupportedEncodingException e) {
-			Log.e(TAG,
-					"Could not encode searchterm and so couldn't get Resource from "
-							+ Constants.FOAF_AUTHORITY + ".", e);
-			TextView empty = (TextView) this.findViewById(android.R.id.empty);
-			empty.setText("Could not encode Searchterm and so couldn't get Resource from "
-					+ Constants.FOAF_AUTHORITY + ".");
 		}
 	}
 
@@ -131,7 +143,8 @@ public class BrowserBrowse extends ListActivity {
 			try {
 				startActivityForResult(intent, 0);
 			} catch (ActivityNotFoundException e) {
-				Toast.makeText(getApplicationContext(), R.string.install_zxing, Toast.LENGTH_LONG);
+				Toast.makeText(BrowserBrowse.this, R.string.install_zxing,
+						Toast.LENGTH_LONG);
 			}
 		}
 	}
@@ -140,7 +153,7 @@ public class BrowserBrowse extends ListActivity {
 		if (requestCode == 0) {
 			if (resultCode == RESULT_OK) {
 				String contents = intent.getStringExtra("SCAN_RESULT");
-				//String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
+				// String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
 				// Handle successful scan
 				if (contents != null) {
 					searchTerm = contents;
@@ -168,5 +181,28 @@ public class BrowserBrowse extends ListActivity {
 					+ position + "' with id: '" + id + "'");
 		}
 		super.onListItemClick(l, v, position, id);
+	}
+
+	@Override
+	public boolean searchTermChanged(String searchTerm) {
+		Log.v(TAG, "searchTermChanged: '" + searchTerm + "'");
+		this.searchTerm = searchTerm;
+
+		search();
+		return false;
+	}
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		if (key == "searchTerm") {
+			String searchTermNew = sharedPreferences.getString(key,
+					Constants.EXAMPLE_webId);
+			if (searchTerm == null || !searchTerm.equals(searchTermNew)) {
+				searchTerm = searchTermNew;
+				searchTermChanged(searchTerm);
+			}
+		}
+
 	}
 }

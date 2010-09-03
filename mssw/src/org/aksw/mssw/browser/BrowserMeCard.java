@@ -10,6 +10,7 @@ import org.aksw.mssw.R;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -23,7 +24,8 @@ import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
-public class BrowserMeCard extends ListActivity {
+public class BrowserMeCard extends ListActivity implements WebIdRenderer,
+		OnSharedPreferenceChangeListener {
 
 	private static final String TAG = "msswBrowserMeCard";
 
@@ -40,6 +42,7 @@ public class BrowserMeCard extends ListActivity {
 	private ResourceCursorAdapter rca;
 
 	private MenuManager menuManager;
+	private NameHelper nh;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -63,19 +66,57 @@ public class BrowserMeCard extends ListActivity {
 		 * retrieve WebID first from savedInstanceState than from
 		 * SharedPreferences
 		 */
+
+		SharedPreferences sharedPreferences = PreferenceManager
+				.getDefaultSharedPreferences(getApplicationContext());
+		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 		if (selectedWebID == null) {
-			SharedPreferences sharedPreferences = PreferenceManager
-					.getDefaultSharedPreferences(getApplicationContext());
-			selectedWebID = sharedPreferences.getString("me",
-					Constants.EXAMPLE_webId);
+			selectedWebID = sharedPreferences.getString("selectedWebID", null);
+			if (selectedWebID == null) {
+				selectedWebID = sharedPreferences.getString("me",
+						Constants.EXAMPLE_webId);
+			}
 		}
 
-		NameHelper nh = new NameHelper(getApplicationContext());
+		nh = new NameHelper(getApplicationContext());
 
-		this.name = (TextView) this.findViewById(R.id.mecard_name);
-		this.name.setText(nh.getName(selectedWebID));
-		
+		name = (TextView) this.findViewById(R.id.mecard_name);
+
 		menuManager = new MenuManager();
+
+		selectionChanged(selectedWebID);
+
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		MenuInflater inflater = getMenuInflater();
+		// don't show addWebId if the actualy selecte WebId is already a friend
+		// don't show the me button of you show my WenId
+		inflater.inflate(R.menu.mecard, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+
+		boolean ret = menuManager.itemSelected(this, item, selectedWebID);
+		if (ret) {
+			return true;
+		} else {
+			return super.onOptionsItemSelected(item);
+		}
+	}
+
+	@Override
+	public boolean selectionChanged(String webid) {
+		Log.v(TAG, "selectionChanged: <" + webid + ">");
+		
+		selectedWebID = webid;
+		
+
+		name.setText(nh.getName(selectedWebID));
 
 		try {
 			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
@@ -111,28 +152,22 @@ public class BrowserMeCard extends ListActivity {
 					+ Constants.FOAF_AUTHORITY + ".");
 		}
 		
-		 //setDefaultKeyMode(DEFAULT_KEYS_SEARCH_LOCAL);
-
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		super.onCreateOptionsMenu(menu);
-		MenuInflater inflater = getMenuInflater();
-		// don't show addWebId if the actualy selecte WebId is already a friend
-		// don't show the me button of you show my WenId
-		inflater.inflate(R.menu.mecard, menu);
 		return true;
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-
-		boolean ret = menuManager.itemSelected(this, item, selectedWebID);
-		if (ret) {
-			return true;
-		} else {
-			return super.onOptionsItemSelected(item);
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		Log.v(TAG, "SharedPreference changed.");
+		if (key == "selectedWebID") {
+			String selectedWebIDnew = sharedPreferences.getString(key,
+					Constants.EXAMPLE_webId);
+			Log.v(TAG, "selectedWebID changed to <" + selectedWebIDnew + ">.");
+			if (selectedWebID == null || !selectedWebID.equals(selectedWebIDnew)) {
+				selectedWebID = selectedWebIDnew;
+				// TODO change view
+				selectionChanged(selectedWebID);
+			}
 		}
 	}
 }
