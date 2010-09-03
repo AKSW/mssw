@@ -21,11 +21,11 @@ public final class R {
         public static final int browser_mecard_view=0x7f070003;
         public static final int firstLine=0x7f070007;
         public static final int icon=0x7f070006;
-        public static final int itemAdd=0x7f07000d;
+        public static final int itemAdd=0x7f070011;
         public static final int itemMe=0x7f07000f;
         public static final int itemPref=0x7f070010;
-        public static final int itemQR=0x7f070011;
-        public static final int itemSearch=0x7f07000e;
+        public static final int itemScan=0x7f07000e;
+        public static final int itemSearch=0x7f07000d;
         public static final int key=0x7f070009;
         public static final int mecard_icon=0x7f070004;
         public static final int mecard_name=0x7f070005;
@@ -46,8 +46,9 @@ public final class R {
         public static final int properties_row1=0x7f030008;
     }
     public static final class menu {
-        public static final int browser=0x7f060000;
-        public static final int search=0x7f060001;
+        public static final int browse=0x7f060000;
+        public static final int contacts=0x7f060001;
+        public static final int mecard=0x7f060002;
     }
     public static final class string {
         public static final int account_name=0x7f050002;
@@ -62,6 +63,7 @@ public final class R {
         public static final int email=0x7f050014;
         public static final int example_webid=0x7f05001f;
         public static final int hello=0x7f050000;
+        public static final int install_zxing=0x7f050023;
         public static final int load=0x7f050011;
         public static final int me=0x7f05000a;
         public static final int my_name=0x7f050020;

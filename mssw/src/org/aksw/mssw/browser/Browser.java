@@ -3,6 +3,7 @@ package org.aksw.mssw.browser;
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
+import android.app.Activity;
 import android.app.SearchManager;
 import android.app.TabActivity;
 import android.content.ContentValues;
@@ -26,6 +27,8 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	private TabHost tabHost;
 
 	protected String selectedWebID;
+	protected String searchTerm;
+	protected int selectedTab = 0;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -42,14 +45,56 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				.getDefaultSharedPreferences(getApplicationContext());
 		selectedWebID = sharedPreferences.getString("me",
 				Constants.EXAMPLE_webId);
-		String searchTerm = null;
 
 		Resources res = getResources(); // Resource object to get Drawables
 		TabHost.TabSpec spec; // Reusable TabSpec for each tab
 		Intent intent; // Reusable Intent for each tab
-		int selectedTab = 0;
 
-		intent = getIntent();
+		handleIntent(getIntent());
+
+		setTitle(selectedWebID);
+
+		/* This is bad, because I repeat very similar code three times */
+		intent = new Intent().setClass(this, BrowserMeCard.class);
+		intent.setData(Uri.parse(selectedWebID));
+		spec = tabHost.newTabSpec("meCard");
+		spec.setIndicator(getString(R.string.profile),
+				res.getDrawable(android.R.drawable.ic_menu_myplaces));
+		spec.setContent(intent);
+		tabHost.addTab(spec);
+
+		/* This is bad, because I repeat very similar code three times */
+		intent = new Intent().setClass(this, BrowserContacts.class);
+		intent.setData(Uri.parse(selectedWebID));
+		spec = tabHost.newTabSpec("Contacts");
+		spec.setIndicator(getString(R.string.contacts),
+				res.getDrawable(android.R.drawable.ic_menu_help));
+		spec.setContent(intent);
+		tabHost.addTab(spec);
+
+		/* This is bad, because I repeat very similar code three times */
+		intent = new Intent().setClass(this, BrowserBrowse.class);
+		if (searchTerm != null) {
+			intent.setData(Uri.parse(searchTerm));
+		}
+		spec = tabHost.newTabSpec("Browser");
+		spec.setIndicator(getString(R.string.browse),
+				res.getDrawable(android.R.drawable.ic_menu_compass));
+		spec.setContent(intent);
+		tabHost.addTab(spec);
+
+		tabHost.setCurrentTab(selectedTab);
+	}
+
+	@Override
+	protected void onNewIntent(Intent intent) {
+		setIntent(intent);
+		handleIntent(intent);
+		tabHost.setCurrentTab(selectedTab);
+		tabHost.getCurrentView();
+	}
+
+	private void handleIntent(Intent intent) {
 		if (intent != null) {
 			String action = intent.getAction();
 			String data;
@@ -87,60 +132,27 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				selectedTab = 2;
 			}
 		}
-
-		setTitle(selectedWebID);
-
-		/* This is bad, because I repeat very similar code three times */
-		intent = new Intent().setClass(this, BrowserMeCard.class);
-		intent.setData(Uri.parse(selectedWebID));
-		spec = tabHost.newTabSpec("meCard");
-		spec.setIndicator(getString(R.string.profile),
-				res.getDrawable(android.R.drawable.ic_menu_myplaces));
-		spec.setContent(intent);
-		tabHost.addTab(spec);
-
-		/* This is bad, because I repeat very similar code three times */
-		intent = new Intent().setClass(this, BrowserContacts.class);
-		intent.setData(Uri.parse(selectedWebID));
-		spec = tabHost.newTabSpec("Contacts");
-		spec.setIndicator(getString(R.string.contacts),
-				res.getDrawable(android.R.drawable.ic_menu_help));
-		spec.setContent(intent);
-		tabHost.addTab(spec);
-
-		/* This is bad, because I repeat very similar code three times */
-		intent = new Intent().setClass(this, BrowserBrowse.class);
-		if (searchTerm != null) {
-			intent.setData(Uri.parse(searchTerm));
-		}
-		spec = tabHost.newTabSpec("Browser");
-		spec.setIndicator(getString(R.string.browse),
-				res.getDrawable(android.R.drawable.ic_menu_compass));
-		spec.setContent(intent);
-		tabHost.addTab(spec);
-
-		tabHost.setCurrentTab(selectedTab);
 	}
 
 	@Override
 	public void onTabChanged(String tabId) {
+		Log.v(TAG, "onTabChange id: " + tabId);
 		// TODO Auto-generated method stub
 		// Because we're using Activities as our tab children, we trigger
 		// onWindowFocusChanged() to let them know when they're active. This may
 		// seem to duplicate the purpose of onResume(), but it's needed because
 		// onResume() can't reliably check if a keyguard is active.
-		/*
-		 * Activity activity = getLocalActivityManager().getActivity(tabId); if
-		 * (activity != null) { activity.onWindowFocusChanged(true); }
-		 */
+		Activity activity = getLocalActivityManager().getActivity(tabId);
+		if (activity != null) {
+			activity.onWindowFocusChanged(true);
+		}
+
 		// Remember this tab index. This function is also called, if the tab is
 		// set automatically
 		// in which case the setter (setCurrentTab) has to set this to its old
 		// value afterwards
 
 		// lastManuallySelectedTab = tabHost.getCurrentTab();
-		// TODO Auto-generated method stub
-		Log.v(TAG, "onTabChange id: " + tabId);
 	}
 
 	@Override

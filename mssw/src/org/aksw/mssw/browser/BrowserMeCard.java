@@ -121,7 +121,7 @@ public class BrowserMeCard extends ListActivity {
 		MenuInflater inflater = getMenuInflater();
 		// don't show addWebId if the actualy selecte WebId is already a friend
 		// don't show the me button of you show my WenId
-		inflater.inflate(R.menu.browser, menu);
+		inflater.inflate(R.menu.mecard, menu);
 		return true;
 	}
 

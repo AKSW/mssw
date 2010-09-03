@@ -7,6 +7,7 @@ import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
 import android.app.ListActivity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -22,6 +23,7 @@ import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class BrowserBrowse extends ListActivity {
 
@@ -30,31 +32,29 @@ public class BrowserBrowse extends ListActivity {
 	private ListView results;
 	private Button search;
 	private Button scan;
-	
+
 	private ResourceCursorAdapter rca;
 
 	private MenuManager menuManager;
-	
+
 	private String searchTerm;
-	
+
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		setContentView(R.layout.browser_browse);
 
 		searchTerm = null;
 
-		
 		menuManager = new MenuManager();
 
 		search = (Button) findViewById(R.id.search);
 		scan = (Button) findViewById(R.id.scan_code);
 		results = (ListView) this.findViewById(android.R.id.list);
-		
+
 		search.setOnClickListener(new searchClickListener());
 		scan.setOnClickListener(new scanClickListener());
-		
-		
+
 		Intent intent = getIntent();
 		if (intent != null) {
 			String data = intent.getDataString();
@@ -69,7 +69,7 @@ public class BrowserBrowse extends ListActivity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.search, menu);
+		inflater.inflate(R.menu.browse, menu);
 		return true;
 	}
 
@@ -83,9 +83,9 @@ public class BrowserBrowse extends ListActivity {
 			return super.onOptionsItemSelected(item);
 		}
 	}
-	
+
 	private void search() {
-		
+
 		try {
 			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/search/"
 					+ URLEncoder.encode(searchTerm, Constants.ENC));
@@ -94,12 +94,15 @@ public class BrowserBrowse extends ListActivity {
 					+ ">.");
 
 			Cursor rc = managedQuery(contentUri, null, null, null, null);
-			
-			String[] from = new String[]{"name", "webid"};
-			int[] to = {R.id.firstLine,R.id.secondLine};
-			rca = new SimpleCursorAdapter(getApplicationContext(), R.layout.contact_row, rc, from, to);
-			
+
+			if (rc != null) {
+			String[] from = new String[] { "name", "webid" };
+			int[] to = { R.id.firstLine, R.id.secondLine };
+			rca = new SimpleCursorAdapter(getApplicationContext(),
+					R.layout.contact_row, rc, from, to);
+
 			results.setAdapter(rca);
+			}
 
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG,
@@ -110,36 +113,59 @@ public class BrowserBrowse extends ListActivity {
 					+ Constants.FOAF_AUTHORITY + ".");
 		}
 	}
-	
+
 	class searchClickListener implements OnClickListener {
-		
+
 		@Override
 		public void onClick(View v) {
 			onSearchRequested();
 		}
 	}
-	
+
 	class scanClickListener implements OnClickListener {
-		
+
 		@Override
 		public void onClick(View v) {
-			
+			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+			intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+			try {
+				startActivityForResult(intent, 0);
+			} catch (ActivityNotFoundException e) {
+				Toast.makeText(getApplicationContext(), R.string.install_zxing, Toast.LENGTH_LONG);
+			}
 		}
 	}
-	
+
+	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+		if (requestCode == 0) {
+			if (resultCode == RESULT_OK) {
+				String contents = intent.getStringExtra("SCAN_RESULT");
+				//String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
+				// Handle successful scan
+				if (contents != null) {
+					searchTerm = contents;
+					search();
+				}
+			} else if (resultCode == RESULT_CANCELED) {
+				// Handle cancel
+			}
+		}
+	}
+
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		String uri;
-		
+
 		Cursor rc = rca.getCursor();
 		if (rc.moveToPosition(position)) {
-		uri = rc.getString(rc.getColumnIndex("webid"));
-		
-		//uri = "http://sebastian.tramp.name";
-		Intent i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(uri));
-		startActivity(i);
+			uri = rc.getString(rc.getColumnIndex("webid"));
+
+			// uri = "http://sebastian.tramp.name";
+			Intent i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(uri));
+			startActivity(i);
 		} else {
-			Log.v(TAG, "Error on finding selected item at position: '" + position + "' with id: '" + id + "'");
+			Log.v(TAG, "Error on finding selected item at position: '"
+					+ position + "' with id: '" + id + "'");
 		}
 		super.onListItemClick(l, v, position, id);
 	}

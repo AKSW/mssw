@@ -523,7 +523,7 @@ public class FoafProvider extends ContentProvider implements
 			try {
 				Uri contentUri;
 				contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
-						+ "/resource/"
+						+ "/resource/tmp/"
 						+ URLEncoder.encode(searchTerm, Constants.ENC));
 
 				Log.i(TAG, "Getting WebID <" + searchTerm + ">.");
