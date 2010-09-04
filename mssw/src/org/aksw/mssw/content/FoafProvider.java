@@ -6,6 +6,7 @@ package org.aksw.mssw.content;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.NameHelper;
@@ -468,6 +469,16 @@ public class FoafProvider extends ContentProvider implements
 				String relationReadable;
 				boolean isResource;
 				NameHelper nh = new NameHelper(getContext());
+				ArrayList<String> uris = new ArrayList<String>();
+				while (rc.moveToNext()) {
+					isResource = rc.getString(rc.getColumnIndex("oIsResource"))
+							.equals("true");
+					if (isResource) {
+						uris.add(rc.getString(rc.getColumnIndex("object")));
+					}
+				}
+				rc.moveToPosition(-1);
+				HashMap<String, String> names = nh.getNames(uris);
 				PersonCursor pc = new PersonCursor();
 				while (rc.moveToNext()) {
 					isResource = rc.getString(rc.getColumnIndex("oIsResource"))
@@ -477,7 +488,7 @@ public class FoafProvider extends ContentProvider implements
 						relation = rc.getString(rc.getColumnIndex("predicat"));
 						relationReadable = rc.getString(rc
 								.getColumnIndex("predicatReadable"));
-						pc.addPerson(uri, relation, nh.getName(uri),
+						pc.addPerson(uri, relation, names.get(uri),
 								relationReadable, null);
 					}
 				}

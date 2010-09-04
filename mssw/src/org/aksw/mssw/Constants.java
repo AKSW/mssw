@@ -38,4 +38,8 @@ public final class Constants {
 	public static final String INTENT_VIEW_WEBID = "org.aksw.mssw.VIEW_WEBID";
 	public static final String INTENT_WEBID_SELECTED = "org.aksw.mssw.WEBID_SELECTED";
 	public static final String INTENT_WEBID_SEARCH = "org.aksw.mssw.VIEW_WEBID_SEARCH";
+	
+	public static final int TIME_SHORT = 1000;
+	public static final int TIME_MIDDLE = 5000;
+	public static final int TIME_LONG = 10000;
 }

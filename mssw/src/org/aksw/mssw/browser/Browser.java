@@ -62,7 +62,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		//intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("meCard");
 		spec.setIndicator(getString(R.string.profile),
-				res.getDrawable(android.R.drawable.ic_menu_myplaces));
+				res.getDrawable(R.drawable.ic_tab_mecard));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
 
@@ -71,7 +71,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		//intent.setData(Uri.parse(selectedWebID));
 		spec = tabHost.newTabSpec("Contacts");
 		spec.setIndicator(getString(R.string.contacts),
-				res.getDrawable(android.R.drawable.ic_menu_help));
+				res.getDrawable(R.drawable.ic_tab_contacts));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
 
@@ -82,7 +82,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		}
 		spec = tabHost.newTabSpec("Browser");
 		spec.setIndicator(getString(R.string.browse),
-				res.getDrawable(android.R.drawable.ic_menu_compass));
+				res.getDrawable(R.drawable.ic_tab_browse));
 		spec.setContent(intent);
 		tabHost.addTab(spec);
 
@@ -160,26 +160,40 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 	}
 
-	private boolean addWebID(String webid) {
-		try {
-			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-					+ "/me/friend/add");
+	private void addWebID(String webid) {
+		AddWebIdTread awt = new AddWebIdTread();
+		awt.setWebId(webid);
+		awt.start();
+	}
+	
+	private class AddWebIdTread extends Thread {
+		private String webid;
+		
+		public void setWebId(String webidIn) {
+			webid = webidIn;
+		}
+		
+		public void run() {
+			try {
+				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+						+ "/me/friend/add");
 
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
+				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+						+ ">.");
 
-			ContentValues values = new ContentValues();
-			values.put("webid", webid);
+				ContentValues values = new ContentValues();
+				values.put("webid", webid);
 
-			Uri result = getContentResolver().insert(contentUri, values);
-			if (result != null) {
-				return true;
-			} else {
-				return false;
+				Uri result = getContentResolver().insert(contentUri, values);
+				if (result != null) {
+					//return true;
+				} else {
+					//return false;
+				}
+			} catch (Exception e) {
+				Log.e(TAG, "Error on adding new Friend.", e);
+				//return false;
 			}
-		} catch (Exception e) {
-			Log.e(TAG, "Error on adding new Friend.", e);
-			return false;
 		}
 	}
 

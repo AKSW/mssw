@@ -37,7 +37,7 @@ public class NameHelper {
 	}
 
 	public HashMap<String, String> getNames(ArrayList<String> uris) {
-		return getNames(uris.toArray(new String[]{}));
+		return getNames(uris.toArray(new String[] {}));
 	}
 
 	public HashMap<String, String> getNames(String[] uris) {
@@ -50,9 +50,9 @@ public class NameHelper {
 				batchNames.add(uri);
 			}
 		}
-		
-		batchGetNames((String[]) batchNames.toArray());
-		
+
+		batchGetNames(batchNames.toArray(new String[batchNames.size()]));
+
 		for (int i = 0; i < uris.length; i++) {
 			String uri = uris[i];
 			namesOut.put(uri, names.get(uri));
@@ -63,26 +63,54 @@ public class NameHelper {
 
 	public String getName(String uri) {
 		if (!names.containsKey(uri)) {
-			batchGetNames(new String[]{uri});
+			batchGetNames(new String[] { uri });
 		}
-		return names.get(uri);
+
+		if (names.containsKey(uri)) {
+			return names.get(uri);
+		} else {
+			return uri;
+		}
 	}
 
 	private void batchGetNames(String[] uris) {
-		ContentResolver cr = context.getContentResolver();
-
-		Uri contentUri;
-		String uri;
+		GetNameThread[] threads = new GetNameThread[uris.length];
 		for (int i = 0; i < uris.length; i++) {
-			uri = uris[i];
+			threads[i] = new GetNameThread();
+			threads[i].setUri(uris[i]);
+			threads[i].start();
+		}
+		Thread mt = new MetaThread(threads);
+		mt.start();
+		try {
+			mt.join(Constants.TIME_MIDDLE);
+			Log.v(TAG, "Ready with waiting");
+		} catch (InterruptedException e) {
+			Log.v(TAG, "MetaThread was interrupted");
+		}
+
+	}
+
+	private class GetNameThread extends Thread {
+
+		private String uri;
+
+		public void setUri(String uriIn) {
+			uri = uriIn;
+		}
+
+		public void run() {
+			ContentResolver cr = context.getContentResolver();
 			try {
-				contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
-						+ "/resource/tmp/" + URLEncoder.encode(uri, Constants.ENC));
+				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
+						+ "/resource/tmp/"
+						+ URLEncoder.encode(uri, Constants.ENC));
 
 				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
 						+ ">.");
 
-				Cursor rc = cr.query(contentUri, projection.toArray(new String[]{}), null, null, null);
+				Cursor rc = cr.query(contentUri,
+						projection.toArray(new String[] {}), null, null, null);
 
 				if (rc != null) {
 					String predicat;
@@ -90,6 +118,7 @@ public class NameHelper {
 					int guefak = projection.size();
 					while (rc.moveToNext()) {
 						predicat = rc.getString(rc.getColumnIndex("predicat"));
+						Log.v(TAG, "Got name '" + rc.getString(rc.getColumnIndex("object")) + "' with güfak: " + projection.indexOf(predicat));
 						if (projection.indexOf(predicat) < guefak) {
 							guefak = projection.indexOf(predicat);
 							name = rc.getString(rc.getColumnIndex("object"));
@@ -105,6 +134,29 @@ public class NameHelper {
 			} catch (UnsupportedEncodingException e) {
 				Log.e(TAG, "Could not encode uri for query. Skipping <" + uri
 						+ ">", e);
+			}
+			Log.v(TAG, "Ready with getting Name: " + names.get(uri) + ".");
+		}
+	}
+
+	private class MetaThread extends Thread {
+		Thread[] threads;
+
+		public MetaThread(Thread[] threadsIn) {
+			threads = threadsIn;
+		}
+		
+		
+
+		public void run() {
+			for (int i = 0; i < threads.length; i++) {
+				try {
+					threads[i].join(Constants.TIME_LONG);
+				} catch (InterruptedException e) {
+					Log.e(TAG,
+							"The thread was interrupted, while waitung for its end.",
+							e);
+				}
 			}
 		}
 	}
