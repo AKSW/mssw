@@ -249,50 +249,6 @@ public class FoafProvider extends ContentProvider implements
 
 	/*------------- private ----------------*/
 
-	private String[] relations = { "http://xmlns.com/foaf/0.1/knows",
-			"http://purl.org/vocab/relationship/acquaintanceOf",
-			"http://purl.org/vocab/relationship/ambivalentOf",
-			"http://purl.org/vocab/relationship/ancestorOf",
-			"http://purl.org/vocab/relationship/antagonistOf",
-			"http://purl.org/vocab/relationship/apprenticeTo",
-			"http://purl.org/vocab/relationship/childOf",
-			"http://purl.org/vocab/relationship/closeFriendOf",
-			"http://purl.org/vocab/relationship/collaboratesWith",
-			"http://purl.org/vocab/relationship/colleagueOf",
-			"http://purl.org/vocab/relationship/descendantOf",
-			"http://purl.org/vocab/relationship/employedBy",
-			"http://purl.org/vocab/relationship/employerOf",
-			"http://purl.org/vocab/relationship/enemyOf",
-			"http://purl.org/vocab/relationship/engagedTo",
-			"http://purl.org/vocab/relationship/friendOf",
-			"http://purl.org/vocab/relationship/grandchildOf",
-			"http://purl.org/vocab/relationship/grandparentOf",
-			"http://purl.org/vocab/relationship/hasMet",
-			"http://purl.org/vocab/relationship/influencedBy",
-			"http://purl.org/vocab/relationship/knowsByReputation",
-			"http://purl.org/vocab/relationship/knowsInPassing",
-			"http://purl.org/vocab/relationship/knowsOf",
-			"http://purl.org/vocab/relationship/lifePartnerOf",
-			"http://purl.org/vocab/relationship/livesWith",
-			"http://purl.org/vocab/relationship/lostContactWith",
-			"http://purl.org/vocab/relationship/mentorOf",
-			"http://purl.org/vocab/relationship/neighborOf",
-			"http://purl.org/vocab/relationship/parentOf",
-			"http://purl.org/vocab/relationship/participant",
-			"http://purl.org/vocab/relationship/participantIn",
-			"http://purl.org/vocab/relationship/Relationship",
-			"http://purl.org/vocab/relationship/siblingOf",
-			"http://purl.org/vocab/relationship/spouseOf",
-			"http://purl.org/vocab/relationship/worksWith",
-			"http://purl.org/vocab/relationship/wouldLikeToKnow" };
-
-	private String[] nameProps = { "http://xmlns.com/foaf/0.1/name",
-			"http://xmlns.com/foaf/0.1/givenName",
-			"http://xmlns.com/foaf/0.1/familyName",
-			"http://xmlns.com/foaf/0.1/nick" };
-
-	private String[] pictureProps = { "http://xmlns.com/foaf/0.1/depiction" };
-
 	private Cursor getMe(String[] projection) {
 		if (me == null) {
 			me = getConfiguration().getString("me", null);
@@ -340,7 +296,7 @@ public class FoafProvider extends ContentProvider implements
 
 			String selection = null;
 			if (projection == null) {
-				projection = relations;
+				projection = Constants.PROPS_relations;
 				selection = "complement";
 			}
 			Cursor rc = getContentResolver().query(contentUri, projection,
@@ -367,13 +323,13 @@ public class FoafProvider extends ContentProvider implements
 			if (projection != null) {
 				Log.i(TAG, "projection not supported for getName()");
 			}
-			Cursor rc = getContentResolver().query(contentUri, nameProps, null,
+			Cursor rc = getContentResolver().query(contentUri, Constants.PROPS_nameProps, null,
 					null, null);
 
 			if (rc != null) {
 				if (rc.moveToFirst()) {
 
-					String[] names = new String[nameProps.length];
+					String[] names = new String[Constants.PROPS_nameProps.length];
 					String predicat = "";
 					String object = "";
 					String subject = rc.getString(rc.getColumnIndex("subject"));
@@ -381,8 +337,8 @@ public class FoafProvider extends ContentProvider implements
 					while (rc.moveToNext()) {
 						predicat = rc.getString(rc.getColumnIndex("predicat"));
 						object = rc.getString(rc.getColumnIndex("object"));
-						for (int i = 0; i < nameProps.length; i++) {
-							if (nameProps[i].compareToIgnoreCase(predicat) == 0) {
+						for (int i = 0; i < Constants.PROPS_nameProps.length; i++) {
+							if (Constants.PROPS_nameProps[i].compareToIgnoreCase(predicat) == 0) {
 								names[i] = object;
 							}
 						}
@@ -391,7 +347,7 @@ public class FoafProvider extends ContentProvider implements
 					for (int i = 0; i < names.length; i++) {
 						if (names[i] != null && names[i].length() > 0) {
 							object = names[i];
-							predicat = nameProps[i];
+							predicat = Constants.PROPS_nameProps[i];
 							if (i == 1) {
 								object = object + " " + names[i + 1];
 							}
@@ -430,7 +386,7 @@ public class FoafProvider extends ContentProvider implements
 			if (projection != null) {
 				Log.i(TAG, "projection not supported for getPicture()");
 			}
-			Cursor rc = getContentResolver().query(contentUri, pictureProps,
+			Cursor rc = getContentResolver().query(contentUri, Constants.PROPS_pictureProps,
 					null, null, null);
 
 			return rc;
@@ -459,10 +415,10 @@ public class FoafProvider extends ContentProvider implements
 					+ ">.");
 
 			if (projection == null) {
-				projection = relations;
+				projection = Constants.PROPS_relations;
 			}
 
-			Cursor rc = getContentResolver().query(contentUri, relations, null,
+			Cursor rc = getContentResolver().query(contentUri, Constants.PROPS_relations, null,
 					null, null);
 			if (rc != null) {
 				String relation;
