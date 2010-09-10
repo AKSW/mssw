@@ -70,8 +70,7 @@ public final class Constants {
 	}
 
 	/**
-	 * Because the fields android.provider.ContactsContract.DataColumns is not
-	 * available in API < 5
+	 * Because there is no possibilitiy for MIME-Type "reverselookup"
 	 */
 
 	public static final HashMap<String, String> MIME_TYPES = new HashMap<String, String>();

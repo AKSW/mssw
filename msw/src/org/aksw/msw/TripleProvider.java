@@ -250,11 +250,18 @@ public class TripleProvider extends ContentProvider {
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
-				return null;
+				break;
 			}
-		default:
-			return null;
+		case RESOURCE_ADD_DATA:
+			if (path.size() > 2) {
+				return addData(path.get(2), values);
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				break;
+			}
 		}
+		return null;
 
 	}
 
@@ -285,19 +292,36 @@ public class TripleProvider extends ContentProvider {
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
-				return 0;
+				break;
 			}
 		case RESOURCE_ADD_DATA:
 			if (path.size() > 2) {
-				return addData(path.get(2), values);
+				Uri retval = addData(path.get(2), values);
+				if (retval != null) {
+					return 1;
+				} else {
+					break;
+				}
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
-				return 0;
+				break;
 			}
-		default:
-			return 0;
+		case RESOURCE_ADD_TRIPLE:
+			if (path.size() > 2) {
+				Uri retval = addTriple(path.get(2), values);
+				if (retval != null) {
+					return 1;
+				} else {
+					break;
+				}
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				break;
+			}
 		}
+		return 0;
 	}
 
 	// ---------------------------- private --------------------
@@ -365,7 +389,7 @@ public class TripleProvider extends ContentProvider {
 		return resource;
 	}
 
-	private int addData(String uri, ContentValues values) {
+	private Uri addData(String uri, ContentValues values) {
 		// TODO implement
 		Set<Entry<String, Object>> data = values.valueSet();
 		Model model = mm.getModel(uri, "local");
@@ -417,7 +441,7 @@ public class TripleProvider extends ContentProvider {
 				model.abort();
 			}
 		}
-		return 0;
+		return Uri.parse(uri);
 	}
 
 	private Uri addTriple(String uri, ContentValues values) {
