@@ -5,6 +5,8 @@ androjena
 bin/
 libs-src/
 code-resources/
+mssw/.project
+msw/.project
 
 syntax: regexp
 ^dist
