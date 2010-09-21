@@ -67,7 +67,11 @@ public class NameHelper {
 		}
 
 		if (names.containsKey(uri)) {
-			return names.get(uri);
+			if (names.get(uri).trim().length() != 0) {
+				return names.get(uri);
+			} else {
+				return uri;
+			}
 		} else {
 			return uri;
 		}

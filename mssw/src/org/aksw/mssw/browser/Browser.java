@@ -37,56 +37,62 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		Log.v(TAG, "================ onCreate Browser =====================");
 		// important!! don't set the content because else no tab-content would
 		// be displayed.
+
 		setContentView(R.layout.browser);
 
 		tabHost = getTabHost();
 		tabHost.setOnTabChangedListener(this);
 
-		SharedPreferences sharedPreferences = PreferenceManager
-				.getDefaultSharedPreferences(getApplicationContext());
+		if (checkEnvironment()) {
 
-		selectedWebID = sharedPreferences.getString("selectedWebID", null);
-		if (selectedWebID == null) {
-			selectedWebID = sharedPreferences.getString("me",
-					Constants.EXAMPLE_webId);
+			SharedPreferences sharedPreferences = PreferenceManager
+					.getDefaultSharedPreferences(getApplicationContext());
+
+			selectedWebID = sharedPreferences.getString("selectedWebID", null);
+			if (selectedWebID == null) {
+				selectedWebID = sharedPreferences.getString("me",
+						Constants.EXAMPLE_webId);
+			}
+
+			handleIntent(getIntent());
+
+			Resources res = getResources(); // Resource object to get Drawables
+			TabHost.TabSpec spec; // Reusable TabSpec for each tab
+			Intent intent; // Reusable Intent for each tab
+
+			/* This is bad, because I repeat very similar code three times */
+			intent = new Intent().setClass(this, BrowserMeCard.class);
+			// intent.setData(Uri.parse(selectedWebID));
+			spec = tabHost.newTabSpec("meCard");
+			spec.setIndicator(getString(R.string.profile),
+					res.getDrawable(R.drawable.ic_tab_mecard));
+			spec.setContent(intent);
+			tabHost.addTab(spec);
+
+			/* This is bad, because I repeat very similar code three times */
+			intent = new Intent().setClass(this, BrowserContacts.class);
+			// intent.setData(Uri.parse(selectedWebID));
+			spec = tabHost.newTabSpec("Contacts");
+			spec.setIndicator(getString(R.string.contacts),
+					res.getDrawable(R.drawable.ic_tab_contacts));
+			spec.setContent(intent);
+			tabHost.addTab(spec);
+
+			/* This is bad, because I repeat very similar code three times */
+			intent = new Intent().setClass(this, BrowserBrowse.class);
+			if (searchTerm != null) {
+				// intent.setData(Uri.parse(searchTerm));
+			}
+			spec = tabHost.newTabSpec("Browser");
+			spec.setIndicator(getString(R.string.browse),
+					res.getDrawable(R.drawable.ic_tab_browse));
+			spec.setContent(intent);
+			tabHost.addTab(spec);
+
+			tabHost.setCurrentTab(selectedTab);
+		} else {
+			finish();
 		}
-
-		handleIntent(getIntent());
-
-		Resources res = getResources(); // Resource object to get Drawables
-		TabHost.TabSpec spec; // Reusable TabSpec for each tab
-		Intent intent; // Reusable Intent for each tab
-
-		/* This is bad, because I repeat very similar code three times */
-		intent = new Intent().setClass(this, BrowserMeCard.class);
-		//intent.setData(Uri.parse(selectedWebID));
-		spec = tabHost.newTabSpec("meCard");
-		spec.setIndicator(getString(R.string.profile),
-				res.getDrawable(R.drawable.ic_tab_mecard));
-		spec.setContent(intent);
-		tabHost.addTab(spec);
-
-		/* This is bad, because I repeat very similar code three times */
-		intent = new Intent().setClass(this, BrowserContacts.class);
-		//intent.setData(Uri.parse(selectedWebID));
-		spec = tabHost.newTabSpec("Contacts");
-		spec.setIndicator(getString(R.string.contacts),
-				res.getDrawable(R.drawable.ic_tab_contacts));
-		spec.setContent(intent);
-		tabHost.addTab(spec);
-
-		/* This is bad, because I repeat very similar code three times */
-		intent = new Intent().setClass(this, BrowserBrowse.class);
-		if (searchTerm != null) {
-			//intent.setData(Uri.parse(searchTerm));
-		}
-		spec = tabHost.newTabSpec("Browser");
-		spec.setIndicator(getString(R.string.browse),
-				res.getDrawable(R.drawable.ic_tab_browse));
-		spec.setContent(intent);
-		tabHost.addTab(spec);
-
-		tabHost.setCurrentTab(selectedTab);
 	}
 
 	@Override
@@ -98,11 +104,28 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		tabHost.getCurrentView();
 	}
 
+	private boolean checkEnvironment() {
+		if (getContentResolver().acquireContentProviderClient(
+				Constants.TRIPLE_AUTHORITY) == null) {
+			Intent intent = new Intent(Constants.INTENT_ERROR);
+			intent.putExtra("error_titel", getString(R.string.no_core_titel));
+			intent.putExtra("error_message",
+					getString(R.string.no_core_message));
+			startActivity(intent);
+			finish();
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 	private void handleIntent(Intent intent) {
 		if (intent != null) {
 			String action = intent.getAction();
 			String data;
-			if (action.equals(Constants.INTENT_ADD_WEBID)) {
+			if (action == null) {
+				Log.v(TAG, "No Action");
+			} else if (action.equals(Constants.INTENT_ADD_WEBID)) {
 				data = intent.getDataString();
 				Log.v(TAG, "Add WebId <" + data + "> Intent.");
 				if (data != null) {
@@ -129,6 +152,11 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 					selectedTab = 2;
 					searchTermChanged();
 				}
+			} else {
+				Log.v(TAG, "Unsupported Action");
+				if (intent.getBooleanExtra("reCreate", false)) {
+					onCreate(null);
+				}
 			}
 		}
 
@@ -139,8 +167,10 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		SharedPreferences sp = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
 		Log.v(TAG, "Selection changed <" + selectedWebID + ">.");
-		if (selectedWebID != null || !selectedWebID.equals(sp.getString("selectedWebID", null))) {
-			Log.v(TAG, "Writing selectedWebID <" + selectedWebID + "> to config.");
+		if (selectedWebID != null
+				|| !selectedWebID.equals(sp.getString("selectedWebID", null))) {
+			Log.v(TAG, "Writing selectedWebID <" + selectedWebID
+					+ "> to config.");
 			Editor spEdit = sp.edit();
 			spEdit.putString("selectedWebID", selectedWebID);
 			spEdit.commit();
@@ -151,7 +181,8 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		SharedPreferences sp = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
 		Log.v(TAG, "SearchTerm changed <" + searchTerm + ">.");
-		if (searchTerm == null || !searchTerm.equals(sp.getString("searchTerm", null))) {
+		if (searchTerm == null
+				|| !searchTerm.equals(sp.getString("searchTerm", null))) {
 			Log.v(TAG, "Writing searchTerm <" + searchTerm + "> to config.");
 			Editor spEdit = sp.edit();
 			spEdit.putString("searchTerm", searchTerm);
@@ -165,14 +196,14 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		awt.setWebId(webid);
 		awt.start();
 	}
-	
+
 	private class AddWebIdTread extends Thread {
 		private String webid;
-		
+
 		public void setWebId(String webidIn) {
 			webid = webidIn;
 		}
-		
+
 		public void run() {
 			try {
 				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
@@ -186,13 +217,13 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 				Uri result = getContentResolver().insert(contentUri, values);
 				if (result != null) {
-					//return true;
+					// return true;
 				} else {
-					//return false;
+					// return false;
 				}
 			} catch (Exception e) {
 				Log.e(TAG, "Error on adding new Friend.", e);
-				//return false;
+				// return false;
 			}
 		}
 	}
