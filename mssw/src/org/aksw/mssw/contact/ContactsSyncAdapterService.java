@@ -302,8 +302,12 @@ public class ContactsSyncAdapterService extends Service {
 
 							} catch (ClassNotFoundException e) {
 								Log.e(TAG,
-										"There was a error to find the according Class. (ignorring this triple)",
-										e);
+										"There was a error to find the according Class. (ignorring this triple) - message: '"
+												+ e.getMessage() + "'.");
+							} catch (NoSuchFieldException e) {
+								Log.e(TAG,
+										"There was a error to finding this field. (ignorring this triple) - message: '"
+												+ e.getMessage() + "'.");
 							} catch (Exception e) {
 								Log.e(TAG,
 										"Couldn't interpres the Triple subject = '"
@@ -427,56 +431,87 @@ public class ContactsSyncAdapterService extends Service {
 											+ object
 											+ "' (ignoring), check the file 'rules.n3' on your sdcard if everything is spelled right.");
 							dataList.remove(subject);
+						} catch (Exception e) {
+							Log.e(TAG,
+									"Couldn't interpres the Triple subject = '"
+											+ subject
+											+ "', predicat = '"
+											+ predicat
+											+ "', object = '"
+											+ object
+											+ "' I'll ignorre it and am proceding with next Property.",
+									e);
 						}
 					} else if (predicat.startsWith(Constants.DATA_KINDS_PREFIX)) {
 
-						String fieldName = extractFieldName(predicat);
-						String column = (String) forUri(predicat, true)
-								.getField(fieldName).get(null);
+						try {
+							String fieldName = extractFieldName(predicat);
+							String column = (String) forUri(predicat, true)
+									.getField(fieldName).get(null);
 
-						if (isResource
-								&& object
-										.startsWith(Constants.DATA_KINDS_PREFIX)) {
+							if (isResource
+									&& object
+											.startsWith(Constants.DATA_KINDS_PREFIX)) {
 
-							if (dataList.containsKey(subject)) {
-								data = dataList.get(subject);
+								if (dataList.containsKey(subject)) {
+									data = dataList.get(subject);
+								} else {
+									data = new HashMap<String, String>();
+								}
+
+								// this is the place of magic
+								fieldName = extractFieldName(object);
+								Field valueField = forUri(object, true)
+										.getField(fieldName);
+
+								// Type is int
+								// Protocol is string
+								if (valueField.getType().getName()
+										.equalsIgnoreCase("int")) {
+									int value = (Integer) valueField.get(null);
+
+									data.put(column, Integer.toString(value));
+								} else if (valueField.getType().getName()
+										.equalsIgnoreCase("java.lang.String")) {
+									object = (java.lang.String) valueField
+											.get(null);
+
+									data.put(column, object);
+								} else {
+									Log.e(TAG,
+											"I don't know the Type of the field: '"
+													+ object + "'.");
+								}
+
+								dataList.put(subject, data);
 							} else {
-								data = new HashMap<String, String>();
-							}
-
-							// this is the place of magic
-							fieldName = extractFieldName(object);
-							Field valueField = forUri(object, true).getField(
-									fieldName);
-
-							// Type is int
-							// Protocol is string
-							if (valueField.getType().getName()
-									.equalsIgnoreCase("int")) {
-								int value = (Integer) valueField.get(null);
-
-								data.put(column, Integer.toString(value));
-							} else if (valueField.getType().getName()
-									.equalsIgnoreCase("java.lang.String")) {
-								object = (java.lang.String) valueField
-										.get(null);
-
+								if (dataList.containsKey(subject)) {
+									data = dataList.get(subject);
+								} else {
+									data = new HashMap<String, String>();
+								}
 								data.put(column, object);
-							} else {
-								Log.e(TAG,
-										"I don't know the Type of the field: '"
-												+ object + "'.");
+								dataList.put(subject, data);
 							}
 
-							dataList.put(subject, data);
-						} else {
-							if (dataList.containsKey(subject)) {
-								data = dataList.get(subject);
-							} else {
-								data = new HashMap<String, String>();
-							}
-							data.put(column, object);
-							dataList.put(subject, data);
+						} catch (ClassNotFoundException e) {
+							Log.e(TAG,
+									"There was a error to find the according Class. (ignorring this triple) - message: '"
+											+ e.getMessage() + "'.");
+						} catch (NoSuchFieldException e) {
+							Log.e(TAG,
+									"There was a error to finding this field. (ignorring this triple) - message: '"
+											+ e.getMessage() + "'.");
+						} catch (Exception e) {
+							Log.e(TAG,
+									"Couldn't interpres the Triple subject = '"
+											+ subject
+											+ "', predicat = '"
+											+ predicat
+											+ "', object = '"
+											+ object
+											+ "' I'll ignorre it and am proceding with next Property.",
+									e);
 						}
 					} else {
 						Log.v(TAG, "Unknown predicat <" + predicat
@@ -649,7 +684,8 @@ public class ContactsSyncAdapterService extends Service {
 
 				// now write the data sets, which didn't fit a contacts data set
 				// (with data_id = null) to ContactsContract
-				Log.v(TAG, "=== Now write new datasets for <" + uri + "> to contacts. ===");
+				Log.v(TAG, "=== Now write new datasets for <" + uri
+						+ "> to contacts. ===");
 
 				dataListIterator = dataList.keySet().iterator();
 

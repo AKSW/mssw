@@ -37,7 +37,6 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
 import com.hp.hpl.jena.shared.DoesNotExistException;
 import com.hp.hpl.jena.shared.JenaException;
-import com.hp.hpl.jena.shared.RulesetNotFoundException;
 
 public class ModelManager {
 
@@ -71,21 +70,7 @@ public class ModelManager {
 		String state = Environment.getExternalStorageState();
 		if (Environment.MEDIA_MOUNTED.equals(state)
 				|| Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-			try {
-				fm = new FoafMapper(storage, Constants.RULE_FILE);
-			} catch (RulesetNotFoundException e) {
-				if (Environment.MEDIA_MOUNTED.equals(state)) {
-					Log.v(TAG, "The ruleset file does not exists at '"
-							+ Constants.RULE_FILE
-							+ "' will create new one with default rules.");
-					fm = new FoafMapper(storage, Constants.RULE_FILE, context);
-				} else {
-					Log.v(TAG, "The ruleset file does not exists at '"
-							+ Constants.RULE_FILE
-							+ "' and can't create new one with default rules.",
-							e);
-				}
-			}
+			fm = new FoafMapper(storage, Constants.RULE_FILE, context);
 		} else {
 			Log.v(TAG,
 					"Can not get ruleset file, because external storrage is not mounted.");
