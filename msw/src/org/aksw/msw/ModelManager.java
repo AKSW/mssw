@@ -82,7 +82,8 @@ public class ModelManager {
 				} else {
 					Log.v(TAG, "The ruleset file does not exists at '"
 							+ Constants.RULE_FILE
-							+ "' and can't create new one with default rules.", e);
+							+ "' and can't create new one with default rules.",
+							e);
 				}
 			}
 		} else {
@@ -195,18 +196,25 @@ public class ModelManager {
 					infModel = modelMakers.get("inf").openModel(uri);
 				} else {
 					infModel = createModel(uri, "inf");
-					try {
-						if (infModel.supportsTransactions()) {
-							infModel.begin();
-						}
-						infModel.add(fm.map(model));
-						if (infModel.supportsTransactions()) {
-							infModel.commit();
-						}
-					} catch (JenaException e) {
-						Log.e(TAG, "Exception on updating model. (rollback)", e);
-						if (infModel.supportsTransactions()) {
-							infModel.abort();
+					// TODO have to check if infModel != null
+					// TODO move the model mapping out to just add ist
+					Model mappedModel = fm.map(model);
+					synchronized (this) {
+						try {
+							if (infModel.supportsTransactions()) {
+								infModel.begin();
+							}
+							infModel.add(mappedModel);
+							if (infModel.supportsTransactions()) {
+								infModel.commit();
+							}
+						} catch (JenaException e) {
+							Log.e(TAG,
+									"Exception on updating model. (rollback)",
+									e);
+							if (infModel.supportsTransactions()) {
+								infModel.abort();
+							}
 						}
 					}
 				}
@@ -238,26 +246,8 @@ public class ModelManager {
 			Log.v(TAG, "webModelMaker knows: " + modelName);
 			if (modelName != null) {
 				model = modelMakers.get("web").openModel(modelName);
-				try {
-					if (model.supportsTransactions()) {
-						model.begin();
-					}
-					model.removeAll();
-					if (model.supportsTransactions()) {
-						model.commit();
-					}
-					readSSL(modelName, model);
-				} catch (JenaException e) {
-					Log.e(TAG, "Exception on updating model. (rollback)", e);
-					if (model.supportsTransactions()) {
-						model.abort();
-					}
-				}
-				model.close();
 
-				// remove the according inference model
-				if (modelExists(modelName, "inf")) {
-					model = modelMakers.get("inf").openModel(modelName);
+				synchronized (this) {
 					try {
 						if (model.supportsTransactions()) {
 							model.begin();
@@ -266,10 +256,37 @@ public class ModelManager {
 						if (model.supportsTransactions()) {
 							model.commit();
 						}
+						readSSL(modelName, model);
 					} catch (JenaException e) {
 						Log.e(TAG, "Exception on updating model. (rollback)", e);
 						if (model.supportsTransactions()) {
 							model.abort();
+						}
+					}
+				}
+				model.close();
+
+				// remove the according inference model
+				if (modelExists(modelName, "inf")) {
+					model = modelMakers.get("inf").openModel(modelName);
+
+					synchronized (this) {
+						try {
+							if (model.supportsTransactions()) {
+								model.begin();
+							}
+							model.removeAll();
+							if (model.supportsTransactions()) {
+								model.commit();
+							}
+						} catch (JenaException e) {
+							Log.e(TAG,
+									"Exception on updating model. (rollback)",
+									e);
+							if (model.supportsTransactions()) {
+								model.abort();
+							}
+
 						}
 					}
 					model.close();
@@ -341,7 +358,7 @@ public class ModelManager {
 							read(url, model, iStream);
 
 							iStream.close();
-							
+
 							if (conn instanceof HttpsURLConnection) {
 								((HttpsURLConnection) conn).disconnect();
 							}
@@ -400,19 +417,22 @@ public class ModelManager {
 		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
 				(RDFNode) null);
 
-		try {
-			if (model.supportsTransactions()) {
-				// model.abort();
-				model.begin();
-			}
-			model.add(tmp.query(selector));
-			if (model.supportsTransactions()) {
-				model.commit();
-			}
-		} catch (JenaException e) {
-			Log.e(TAG, "Exception on query for resource. (rollback)", e);
-			if (model.supportsTransactions()) {
-				model.abort();
+		synchronized (this) {
+			try {
+				if (model.supportsTransactions()) {
+					// model.abort();
+					model.begin();
+				}
+				model.add(tmp.query(selector));
+				if (model.supportsTransactions()) {
+					model.commit();
+				}
+
+			} catch (JenaException e) {
+				Log.e(TAG, "Exception on query for resource. (rollback)", e);
+				if (model.supportsTransactions()) {
+					model.abort();
+				}
 			}
 		}
 		tmp.removeAll();
@@ -495,10 +515,12 @@ public class ModelManager {
 				Resource model = indexMod.getResource(uri);
 
 				try {
-					indexMod.begin();
-					model.addProperty(rdf_type, modelClass);
-					index.addProperty(contains, model);
-					indexMod.commit();
+					synchronized (this) {
+						indexMod.begin();
+						model.addProperty(rdf_type, modelClass);
+						index.addProperty(contains, model);
+						indexMod.commit();
+					}
 
 					return modelMakers.get(makerKey).openModel(uri);
 				} catch (JenaException e) {

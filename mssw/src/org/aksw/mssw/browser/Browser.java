@@ -1,5 +1,6 @@
 package org.aksw.mssw.browser;
 
+import org.aksw.mssw.CommonMethods;
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
@@ -43,7 +44,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		tabHost = getTabHost();
 		tabHost.setOnTabChangedListener(this);
 
-		if (checkEnvironment()) {
+		if (CommonMethods.checkForTripleProvider(getContentResolver())) {
 
 			SharedPreferences sharedPreferences = PreferenceManager
 					.getDefaultSharedPreferences(getApplicationContext());
@@ -91,6 +92,11 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 			tabHost.setCurrentTab(selectedTab);
 		} else {
+			Intent intent = new Intent(Constants.INTENT_ERROR);
+			intent.putExtra("error_titel", getString(R.string.no_core_titel));
+			intent.putExtra("error_message",
+					getString(R.string.no_core_message));
+			startActivity(intent);
 			finish();
 		}
 	}
@@ -102,21 +108,6 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		handleIntent(intent);
 		tabHost.setCurrentTab(selectedTab);
 		tabHost.getCurrentView();
-	}
-
-	private boolean checkEnvironment() {
-		if (getContentResolver().acquireContentProviderClient(
-				Constants.TRIPLE_AUTHORITY) == null) {
-			Intent intent = new Intent(Constants.INTENT_ERROR);
-			intent.putExtra("error_titel", getString(R.string.no_core_titel));
-			intent.putExtra("error_message",
-					getString(R.string.no_core_message));
-			startActivity(intent);
-			finish();
-			return false;
-		} else {
-			return true;
-		}
 	}
 
 	private void handleIntent(Intent intent) {
