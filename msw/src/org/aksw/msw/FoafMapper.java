@@ -68,6 +68,8 @@ public class FoafMapper {
 					"Couldn't get information of this package assuming versionCode == 0");
 		}
 
+		Log.v(TAG,"File: " + ruleFile.getAbsolutePath() + " has following properties: exists=" + ruleFile.exists() +  " isFile=" + ruleFile.isFile() +  " isDirectory=" + ruleFile.isDirectory() +  " canRead=" + ruleFile.canRead() +  " canWrite=" + ruleFile.canWrite() +  " string=" + ruleFile.toString() +  ".");
+		
 		if (ruleFile.isFile()) {
 			try {
 				// FileReader fr = ;
