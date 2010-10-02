@@ -274,26 +274,37 @@ public class ContactProvider extends ContentProvider {
 									oIsResource = false;
 								} else if (predicat
 										.equals(Constants.DATA_KINDS_PREFIX
+												+ "CommonDataKinds.Email.DATA")
+										&& object.startsWith("mailto:")) {
+									object = object.substring(7);
+									oIsResource = false;
+								} else if (predicat
+										.equals(Constants.DATA_KINDS_PREFIX
 												+ "CommonDataKinds.Photo.PHOTO")) {
 									// TODO get photo and convert it in the
 									// right format
 									if (oIsResource) {
 										try {
-											Log.v(TAG, "Reading Photo from <" + object + ">.");
+											Log.v(TAG, "Reading Photo from <"
+													+ object + ">.");
 											URLConnection photoConnection = new URL(
 													object).openConnection();
-											InputStream photoStream = photoConnection.getInputStream();
-														
-											InputStream photo64Stream = new Base64.InputStream(photoStream, Base64.ENCODE);
+											InputStream photoStream = photoConnection
+													.getInputStream();
+
+											InputStream photo64Stream = new Base64.InputStream(
+													photoStream, Base64.ENCODE);
 
 											StringBuilder sb = new StringBuilder();
-											BufferedReader reader = new BufferedReader(new InputStreamReader(photo64Stream));
+											BufferedReader reader = new BufferedReader(
+													new InputStreamReader(
+															photo64Stream));
 											String line;
-											
+
 											while ((line = reader.readLine()) != null) {
 												sb.append(line);
 											}
-											
+
 											object = sb.toString();
 										} catch (MalformedURLException e) {
 											Log.e(TAG,

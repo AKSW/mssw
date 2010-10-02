@@ -12,12 +12,14 @@
 @prefix name: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.StructuredName.>.
 @prefix photo: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.Photo.>.
 @prefix phone: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.Phone.>.
+@prefix email: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.Email.>.
 @prefix website: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.Website.>.
 @prefix im: <http://ns.aksw.org/Android/ContactsContract.CommonDataKinds.Im.>.
 
 [name: (?s foaf:name ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:StructuredName), (?d name:DISPLAY_NAME ?o)]
 [photo: (?s foaf:depiction ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Photo), (?d photo:PHOTO ?o)]
 [phone: (?s foaf:phone ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Phone), (?d phone:NUMBER ?o), (?d phone:TYPE phone:TYPE_HOME)]
+[email: (?s foaf:mbox ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Email), (?d email:DATA ?o), (?d email:TYPE email:TYPE_HOME)]
 [homepage: (?s foaf:homepage ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Website), (?d website:URL ?o), (?d website:TYPE website:TYPE_HOMEPAGE)]
 [weblog: (?s foaf:weblog ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Website), (?d website:URL ?o), (?d website:TYPE website:TYPE_BLOG)]
 [jabber: (?s foaf:jabberID ?o), makeTemp(?d)-> (?s android:hasData ?d), (?d rdf:type acontacts:Im), (?d im:DATA ?o), (?d im:TYPE im:TYPE_HOME), (?d im:PROTOCOL im:PROTOCOL_JABBER)]
