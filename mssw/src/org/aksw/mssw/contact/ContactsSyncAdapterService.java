@@ -150,18 +150,18 @@ public class ContactsSyncAdapterService extends Service {
 				Cursor rc = content.query(contentUri, null, null, null, null);
 
 				if (rc != null) {
-					String subject, predicat, object;
+					String subject, predicate, object;
 
 					Log.i(TAG, "== Initializing hasData properties. ==");
 					/**
 					 * Initializing all hasData Properties of this contact
 					 */
 					while (rc.moveToNext()) {
-						predicat = rc.getString(rc.getColumnIndex("predicat"));
-						Log.v(TAG, "predicat = " + predicat);
+						predicate = rc.getString(rc.getColumnIndex("predicate"));
+						Log.v(TAG, "predicate = " + predicate);
 
-						if (predicat != null
-								&& predicat.equals(Constants.PROP_hasData)) {
+						if (predicate != null
+								&& predicate.equals(Constants.PROP_hasData)) {
 							object = rc.getString(rc.getColumnIndex("object"));
 
 							if (!builderList.containsKey(object)) {
@@ -191,18 +191,18 @@ public class ContactsSyncAdapterService extends Service {
 					 * range of a hasData property
 					 */
 					while (rc.moveToNext()) {
-						predicat = rc.getString(rc.getColumnIndex("predicat"));
-						Log.v(TAG, "predicat = " + predicat);
+						predicate = rc.getString(rc.getColumnIndex("predicate"));
+						Log.v(TAG, "predicate = " + predicate);
 
-						if (predicat != null
-								&& !predicat.equals(Constants.PROP_hasData)) {
+						if (predicate != null
+								&& !predicate.equals(Constants.PROP_hasData)) {
 							subject = rc
 									.getString(rc.getColumnIndex("subject"));
 							object = rc.getString(rc.getColumnIndex("object"));
 							builder = builderList.get(subject);
 
 							try {
-								if (predicat.equals(Constants.PROP_rdfType)
+								if (predicate.equals(Constants.PROP_rdfType)
 										&& object
 												.startsWith(Constants.DATA_KINDS_PREFIX)) {
 									Log.v(TAG, "rdf:type = " + object + ".");
@@ -219,7 +219,7 @@ public class ContactsSyncAdapterService extends Service {
 									builderHasMimeTypeList.put(subject,
 											Boolean.TRUE);
 
-								} else if (predicat
+								} else if (predicate
 										.startsWith(Constants.DATA_KINDS_PREFIX)) {
 									boolean isResource;
 									if (rc.getString(
@@ -238,8 +238,8 @@ public class ContactsSyncAdapterService extends Service {
 									 * in the uri. than get the specified
 									 * property from this class.
 									 */
-									String fieldName = extractFieldName(predicat);
-									String column = (String) forUri(predicat,
+									String fieldName = extractFieldName(predicate);
+									String column = (String) forUri(predicate,
 											true).getField(fieldName).get(null);
 
 									if (isResource
@@ -287,7 +287,7 @@ public class ContactsSyncAdapterService extends Service {
 										}
 
 									}
-								} else if (predicat
+								} else if (predicate
 										.equals(Constants.PROP_rdfType)) {
 									Log.v(TAG,
 											"The given object <"
@@ -295,8 +295,8 @@ public class ContactsSyncAdapterService extends Service {
 													+ "> is not a valide type. (ignorring this triple)");
 								} else {
 									Log.v(TAG,
-											"The given predicat <"
-													+ predicat
+											"The given predicate <"
+													+ predicate
 													+ "> is not valide. (ignorring this triple)");
 								}
 
@@ -312,8 +312,8 @@ public class ContactsSyncAdapterService extends Service {
 								Log.e(TAG,
 										"Couldn't interpres the Triple subject = '"
 												+ subject
-												+ "', predicat = '"
-												+ predicat
+												+ "', predicate = '"
+												+ predicate
 												+ "', object = '"
 												+ object
 												+ "' I'll ignorre it and am proceding with next Property.",
@@ -399,17 +399,17 @@ public class ContactsSyncAdapterService extends Service {
 				while (rc.moveToNext()) {
 
 					String subject = rc.getString(rc.getColumnIndex("subject"));
-					String predicat = rc.getString(rc
-							.getColumnIndex("predicat"));
+					String predicate = rc.getString(rc
+							.getColumnIndex("predicate"));
 					String object = rc.getString(rc.getColumnIndex("object"));
 					boolean isResource = rc.getString(
 							rc.getColumnIndex("oIsResource")).equals("true");
 
-					if (predicat.equals(Constants.PROP_hasData)) {
+					if (predicate.equals(Constants.PROP_hasData)) {
 						if (!dataList.containsKey(object)) {
 							dataList.put(object, new HashMap<String, String>());
 						}
-					} else if (predicat.equals(Constants.PROP_rdfType)
+					} else if (predicate.equals(Constants.PROP_rdfType)
 							&& object.startsWith(Constants.DATA_KINDS_PREFIX)) {
 						// check mimetype
 						if (!dataList.containsKey(subject)) {
@@ -435,18 +435,18 @@ public class ContactsSyncAdapterService extends Service {
 							Log.e(TAG,
 									"Couldn't interpres the Triple subject = '"
 											+ subject
-											+ "', predicat = '"
-											+ predicat
+											+ "', predicate = '"
+											+ predicate
 											+ "', object = '"
 											+ object
 											+ "' I'll ignorre it and am proceding with next Property.",
 									e);
 						}
-					} else if (predicat.startsWith(Constants.DATA_KINDS_PREFIX)) {
+					} else if (predicate.startsWith(Constants.DATA_KINDS_PREFIX)) {
 
 						try {
-							String fieldName = extractFieldName(predicat);
-							String column = (String) forUri(predicat, true)
+							String fieldName = extractFieldName(predicate);
+							String column = (String) forUri(predicate, true)
 									.getField(fieldName).get(null);
 
 							if (isResource
@@ -506,15 +506,15 @@ public class ContactsSyncAdapterService extends Service {
 							Log.e(TAG,
 									"Couldn't interpres the Triple subject = '"
 											+ subject
-											+ "', predicat = '"
-											+ predicat
+											+ "', predicate = '"
+											+ predicate
 											+ "', object = '"
 											+ object
 											+ "' I'll ignorre it and am proceding with next Property.",
 									e);
 						}
 					} else {
-						Log.v(TAG, "Unknown predicat <" + predicat
+						Log.v(TAG, "Unknown predicate <" + predicate
 								+ "> or unknown object <" + object + ">.");
 					}
 

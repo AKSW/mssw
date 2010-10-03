@@ -330,15 +330,15 @@ public class FoafProvider extends ContentProvider implements
 				if (rc.moveToFirst()) {
 
 					String[] names = new String[Constants.PROPS_nameProps.length];
-					String predicat = "";
+					String predicate = "";
 					String object = "";
 					String subject = rc.getString(rc.getColumnIndex("subject"));
 					rc.moveToPosition(-1);
 					while (rc.moveToNext()) {
-						predicat = rc.getString(rc.getColumnIndex("predicat"));
+						predicate = rc.getString(rc.getColumnIndex("predicate"));
 						object = rc.getString(rc.getColumnIndex("object"));
 						for (int i = 0; i < Constants.PROPS_nameProps.length; i++) {
-							if (Constants.PROPS_nameProps[i].compareToIgnoreCase(predicat) == 0) {
+							if (Constants.PROPS_nameProps[i].compareToIgnoreCase(predicate) == 0) {
 								names[i] = object;
 							}
 						}
@@ -347,7 +347,7 @@ public class FoafProvider extends ContentProvider implements
 					for (int i = 0; i < names.length; i++) {
 						if (names[i] != null && names[i].length() > 0) {
 							object = names[i];
-							predicat = Constants.PROPS_nameProps[i];
+							predicate = Constants.PROPS_nameProps[i];
 							if (i == 1) {
 								object = object + " " + names[i + 1];
 							}
@@ -355,7 +355,7 @@ public class FoafProvider extends ContentProvider implements
 						}
 					}
 
-					Cursor out = new PropertyCursor(subject, predicat, object);
+					Cursor out = new PropertyCursor(subject, predicate, object);
 					return out;
 				} else {
 					return null;
@@ -441,9 +441,9 @@ public class FoafProvider extends ContentProvider implements
 							.equals("true");
 					if (isResource) {
 						uri = rc.getString(rc.getColumnIndex("object"));
-						relation = rc.getString(rc.getColumnIndex("predicat"));
+						relation = rc.getString(rc.getColumnIndex("predicate"));
 						relationReadable = rc.getString(rc
-								.getColumnIndex("predicatReadable"));
+								.getColumnIndex("predicateReadable"));
 						pc.addPerson(uri, relation, names.get(uri),
 								relationReadable, null);
 					}
@@ -471,7 +471,7 @@ public class FoafProvider extends ContentProvider implements
 
 			ContentValues values = new ContentValues();
 			values.put("subject", me);
-			values.put("predicat", Constants.PROP_knows);
+			values.put("predicate", Constants.PROP_knows);
 			values.put("object", webid);
 
 			Log.i(TAG, "Adding new friends to your WebID uri <" + webid + ">.");

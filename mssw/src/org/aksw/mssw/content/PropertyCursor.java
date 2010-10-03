@@ -6,13 +6,13 @@ public class PropertyCursor extends AbstractCursor {
 	
 	private String[] property;
 	
-	public PropertyCursor(String subject, String predicat, String object) {
-		property = new String[]{subject, predicat, object};
+	public PropertyCursor(String subject, String predicate, String object) {
+		property = new String[]{subject, predicate, object};
 	}
 
 	@Override
 	public String[] getColumnNames() {
-		String[] names = {"_id", "subject", "predicat", "object", "predicatReadable", "objectReadable"};
+		String[] names = {"_id", "subject", "predicate", "object", "predicateReadable", "objectReadable"};
 		return names;
 	}
 

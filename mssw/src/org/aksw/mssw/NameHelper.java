@@ -124,7 +124,7 @@ public class NameHelper {
 							null);
 
 					if (rc != null) {
-						String predicat;
+						String predicate;
 						String name = "";
 						
 						/**
@@ -133,16 +133,16 @@ public class NameHelper {
 						 */
 						int quality = projection.size();
 						while (rc.moveToNext()) {
-							predicat = rc.getString(rc
-									.getColumnIndex("predicat"));
+							predicate = rc.getString(rc
+									.getColumnIndex("predicate"));
 							Log.v(TAG,
 									"Got name '"
 											+ rc.getString(rc
 													.getColumnIndex("object"))
 											+ "' with güfak: "
-											+ projection.indexOf(predicat));
-							if (projection.indexOf(predicat) < quality) {
-								quality = projection.indexOf(predicat);
+											+ projection.indexOf(predicate));
+							if (projection.indexOf(predicate) < quality) {
+								quality = projection.indexOf(predicate);
 								name = rc
 										.getString(rc.getColumnIndex("object"));
 							}

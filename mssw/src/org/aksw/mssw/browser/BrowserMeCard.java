@@ -128,7 +128,7 @@ public class BrowserMeCard extends ListActivity implements WebIdRenderer,
 
 			Cursor rc = managedQuery(contentUri, null, null, null, null);
 
-			String[] from = new String[] { "predicatReadable", "objectReadable" };
+			String[] from = new String[] { "predicateReadable", "objectReadable" };
 			int[] to = { R.id.key, R.id.value };
 			rca = new SimpleCursorAdapter(getApplicationContext(),
 					R.layout.mecard_properties, rc, from, to);

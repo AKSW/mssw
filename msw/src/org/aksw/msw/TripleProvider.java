@@ -450,14 +450,14 @@ public class TripleProvider extends ContentProvider {
 
 		try {
 			String subject = values.getAsString("subject");
-			String predicat = values.getAsString("predicat");
+			String predicate = values.getAsString("predicate");
 			String object = values.getAsString("object");
 
 			if (model.supportsTransactions()) {
 				model.begin();
 			}
 			Resource resource = model.getResource(subject);
-			Property property = model.getProperty(predicat);
+			Property property = model.getProperty(predicate);
 			RDFNode objectRes;
 			if (object.startsWith("http:") || object.startsWith("https:")) {
 				objectRes = model.getResource(object);
