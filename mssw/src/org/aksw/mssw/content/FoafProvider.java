@@ -62,7 +62,6 @@ public class FoafProvider extends ContentProvider implements
 		uriMatcher.addURI(AUTHORITY, "me", ME);
 		uriMatcher.addURI(AUTHORITY, "person/friends/*", PERSON_FRIENDS);
 		uriMatcher.addURI(AUTHORITY, "person/mecard/*", PERSON_MECARD);
-		uriMatcher.addURI(AUTHORITY, "person/name/*", PERSON_NAME);
 		uriMatcher.addURI(AUTHORITY, "person/picture/*", PERSON_PICTURE);
 		uriMatcher.addURI(AUTHORITY, "person/*", PERSON);
 		uriMatcher.addURI(AUTHORITY, "search/*", SEARCH);

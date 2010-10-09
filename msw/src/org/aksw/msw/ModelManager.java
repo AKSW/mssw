@@ -42,14 +42,6 @@ public class ModelManager {
 
 	private static final String TAG = "MswModelManager";
 
-	public static HashMap<String, String> namespaces = new HashMap<String, String>();
-	static {
-		namespaces.put("rel", "http://purl.org/vocab/relationship/");
-		namespaces.put("foaf", "http://xmlns.com/foaf/0.1/");
-		namespaces.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-		namespaces.put("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
-	}
-
 	private static File webModelsFiles;
 	private static File infModelsFiles;
 	private static File localModelsFiles;
@@ -167,7 +159,7 @@ public class ModelManager {
 				}
 			}
 
-			model.setNsPrefixes(namespaces);
+			model.setNsPrefixes(Constants.namespaces);
 
 			if (modelExists(uri, "local")) {
 				model.add(modelMakers.get("local").openModel(uri));
@@ -401,6 +393,11 @@ public class ModelManager {
 		Resource subj = new ResourceImpl(uri);
 		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
 				(RDFNode) null);
+		
+		//String queryString = "";
+		
+		//Query query = QueryFactory.create(queryString);
+		//query.addDescribeNode(subj);
 
 		synchronized (this) {
 			try {

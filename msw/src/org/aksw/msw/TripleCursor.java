@@ -70,7 +70,7 @@ public class TripleCursor extends AbstractCursor {
 	public String[] getColumnNames() {
 		String[] names = { "_id", "subject", "predicate", "object",
 				"predicateReadable", "objectReadable", "oIsResource",
-				"oIsBlankNode", "objectName" };
+				"oIsBlankNode"};
 		return names;
 	}
 

@@ -23,13 +23,13 @@ import com.hp.hpl.jena.reasoner.rulesys.Rule;
 
 public class FoafMapper {
 
-	public static String TAG = "FoafMapper";
+	private static String TAG = "FoafMapper";
 	private static String NOTVERSIONED_HEAD = "# A Mapping of the FOAF-Covabulary to the Datastructure of the Android addressbook";
 	private static String UPDATE_HEAD = "update=yes";
 	private static String VERSION_KEY = "version=";
 
-	List<Rule> rules;
-	Reasoner reasoner;
+	private List<Rule> rules;
+	private Reasoner reasoner;
 
 	public FoafMapper(File storage, String fileName, Context context) {
 

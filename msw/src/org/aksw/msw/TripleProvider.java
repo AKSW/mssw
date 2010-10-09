@@ -218,6 +218,7 @@ public class TripleProvider extends ContentProvider {
 		/**
 		 * The following cases are not implemented at the moment
 		 */
+		case RESOURCES:
 		case WORLD:
 		case SPARQL:
 		default:
