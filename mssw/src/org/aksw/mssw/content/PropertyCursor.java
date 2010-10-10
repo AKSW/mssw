@@ -2,6 +2,11 @@ package org.aksw.mssw.content;
 
 import android.database.AbstractCursor;
 
+/**
+ * 
+ * @author natanael
+ * @deprecated
+ */
 public class PropertyCursor extends AbstractCursor {
 	
 	private String[] property;

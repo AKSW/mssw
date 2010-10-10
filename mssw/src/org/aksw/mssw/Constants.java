@@ -43,7 +43,7 @@ public final class Constants {
 	public static final int TIME_SHORT = 1000;
 	public static final int TIME_MIDDLE = 5000;
 	public static final int TIME_LONG = 10000;
-	
+
 	public static String[] PROPS_relations = { "http://xmlns.com/foaf/0.1/knows",
 			"http://purl.org/vocab/relationship/acquaintanceOf",
 			"http://purl.org/vocab/relationship/ambivalentOf",

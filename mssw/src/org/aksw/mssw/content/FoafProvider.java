@@ -44,10 +44,9 @@ public class FoafProvider extends ContentProvider implements
 	private static final int ME_FRIENDS = 120;
 	private static final int ME_FRIEND_ADD = 121;
 	private static final int PERSON = 200;
-	private static final int PERSON_NAME = 210;
-	private static final int PERSON_PICTURE = 220;
-	private static final int PERSON_MECARD = 230;
-	private static final int PERSON_FRIENDS = 240;
+	private static final int PERSON_PICTURE = 210;
+	private static final int PERSON_MECARD = 220;
+	private static final int PERSON_FRIENDS = 230;
 	private static final int SEARCH = 300;
 
 	/**
@@ -94,6 +93,7 @@ public class FoafProvider extends ContentProvider implements
 		if (me == null) {
 			Log.i(TAG,
 					"No URI for \"me\" specified in FoafProvider, please set a URI in configuration.");
+			me = Constants.EXAMPLE_webId;
 		} else {
 			Log.v(TAG, "URI for \"me\" is: " + me);
 		}
@@ -184,11 +184,6 @@ public class FoafProvider extends ContentProvider implements
 				return getFriends(path.get(2), projection);
 			}
 			break;
-		case PERSON_NAME:
-			if (path.size() > 2) {
-				return getName(path.get(2), projection);
-			}
-			break;
 		case PERSON_PICTURE:
 			if (path.size() > 2) {
 				return getPicture(path.get(2), projection);
@@ -220,7 +215,9 @@ public class FoafProvider extends ContentProvider implements
 		int match = uriMatcher.match(uri);
 		switch (match) {
 		case ME_FRIEND_ADD:
-			addFriend((String) values.get("webid"));
+			String webid = values.getAsString("webid");
+			String relation = values.getAsString("relation");
+			addFriend(webid, relation);
 			return 1;
 		default:
 			return 0;
@@ -239,19 +236,28 @@ public class FoafProvider extends ContentProvider implements
 		int match = uriMatcher.match(uri);
 		switch (match) {
 		case ME_FRIEND_ADD:
-			return addFriend((String) values.get("webid"));
+			String webid = values.getAsString("webid");
+			String relation = values.getAsString("relation");
+			return addFriend(webid, relation);
 			// return Uri.parse((String) values.get("webid"));
 		default:
 			return null;
 		}
 	}
 
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		Log.v(TAG, "Shared Preference Changed key = \"" + key + "\".");
+		if (key == "me") {
+			me = sharedPreferences.getString(key, Constants.EXAMPLE_webId);
+		}
+	}
+	
 	/*------------- private ----------------*/
 
 	private Cursor getMe(String[] projection) {
-		if (me == null) {
-			me = getConfiguration().getString("me", null);
-		}
 		return getPerson(me, projection);
 	}
 
@@ -276,9 +282,6 @@ public class FoafProvider extends ContentProvider implements
 	}
 
 	private Cursor getMeCard(String[] projection) {
-		if (me == null) {
-			me = getConfiguration().getString("me", null);
-		}
 		return getMeCard(me, projection);
 	}
 
@@ -295,75 +298,16 @@ public class FoafProvider extends ContentProvider implements
 
 			String selection = null;
 			if (projection == null) {
-				projection = Constants.PROPS_relations;
+				int length = Constants.PROPS_relations.length;
+				projection = new String[length+1];
+				System.arraycopy(Constants.PROPS_relations, 0, projection, 0, length);
+				projection[length] = Constants.PROP_hasData;
 				selection = "complement";
 			}
 			Cursor rc = getContentResolver().query(contentUri, projection,
 					selection, null, null);
 
 			return rc;
-		} catch (UnsupportedEncodingException e) {
-			Log.e(TAG, "Problem with encoding uri for the query.", e);
-			return null;
-		}
-	}
-
-	private Cursor getName(String uri, String[] projection) {
-		Log.v(TAG, "getName: <" + uri + ">");
-
-		try {
-			Uri contentUri;
-			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, Constants.ENC));
-
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
-
-			if (projection != null) {
-				Log.i(TAG, "projection not supported for getName()");
-			}
-			Cursor rc = getContentResolver().query(contentUri, Constants.PROPS_nameProps, null,
-					null, null);
-
-			if (rc != null) {
-				if (rc.moveToFirst()) {
-
-					String[] names = new String[Constants.PROPS_nameProps.length];
-					String predicate = "";
-					String object = "";
-					String subject = rc.getString(rc.getColumnIndex("subject"));
-					rc.moveToPosition(-1);
-					while (rc.moveToNext()) {
-						predicate = rc.getString(rc.getColumnIndex("predicate"));
-						object = rc.getString(rc.getColumnIndex("object"));
-						for (int i = 0; i < Constants.PROPS_nameProps.length; i++) {
-							if (Constants.PROPS_nameProps[i].compareToIgnoreCase(predicate) == 0) {
-								names[i] = object;
-							}
-						}
-					}
-
-					for (int i = 0; i < names.length; i++) {
-						if (names[i] != null && names[i].length() > 0) {
-							object = names[i];
-							predicate = Constants.PROPS_nameProps[i];
-							if (i == 1) {
-								object = object + " " + names[i + 1];
-							}
-							break;
-						}
-					}
-
-					Cursor out = new PropertyCursor(subject, predicate, object);
-					return out;
-				} else {
-					return null;
-				}
-			} else {
-				Log.v(TAG, "Resourcecursor was empty, returning 'null'");
-				return null;
-			}
-
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
 			return null;
@@ -396,9 +340,6 @@ public class FoafProvider extends ContentProvider implements
 	}
 
 	private Cursor getFriends(String[] projection) {
-		if (me == null) {
-			me = getConfiguration().getString("me", null);
-		}
 		return getFriends(me, projection);
 	}
 
@@ -426,8 +367,10 @@ public class FoafProvider extends ContentProvider implements
 				NameHelper nh = new NameHelper(getContext());
 				ArrayList<String> uris = new ArrayList<String>();
 				while (rc.moveToNext()) {
-					isResource = rc.getString(rc.getColumnIndex("oIsResource"))
-							.equals("true");
+					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
+					//isResource = rc.getString(rc.getColumnIndex("oIsResource"))
+					//		.equals("true");
+					isResource = objectType < 2 ? true : false;
 					if (isResource) {
 						uris.add(rc.getString(rc.getColumnIndex("object")));
 					}
@@ -436,8 +379,10 @@ public class FoafProvider extends ContentProvider implements
 				HashMap<String, String> names = nh.getNames(uris);
 				PersonCursor pc = new PersonCursor();
 				while (rc.moveToNext()) {
-					isResource = rc.getString(rc.getColumnIndex("oIsResource"))
-							.equals("true");
+					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
+					//isResource = rc.getString(rc.getColumnIndex("oIsResource"))
+					//		.equals("true");
+					isResource = objectType < 2 ? true : false;
 					if (isResource) {
 						uri = rc.getString(rc.getColumnIndex("object"));
 						relation = rc.getString(rc.getColumnIndex("predicate"));
@@ -457,23 +402,30 @@ public class FoafProvider extends ContentProvider implements
 		}
 	}
 
-	private Uri addFriend(String webid) {
+	private Uri addFriend(String webid, String relation) {
 
-		String uri = getConfiguration()
-				.getString("me", Constants.EXAMPLE_webId);
+		if (webid == null) {
+			Log.i(TAG, "No webid to add specified, returning null");
+			return null;
+		}
+		
+		if (relation == null) {
+			relation = Constants.PROP_knows;
+		}
 
 		try {
 			Uri contentUri;
 			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
 					+ "/resource/addTriple/"
-					+ URLEncoder.encode(uri, Constants.ENC));
+					+ URLEncoder.encode(me, Constants.ENC));
 
 			ContentValues values = new ContentValues();
 			values.put("subject", me);
-			values.put("predicate", Constants.PROP_knows);
+			values.put("predicate", relation);
 			values.put("object", webid);
 
-			Log.i(TAG, "Adding new friends to your WebID uri <" + webid + ">.");
+			Log.i(TAG, "Adding new friend");
+			Log.i(TAG,  "You <" + me + "> will know <" + relation + "> a new Person <" + webid + ">.");
 
 			return getContentResolver().insert(contentUri, values);
 
@@ -564,13 +516,5 @@ public class FoafProvider extends ContentProvider implements
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
 		// TODO Auto-generated method stub
 		return 0;
-	}
-
-	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-			String key) {
-		if (key == "me") {
-			me = sharedPreferences.getString(key, Constants.EXAMPLE_webId);
-		}
 	}
 }
