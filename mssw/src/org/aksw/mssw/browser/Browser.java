@@ -49,48 +49,60 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 			SharedPreferences sharedPreferences = PreferenceManager
 					.getDefaultSharedPreferences(getApplicationContext());
 
-			selectedWebID = sharedPreferences.getString("selectedWebID", null);
-			if (selectedWebID == null) {
-				selectedWebID = sharedPreferences.getString("me",
-						Constants.EXAMPLE_webId);
+			String me = sharedPreferences.getString("me", null);
+
+			if (me != null) {
+				selectedWebID = sharedPreferences.getString("selectedWebID",
+						null);
+				if (selectedWebID == null) {
+					selectedWebID = sharedPreferences.getString("me",
+							Constants.EXAMPLE_webId);
+				}
+
+				handleIntent(getIntent());
+
+				Resources res = getResources(); // Resource object to get
+												// Drawables
+				TabHost.TabSpec spec; // Reusable TabSpec for each tab
+				Intent intent; // Reusable Intent for each tab
+
+				/* This is bad, because I repeat very similar code three times */
+				intent = new Intent().setClass(this, BrowserMeCard.class);
+				// intent.setData(Uri.parse(selectedWebID));
+				spec = tabHost.newTabSpec("meCard");
+				spec.setIndicator(getString(R.string.profile),
+						res.getDrawable(R.drawable.ic_tab_mecard));
+				spec.setContent(intent);
+				tabHost.addTab(spec);
+
+				/* This is bad, because I repeat very similar code three times */
+				intent = new Intent().setClass(this, BrowserContacts.class);
+				// intent.setData(Uri.parse(selectedWebID));
+				spec = tabHost.newTabSpec("Contacts");
+				spec.setIndicator(getString(R.string.contacts),
+						res.getDrawable(R.drawable.ic_tab_contacts));
+				spec.setContent(intent);
+				tabHost.addTab(spec);
+
+				/* This is bad, because I repeat very similar code three times */
+				intent = new Intent().setClass(this, BrowserBrowse.class);
+				if (searchTerm != null) {
+					// intent.setData(Uri.parse(searchTerm));
+				}
+				spec = tabHost.newTabSpec("Browser");
+				spec.setIndicator(getString(R.string.browse),
+						res.getDrawable(R.drawable.ic_tab_browse));
+				spec.setContent(intent);
+				tabHost.addTab(spec);
+
+				tabHost.setCurrentTab(selectedTab);
+			} else {
+				// Start first run wizard
+				Intent intent = new Intent(Constants.INTENT_FIRSTRUN);
+				intent.putExtra("progress", 0);
+				startActivity(intent);
+				finish();
 			}
-
-			handleIntent(getIntent());
-
-			Resources res = getResources(); // Resource object to get Drawables
-			TabHost.TabSpec spec; // Reusable TabSpec for each tab
-			Intent intent; // Reusable Intent for each tab
-
-			/* This is bad, because I repeat very similar code three times */
-			intent = new Intent().setClass(this, BrowserMeCard.class);
-			// intent.setData(Uri.parse(selectedWebID));
-			spec = tabHost.newTabSpec("meCard");
-			spec.setIndicator(getString(R.string.profile),
-					res.getDrawable(R.drawable.ic_tab_mecard));
-			spec.setContent(intent);
-			tabHost.addTab(spec);
-
-			/* This is bad, because I repeat very similar code three times */
-			intent = new Intent().setClass(this, BrowserContacts.class);
-			// intent.setData(Uri.parse(selectedWebID));
-			spec = tabHost.newTabSpec("Contacts");
-			spec.setIndicator(getString(R.string.contacts),
-					res.getDrawable(R.drawable.ic_tab_contacts));
-			spec.setContent(intent);
-			tabHost.addTab(spec);
-
-			/* This is bad, because I repeat very similar code three times */
-			intent = new Intent().setClass(this, BrowserBrowse.class);
-			if (searchTerm != null) {
-				// intent.setData(Uri.parse(searchTerm));
-			}
-			spec = tabHost.newTabSpec("Browser");
-			spec.setIndicator(getString(R.string.browse),
-					res.getDrawable(R.drawable.ic_tab_browse));
-			spec.setContent(intent);
-			tabHost.addTab(spec);
-
-			tabHost.setCurrentTab(selectedTab);
 		} else {
 			Intent intent = new Intent(Constants.INTENT_ERROR);
 			intent.putExtra("error_titel", getString(R.string.no_core_titel));

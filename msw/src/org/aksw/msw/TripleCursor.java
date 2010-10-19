@@ -24,6 +24,10 @@ public class TripleCursor extends AbstractCursor {
 
 	private ArrayList<Statement> properties;
 
+	public TripleCursor() {
+		// If you create a cursor with nothing, nothing will work
+	}
+
 	public TripleCursor(Resource subject) {
 		this(subject, null, false);
 	}
@@ -76,7 +80,11 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public int getCount() {
-		return this.properties.size();
+		if (this.properties != null) {
+			return this.properties.size();
+		} else {
+			return 0;
+		}
 	}
 
 	@Override
@@ -204,7 +212,7 @@ public class TripleCursor extends AbstractCursor {
 				Resource res = (Resource) node;
 				// TODO implement a method to search for rdfs:label, foaf:name
 				// or something like that
-				//return TripleProvider.getLable(res);
+				// return TripleProvider.getLable(res);
 				return res.getURI();
 			} else {
 				// what could a object be, if it is neither literal, nor a

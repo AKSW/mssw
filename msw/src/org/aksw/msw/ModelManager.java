@@ -317,6 +317,9 @@ public class ModelManager {
 
 							URLConnection conn = new URL(url).openConnection();
 
+							/**
+							 * Set the Accept-Header
+							 */
 							conn.setRequestProperty("accept",
 									Constants.REQUEST_PROPERTY);
 							conn.setDoOutput(true);

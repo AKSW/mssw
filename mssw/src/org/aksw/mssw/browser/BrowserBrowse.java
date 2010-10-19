@@ -28,8 +28,7 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class BrowserBrowse extends ListActivity implements WebIdSearcher,
-		OnSharedPreferenceChangeListener {
+public class BrowserBrowse extends ListActivity implements OnSharedPreferenceChangeListener {
 
 	private static final String TAG = "msswBrowserMeCard";
 
@@ -183,7 +182,6 @@ public class BrowserBrowse extends ListActivity implements WebIdSearcher,
 		super.onListItemClick(l, v, position, id);
 	}
 
-	@Override
 	public boolean searchTermChanged(String searchTerm) {
 		Log.v(TAG, "searchTermChanged: '" + searchTerm + "'");
 		this.searchTerm = searchTerm;

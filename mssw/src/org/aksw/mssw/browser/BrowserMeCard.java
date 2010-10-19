@@ -24,8 +24,7 @@ import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
-public class BrowserMeCard extends ListActivity implements WebIdRenderer,
-		OnSharedPreferenceChangeListener {
+public class BrowserMeCard extends ListActivity implements OnSharedPreferenceChangeListener {
 
 	private static final String TAG = "msswBrowserMeCard";
 
@@ -109,7 +108,6 @@ public class BrowserMeCard extends ListActivity implements WebIdRenderer,
 		}
 	}
 
-	@Override
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 		

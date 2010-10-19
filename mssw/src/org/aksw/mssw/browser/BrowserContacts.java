@@ -24,8 +24,7 @@ import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
-public class BrowserContacts extends ListActivity implements WebIdRenderer,
-		OnSharedPreferenceChangeListener {
+public class BrowserContacts extends ListActivity implements OnSharedPreferenceChangeListener {
 
 	private static final String TAG = "msswBrowserContacts";
 
@@ -108,7 +107,6 @@ public class BrowserContacts extends ListActivity implements WebIdRenderer,
 		super.onListItemClick(l, v, position, id);
 	}
 
-	@Override
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 
