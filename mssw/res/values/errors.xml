@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<string name="error">Error</string>
+<string name="no_core_titel">&quot;Semantic Web Core&quot; is missing</string>
+<string name="no_core_message">You have to install &quot;Semantic Web Core&quot; for FOAF-Browser to work. You can find it in the market (market://search?q=aksw) or on oure project homepage (http://code.google.com/p/mssw/).</string>
+<string name="error_write_password_titel">Error write password</string>
+<string name="error_write_password_message">There was an error writing the certificate password to the &quot;Semantic Web Core&quot;</string>
+<string name="error_write_webid_titel">Error write WebID</string>
+<string name="error_write_webid_message">There was an error writing the WebID to configuration</string>
+
+</resources>

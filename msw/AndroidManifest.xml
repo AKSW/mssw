@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="org.aksw.msw" android:versionCode="6" android:versionName="0.9.5-unstable-6">
+	<application android:icon="@drawable/icon" android:label="@string/app_name">
+		<activity android:name=".MswPreferenceActivity"
+			android:label="MSW Preferences">
+			<intent-filter>
+				<action android:name="org.aksw.msw.PREFERENCE" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.PREFERENCE" />
+			</intent-filter>
+		</activity>
+		<provider android:authorities="org.aksw.msw.tripleprovider"
+			android:name="TripleProvider" />
+	</application>
+	<uses-sdk android:minSdkVersion="3" />
+
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+</manifest> 

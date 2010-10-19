@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+	<string name="hello">Hallo Welt, Browser!</string>
+	<string name="app_name">MSSW</string>
+	<string name="browser_name">FOAF-Browser</string>
+	<string name="your_webid">Deine WebID</string>
+	<string name="new_WebID">Neue WebID</string>
+	<string name="add_WebID">WebID hinzufügen</string>
+	<string name="add_to_WebID">Zur WebID hinzufügen</string>
+	<string name="add">Hinzufügen</string>
+	<string name="preferences">Einstellungen</string>
+	<string name="me">Ich</string>
+	<string name="profile">Profil</string>
+	<string name="contacts">Kontakte</string>
+	<string name="browse">Durchstöbern</string>
+	<string name="search">Suchen</string>
+	<string name="sync">Synchronisieren</string>
+	<string name="load">Laden</string>
+	<string name="pref_your_webid_desc">Füge hier die URI deiner WebID ein. Vergiss dabei das Schema nicht \'http://\' o.ä.</string>
+	<string name="no_contacts">Zu dieser WebID konnten keine Kontakte gefunden werden.</string>
+	<string name="my_name">Mein Name</string>
+	<string name="no_webid">Es konnten keine Daten für diese WebID gefunden werden</string>
+	<string name="firstrun_webid_titel">Einrichtung der WebID</string>
+	<string name="firstrun_webid_message">Bitte geben Sie Ihre WebID ein:</string>
+	<string name="firstrun_cert_titel">Einrichtung des Zertifiks</string>
+	<string name="firstrun_cert_message">Bitte geben Sie das Passwort der Zertifikatdatei ein:</string>
+	<string name="show_password">Passwort anzeigen</string>
+</resources>

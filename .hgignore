@@ -1,0 +1,15 @@
+syntax: glob
+
+.metadata/
+androjena
+bin/
+libs-src/
+code-resources/
+mssw/.project
+msw/.project
+traces/*
+logo/icon_templates-v2.0/*
+logo/sw-cube-v.svg
+
+syntax: regexp
+^dist
