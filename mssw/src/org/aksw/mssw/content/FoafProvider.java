@@ -6,6 +6,7 @@ package org.aksw.mssw.content;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.NameHelper;
@@ -43,10 +44,10 @@ public class FoafProvider extends ContentProvider implements
 	private static final int ME_FRIENDS = 120;
 	private static final int ME_FRIEND_ADD = 121;
 	private static final int PERSON = 200;
-	private static final int PERSON_NAME = 210;
-	private static final int PERSON_PICTURE = 220;
-	private static final int PERSON_MECARD = 230;
-	private static final int PERSON_FRIENDS = 240;
+	private static final int PERSON_PICTURE = 210;
+	private static final int PERSON_MECARD = 220;
+	private static final int PERSON_FRIENDS = 230;
+	private static final int SEARCH = 300;
 
 	/**
 	 * The UriMatcher, which parses the incoming querie-uris
@@ -60,9 +61,9 @@ public class FoafProvider extends ContentProvider implements
 		uriMatcher.addURI(AUTHORITY, "me", ME);
 		uriMatcher.addURI(AUTHORITY, "person/friends/*", PERSON_FRIENDS);
 		uriMatcher.addURI(AUTHORITY, "person/mecard/*", PERSON_MECARD);
-		uriMatcher.addURI(AUTHORITY, "person/name/*", PERSON_NAME);
 		uriMatcher.addURI(AUTHORITY, "person/picture/*", PERSON_PICTURE);
 		uriMatcher.addURI(AUTHORITY, "person/*", PERSON);
+		uriMatcher.addURI(AUTHORITY, "search/*", SEARCH);
 	}
 
 	/**
@@ -92,6 +93,7 @@ public class FoafProvider extends ContentProvider implements
 		if (me == null) {
 			Log.i(TAG,
 					"No URI for \"me\" specified in FoafProvider, please set a URI in configuration.");
+			me = Constants.EXAMPLE_webId;
 		} else {
 			Log.v(TAG, "URI for \"me\" is: " + me);
 		}
@@ -182,14 +184,14 @@ public class FoafProvider extends ContentProvider implements
 				return getFriends(path.get(2), projection);
 			}
 			break;
-		case PERSON_NAME:
-			if (path.size() > 2) {
-				return getName(path.get(2), projection);
-			}
-			break;
 		case PERSON_PICTURE:
 			if (path.size() > 2) {
 				return getPicture(path.get(2), projection);
+			}
+			break;
+		case SEARCH:
+			if (path.size() > 1) {
+				return search(path.get(1));
 			}
 			break;
 		default:
@@ -213,7 +215,9 @@ public class FoafProvider extends ContentProvider implements
 		int match = uriMatcher.match(uri);
 		switch (match) {
 		case ME_FRIEND_ADD:
-			addFriend((String) values.get("webid"));
+			String webid = values.getAsString("webid");
+			String relation = values.getAsString("relation");
+			addFriend(webid, relation);
 			return 1;
 		default:
 			return 0;
@@ -232,63 +236,28 @@ public class FoafProvider extends ContentProvider implements
 		int match = uriMatcher.match(uri);
 		switch (match) {
 		case ME_FRIEND_ADD:
-			return addFriend((String) values.get("webid"));
+			String webid = values.getAsString("webid");
+			String relation = values.getAsString("relation");
+			return addFriend(webid, relation);
 			// return Uri.parse((String) values.get("webid"));
 		default:
 			return null;
 		}
 	}
 
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		Log.v(TAG, "Shared Preference Changed key = \"" + key + "\".");
+		if (key == "me") {
+			me = sharedPreferences.getString(key, Constants.EXAMPLE_webId);
+		}
+	}
+	
 	/*------------- private ----------------*/
 
-	private String[] relations = { "http://xmlns.com/foaf/0.1/knows",
-			"http://purl.org/vocab/relationship/acquaintanceOf",
-			"http://purl.org/vocab/relationship/ambivalentOf",
-			"http://purl.org/vocab/relationship/ancestorOf",
-			"http://purl.org/vocab/relationship/antagonistOf",
-			"http://purl.org/vocab/relationship/apprenticeTo",
-			"http://purl.org/vocab/relationship/childOf",
-			"http://purl.org/vocab/relationship/closeFriendOf",
-			"http://purl.org/vocab/relationship/collaboratesWith",
-			"http://purl.org/vocab/relationship/colleagueOf",
-			"http://purl.org/vocab/relationship/descendantOf",
-			"http://purl.org/vocab/relationship/employedBy",
-			"http://purl.org/vocab/relationship/employerOf",
-			"http://purl.org/vocab/relationship/enemyOf",
-			"http://purl.org/vocab/relationship/engagedTo",
-			"http://purl.org/vocab/relationship/friendOf",
-			"http://purl.org/vocab/relationship/grandchildOf",
-			"http://purl.org/vocab/relationship/grandparentOf",
-			"http://purl.org/vocab/relationship/hasMet",
-			"http://purl.org/vocab/relationship/influencedBy",
-			"http://purl.org/vocab/relationship/knowsByReputation",
-			"http://purl.org/vocab/relationship/knowsInPassing",
-			"http://purl.org/vocab/relationship/knowsOf",
-			"http://purl.org/vocab/relationship/lifePartnerOf",
-			"http://purl.org/vocab/relationship/livesWith",
-			"http://purl.org/vocab/relationship/lostContactWith",
-			"http://purl.org/vocab/relationship/mentorOf",
-			"http://purl.org/vocab/relationship/neighborOf",
-			"http://purl.org/vocab/relationship/parentOf",
-			"http://purl.org/vocab/relationship/participant",
-			"http://purl.org/vocab/relationship/participantIn",
-			"http://purl.org/vocab/relationship/Relationship",
-			"http://purl.org/vocab/relationship/siblingOf",
-			"http://purl.org/vocab/relationship/spouseOf",
-			"http://purl.org/vocab/relationship/worksWith",
-			"http://purl.org/vocab/relationship/wouldLikeToKnow" };
-
-	private String[] nameProps = { "http://xmlns.com/foaf/0.1/name",
-			"http://xmlns.com/foaf/0.1/givenName",
-			"http://xmlns.com/foaf/0.1/familyName",
-			"http://xmlns.com/foaf/0.1/nick" };
-
-	private String[] pictureProps = { "http://xmlns.com/foaf/0.1/depiction" };
-
 	private Cursor getMe(String[] projection) {
-		if (me == null) {
-			me = getConfiguration().getString("me", null);
-		}
 		return getPerson(me, projection);
 	}
 
@@ -313,9 +282,6 @@ public class FoafProvider extends ContentProvider implements
 	}
 
 	private Cursor getMeCard(String[] projection) {
-		if (me == null) {
-			me = getConfiguration().getString("me", null);
-		}
 		return getMeCard(me, projection);
 	}
 
@@ -332,75 +298,16 @@ public class FoafProvider extends ContentProvider implements
 
 			String selection = null;
 			if (projection == null) {
-				projection = relations;
+				int length = Constants.PROPS_relations.length;
+				projection = new String[length+1];
+				System.arraycopy(Constants.PROPS_relations, 0, projection, 0, length);
+				projection[length] = Constants.PROP_hasData;
 				selection = "complement";
 			}
 			Cursor rc = getContentResolver().query(contentUri, projection,
 					selection, null, null);
 
 			return rc;
-		} catch (UnsupportedEncodingException e) {
-			Log.e(TAG, "Problem with encoding uri for the query.", e);
-			return null;
-		}
-	}
-
-	private Cursor getName(String uri, String[] projection) {
-		Log.v(TAG, "getName: <" + uri + ">");
-
-		try {
-			Uri contentUri;
-			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, Constants.ENC));
-
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
-
-			if (projection != null) {
-				Log.i(TAG, "projection not supported for getName()");
-			}
-			Cursor rc = getContentResolver().query(contentUri, nameProps, null,
-					null, null);
-
-			if (rc != null) {
-				if (rc.moveToFirst()) {
-
-					String[] names = new String[nameProps.length];
-					String predicat = "";
-					String object = "";
-					String subject = rc.getString(rc.getColumnIndex("subject"));
-					rc.moveToPosition(-1);
-					while (rc.moveToNext()) {
-						predicat = rc.getString(rc.getColumnIndex("predicat"));
-						object = rc.getString(rc.getColumnIndex("object"));
-						for (int i = 0; i < nameProps.length; i++) {
-							if (nameProps[i].compareToIgnoreCase(predicat) == 0) {
-								names[i] = object;
-							}
-						}
-					}
-
-					for (int i = 0; i < names.length; i++) {
-						if (names[i] != null && names[i].length() > 0) {
-							object = names[i];
-							predicat = nameProps[i];
-							if (i == 1) {
-								object = object + " " + names[i + 1];
-							}
-							break;
-						}
-					}
-
-					Cursor out = new PropertyCursor(subject, predicat, object);
-					return out;
-				} else {
-					return null;
-				}
-			} else {
-				Log.v(TAG, "Resourcecursor was empty, returning 'null'");
-				return null;
-			}
-
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Problem with encoding uri for the query.", e);
 			return null;
@@ -422,7 +329,7 @@ public class FoafProvider extends ContentProvider implements
 			if (projection != null) {
 				Log.i(TAG, "projection not supported for getPicture()");
 			}
-			Cursor rc = getContentResolver().query(contentUri, pictureProps,
+			Cursor rc = getContentResolver().query(contentUri, Constants.PROPS_pictureProps,
 					null, null, null);
 
 			return rc;
@@ -433,9 +340,6 @@ public class FoafProvider extends ContentProvider implements
 	}
 
 	private Cursor getFriends(String[] projection) {
-		if (me == null) {
-			me = getConfiguration().getString("me", null);
-		}
 		return getFriends(me, projection);
 	}
 
@@ -451,26 +355,40 @@ public class FoafProvider extends ContentProvider implements
 					+ ">.");
 
 			if (projection == null) {
-				projection = relations;
+				projection = Constants.PROPS_relations;
 			}
 
-			Cursor rc = getContentResolver().query(contentUri, relations, null,
+			Cursor rc = getContentResolver().query(contentUri, Constants.PROPS_relations, null,
 					null, null);
 			if (rc != null) {
 				String relation;
 				String relationReadable;
 				boolean isResource;
 				NameHelper nh = new NameHelper(getContext());
+				ArrayList<String> uris = new ArrayList<String>();
+				while (rc.moveToNext()) {
+					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
+					//isResource = rc.getString(rc.getColumnIndex("oIsResource"))
+					//		.equals("true");
+					isResource = objectType < 2 ? true : false;
+					if (isResource) {
+						uris.add(rc.getString(rc.getColumnIndex("object")));
+					}
+				}
+				rc.moveToPosition(-1);
+				HashMap<String, String> names = nh.getNames(uris);
 				PersonCursor pc = new PersonCursor();
 				while (rc.moveToNext()) {
-					isResource = rc.getString(rc.getColumnIndex("oIsResource"))
-							.equals("true");
+					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
+					//isResource = rc.getString(rc.getColumnIndex("oIsResource"))
+					//		.equals("true");
+					isResource = objectType < 2 ? true : false;
 					if (isResource) {
 						uri = rc.getString(rc.getColumnIndex("object"));
-						relation = rc.getString(rc.getColumnIndex("predicat"));
+						relation = rc.getString(rc.getColumnIndex("predicate"));
 						relationReadable = rc.getString(rc
-								.getColumnIndex("predicatReadable"));
-						pc.addPerson(uri, relation, nh.getName(uri),
+								.getColumnIndex("predicateReadable"));
+						pc.addPerson(uri, relation, names.get(uri),
 								relationReadable, null);
 					}
 				}
@@ -484,28 +402,79 @@ public class FoafProvider extends ContentProvider implements
 		}
 	}
 
-	private Uri addFriend(String webid) {
+	private Uri addFriend(String webid, String relation) {
 
-		String uri = getConfiguration()
-				.getString("me", Constants.EXAMPLE_webId);
+		if (webid == null) {
+			Log.i(TAG, "No webid to add specified, returning null");
+			return null;
+		}
+		
+		if (relation == null) {
+			relation = Constants.PROP_knows;
+		}
 
 		try {
 			Uri contentUri;
 			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
 					+ "/resource/addTriple/"
-					+ URLEncoder.encode(uri, Constants.ENC));
+					+ URLEncoder.encode(me, Constants.ENC));
 
 			ContentValues values = new ContentValues();
 			values.put("subject", me);
-			values.put("predicat", Constants.PROP_knows);
+			values.put("predicate", relation);
 			values.put("object", webid);
 
-			Log.i(TAG, "Adding new friends to your WebID uri <" + webid + ">.");
-			
+			Log.i(TAG, "Adding new friend");
+			Log.i(TAG,  "You <" + me + "> will know <" + relation + "> a new Person <" + webid + ">.");
+
 			return getContentResolver().insert(contentUri, values);
 
 		} catch (UnsupportedEncodingException e) {
 			Log.e(TAG, "Error on adding Friend to your WebID.", e);
+			return null;
+		}
+	}
+
+	private Cursor search(String searchTerm) {
+		// explicit search
+		if (searchTerm.startsWith("http:") || searchTerm.startsWith("https:")) {
+			try {
+				Uri contentUri;
+				contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
+						+ "/resource/tmp/"
+						+ URLEncoder.encode(searchTerm, Constants.ENC));
+
+				Log.i(TAG, "Getting WebID <" + searchTerm + ">.");
+
+				String[] projection = { Constants.PROP_rdfType };
+
+				Cursor rc = getContentResolver().query(contentUri, projection,
+						null, null, null);
+
+				if (rc != null) {
+					NameHelper nh = new NameHelper(getContext());
+					PersonCursor pc = new PersonCursor();
+					String webid;
+					while (rc.moveToNext()) {
+
+						webid = rc.getString(rc.getColumnIndex("subject"));
+						if (webid.equals(searchTerm)) {
+							pc.addPerson(webid, null, nh.getName(webid), null,
+									null);
+							break;
+						}
+					}
+					return pc;
+				} else {
+					return null;
+				}
+			} catch (UnsupportedEncodingException e) {
+				Log.e(TAG, "Error on adding Friend to your WebID.", e);
+				return null;
+			}
+		} else {
+			Log.v(TAG, "Free search not yet supported");
+
 			return null;
 		}
 	}
@@ -547,13 +516,5 @@ public class FoafProvider extends ContentProvider implements
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
 		// TODO Auto-generated method stub
 		return 0;
-	}
-
-	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-			String key) {
-		if (key == "me") {
-			me = sharedPreferences.getString(key, Constants.EXAMPLE_webId);
-		}
 	}
 }

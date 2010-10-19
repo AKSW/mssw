@@ -5,13 +5,20 @@ import org.aksw.mssw.MsswPreferenceActivity;
 import org.aksw.mssw.R;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 public class MenuManager {
+	
+	public MenuManager() {
+		
+	}
+	
 	public boolean itemSelected (Activity context, MenuItem item, String selectedWebID) {
 
 		Intent i;
@@ -32,6 +39,18 @@ public class MenuManager {
 					Constants.EXAMPLE_webId);
 			i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(webId));
 			context.startActivity(i);
+			return true;
+		case R.id.itemSearch:
+			context.onSearchRequested();
+			return true;
+		case R.id.itemScan:
+			Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+			intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+			try {
+				context.startActivityForResult(intent, 0);
+			} catch (ActivityNotFoundException e) {
+				Toast.makeText(context.getApplicationContext(), R.string.install_zxing, Toast.LENGTH_LONG);
+			}
 			return true;
 		default:
 			return false;

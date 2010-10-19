@@ -6,7 +6,7 @@ import android.database.AbstractCursor;
 
 public class PersonCursor extends AbstractCursor {
 
-	LinkedList<String[]> persons;
+	private LinkedList<String[]> persons;
 
 	public PersonCursor() {
 		persons = new LinkedList<String[]>();
