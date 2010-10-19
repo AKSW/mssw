@@ -17,33 +17,27 @@ public final class R {
         public static final int icon=0x7f020003;
     }
     public static final class id {
-        public static final int LinearLayout01=0x7f070015;
-        public static final int TabHost01=0x7f070014;
+        public static final int LinearLayout01=0x7f07000f;
+        public static final int TabHost01=0x7f07000e;
         public static final int browser_browse_view=0x7f070000;
         public static final int browser_mecard_view=0x7f070003;
         public static final int error_message=0x7f07000a;
         public static final int error_titel=0x7f070009;
         public static final int firstLine=0x7f070007;
         public static final int icon=0x7f070006;
-        public static final int itemAdd=0x7f07001a;
-        public static final int itemMe=0x7f070018;
-        public static final int itemPref=0x7f070019;
-        public static final int itemScan=0x7f070017;
-        public static final int itemSearch=0x7f070016;
-        public static final int key=0x7f070012;
+        public static final int itemAdd=0x7f070014;
+        public static final int itemMe=0x7f070012;
+        public static final int itemPref=0x7f070013;
+        public static final int itemScan=0x7f070011;
+        public static final int itemSearch=0x7f070010;
+        public static final int key=0x7f07000c;
         public static final int mecard_icon=0x7f070004;
         public static final int mecard_name=0x7f070005;
-        public static final int message=0x7f07000d;
-        public static final int next_button=0x7f070010;
         public static final int ok_button=0x7f07000b;
-        public static final int password=0x7f07000e;
         public static final int scan_code=0x7f070002;
         public static final int search=0x7f070001;
         public static final int secondLine=0x7f070008;
-        public static final int show_password=0x7f07000f;
-        public static final int titel=0x7f07000c;
-        public static final int value=0x7f070013;
-        public static final int webid=0x7f070011;
+        public static final int value=0x7f07000d;
     }
     public static final class layout {
         public static final int browser=0x7f030000;
@@ -52,13 +46,10 @@ public final class R {
         public static final int browser_mecard=0x7f030003;
         public static final int contact_row=0x7f030004;
         public static final int error=0x7f030005;
-        public static final int firstrun_cert=0x7f030006;
-        public static final int firstrun_nocert=0x7f030007;
-        public static final int firstrun_webid=0x7f030008;
-        public static final int mecard_properties=0x7f030009;
-        public static final int profile_viewer=0x7f03000a;
-        public static final int properties_row=0x7f03000b;
-        public static final int properties_row1=0x7f03000c;
+        public static final int mecard_properties=0x7f030006;
+        public static final int profile_viewer=0x7f030007;
+        public static final int properties_row=0x7f030008;
+        public static final int properties_row1=0x7f030009;
     }
     public static final class menu {
         public static final int browse=0x7f060000;
