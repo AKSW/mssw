@@ -32,6 +32,15 @@ public final class Constants {
 	public static final String CACHE_MODELS_DIR = FILES_PATH + File.separator
 			+ "models" + File.separator + "cache";
 
+
+	public static HashMap<String, String> namespaces = new HashMap<String, String>();
+	static {
+		namespaces.put("rel", "http://purl.org/vocab/relationship/");
+		namespaces.put("foaf", "http://xmlns.com/foaf/0.1/");
+		namespaces.put("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+		namespaces.put("rdfs", "http://www.w3.org/2000/01/rdf-shema#");
+	}
+	
 	public static final String PROP_hasData = "http://ns.aksw.org/Android/hasData";
 	public static final String PROP_rdfType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 
@@ -70,8 +79,7 @@ public final class Constants {
 	}
 
 	/**
-	 * Because the fields android.provider.ContactsContract.DataColumns is not
-	 * available in API < 5
+	 * Because there is no possibilitiy for MIME-Type "reverselookup"
 	 */
 
 	public static final HashMap<String, String> MIME_TYPES = new HashMap<String, String>();

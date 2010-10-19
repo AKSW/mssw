@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="org.aksw.mssw" android:versionCode="1" android:versionName="0.1.2">
+	package="org.aksw.mssw" android:versionCode="6" android:versionName="0.9-unstable-6">
 	<application android:icon="@drawable/icon" android:label="@string/app_name">
-		<activity android:name=".browser.Browser" android:label="@string/browser_name">
+		<meta-data android:name="android.app.default_searchable"
+			android:value=".browser.Browser" />
+		<activity android:name=".browser.Browser" android:label="@string/browser_name"
+			android:launchMode="singleTop">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
@@ -21,6 +24,25 @@
 				<data android:scheme="http" />
 				<data android:scheme="https" />
 			</intent-filter>
+
+			<intent-filter>
+				<action android:name="android.intent.action.SEARCH" />
+			</intent-filter>
+			<meta-data android:name="android.app.searchable"
+				android:resource="@xml/searchable" />
+
+		</activity>
+		<activity android:name=".FirstRun" android:label="First Run Wizard">
+			<intent-filter>
+				<action android:name="org.aksw.mssw.ERROR" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+			
+			<intent-filter>
+				<action android:name="org.aksw.mssw.FIRSTRUN" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+			
 		</activity>
 		<activity android:name=".MsswPreferenceActivity"
 			android:label="MSSW Preferences">
@@ -57,16 +79,19 @@
 			android:name=".contact.ContactProvider" />
 	</application>
 
-	<uses-sdk android:minSdkVersion="7"></uses-sdk>
+	<uses-sdk android:minSdkVersion="7" android:targetSdkVersion="7"></uses-sdk>
 
 	<uses-permission android:name="android.permission.READ_CONTACTS" />
+	<uses-permission android:name="android.permission.WRITE_CONTACTS" />
+	
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-permission android:name="android.permission.READ_CONTACTS" />
-	<uses-permission android:name="android.permission.WRITE_CONTACTS" />
+	
 	<uses-permission android:name="android.permission.GET_ACCOUNTS" />
 	<uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
 	<uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+	
 	<uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
 	<uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+
 </manifest> 

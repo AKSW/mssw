@@ -1,15 +1,24 @@
 package org.aksw.msw;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javax.net.ssl.SSLSocketFactory;
+
+import org.aksw.msw.foafssl.TrustManagerFactory;
+
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.hp.hpl.jena.rdf.model.AnonId;
@@ -71,6 +80,8 @@ public class TripleProvider extends ContentProvider {
 
 	private static final int UPDATE_ALL = 50;
 	private static final int UPDATE_THIS = 51;
+	
+	private static final int CONFIG_FOAFSSL = 61;
 
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
@@ -87,6 +98,7 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
 		uriMatcher.addURI(AUTHORITY, "update/*", UPDATE_THIS);
 		uriMatcher.addURI(AUTHORITY, "update/", UPDATE_ALL);
+		uriMatcher.addURI(AUTHORITY, "config/foafssl/", CONFIG_FOAFSSL);
 	}
 
 	private static ModelManager mm;
@@ -215,9 +227,16 @@ public class TripleProvider extends ContentProvider {
 						+ uri + ">");
 			}
 			break;
+		case CONFIG_FOAFSSL:
+			if (isFoafSslEnabled()) {
+				return new TripleCursor();
+			} else {
+				return null;
+			}
 		/**
 		 * The following cases are not implemented at the moment
 		 */
+		case RESOURCES:
 		case WORLD:
 		case SPARQL:
 		default:
@@ -250,11 +269,18 @@ public class TripleProvider extends ContentProvider {
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
-				return null;
+				break;
 			}
-		default:
-			return null;
+		case RESOURCE_ADD_DATA:
+			if (path.size() > 2) {
+				return addData(path.get(2), values);
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				break;
+			}
 		}
+		return null;
 
 	}
 
@@ -285,19 +311,49 @@ public class TripleProvider extends ContentProvider {
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
-				return 0;
+				break;
 			}
 		case RESOURCE_ADD_DATA:
 			if (path.size() > 2) {
-				return addData(path.get(2), values);
+				Uri retval = addData(path.get(2), values);
+				if (retval != null) {
+					return 1;
+				} else {
+					break;
+				}
 			} else {
 				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
 						+ uri + ">");
-				return 0;
+				break;
 			}
-		default:
-			return 0;
+		case RESOURCE_ADD_TRIPLE:
+			if (path.size() > 2) {
+				Uri retval = addTriple(path.get(2), values);
+				if (retval != null) {
+					return 1;
+				} else {
+					break;
+				}
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				break;
+			}
+		case CONFIG_FOAFSSL:
+			if (path.size() > 2) {
+				int retval = changePassword(values);
+				if (retval > 0) {
+					return 1;
+				} else {
+					break;
+				}
+			} else {
+				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+						+ uri + ">");
+				break;
+			}
 		}
+		return 0;
 	}
 
 	// ---------------------------- private --------------------
@@ -365,7 +421,7 @@ public class TripleProvider extends ContentProvider {
 		return resource;
 	}
 
-	private int addData(String uri, ContentValues values) {
+	private Uri addData(String uri, ContentValues values) {
 		// TODO implement
 		Set<Entry<String, Object>> data = values.valueSet();
 		Model model = mm.getModel(uri, "local");
@@ -417,7 +473,7 @@ public class TripleProvider extends ContentProvider {
 				model.abort();
 			}
 		}
-		return 0;
+		return Uri.parse(uri);
 	}
 
 	private Uri addTriple(String uri, ContentValues values) {
@@ -426,14 +482,14 @@ public class TripleProvider extends ContentProvider {
 
 		try {
 			String subject = values.getAsString("subject");
-			String predicat = values.getAsString("predicat");
+			String predicate = values.getAsString("predicate");
 			String object = values.getAsString("object");
 
 			if (model.supportsTransactions()) {
 				model.begin();
 			}
 			Resource resource = model.getResource(subject);
-			Property property = model.getProperty(predicat);
+			Property property = model.getProperty(predicate);
 			RDFNode objectRes;
 			if (object.startsWith("http:") || object.startsWith("https:")) {
 				objectRes = model.getResource(object);
@@ -454,6 +510,29 @@ public class TripleProvider extends ContentProvider {
 
 		return Uri.parse(uri);
 	}
+	
+	private int changePassword(ContentValues values) {
+		String password = (String) values.get("password");
+		SharedPreferences prefs = getConfiguration();
+		Editor editor = prefs.edit();
+		editor.putString("privatekey_password", password);
+		if (editor.commit()) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+	
+	private boolean isFoafSslEnabled() {
+		File storage = Environment.getExternalStorageDirectory();
+		File keyFile = new File(storage, Constants.CERT_FILE);
+		// storage.getAbsolutePath();
+		if (keyFile.isFile()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 	public static String getName(Resource person) {
 		return person.getLocalName();
@@ -461,6 +540,15 @@ public class TripleProvider extends ContentProvider {
 
 	public static String getLable(Resource resource) {
 		return resource.getLocalName();
+	}
+	
+
+	private SharedPreferences getConfiguration() {
+
+		SharedPreferences sharedPreferences = PreferenceManager
+				.getDefaultSharedPreferences(getContext());
+
+		return sharedPreferences;
 	}
 
 }

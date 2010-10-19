@@ -206,7 +206,7 @@ public class ContactProvider extends ContentProvider {
 				rc.moveToPrevious();
 				ContactCursor cc = new ContactCursor();
 				// foreach hasData propertiy get object
-				String subject, predicat, object;
+				String subject, predicate, object;
 				boolean oIsResource, oIsBlankNode;
 				while (rc.moveToNext()) {
 					object = rc.getString(rc.getColumnIndex("object"));
@@ -251,8 +251,8 @@ public class ContactProvider extends ContentProvider {
 
 						while (rc2.moveToNext()) {
 							// get object properties
-							predicat = rc2.getString(rc
-									.getColumnIndex("predicat"));
+							predicate = rc2.getString(rc
+									.getColumnIndex("predicate"));
 							object = rc2.getString(rc.getColumnIndex("object"));
 
 							oIsBlankNode = oIsResource = false;
@@ -267,33 +267,44 @@ public class ContactProvider extends ContentProvider {
 							}
 
 							if (!oIsBlankNode) {
-								if (predicat.equals(Constants.DATA_KINDS_PREFIX
+								if (predicate.equals(Constants.DATA_KINDS_PREFIX
 										+ "CommonDataKinds.Phone.NUMBER")
 										&& object.startsWith("tel:")) {
 									object = object.substring(4);
 									oIsResource = false;
-								} else if (predicat
+								} else if (predicate
+										.equals(Constants.DATA_KINDS_PREFIX
+												+ "CommonDataKinds.Email.DATA")
+										&& object.startsWith("mailto:")) {
+									object = object.substring(7);
+									oIsResource = false;
+								} else if (predicate
 										.equals(Constants.DATA_KINDS_PREFIX
 												+ "CommonDataKinds.Photo.PHOTO")) {
 									// TODO get photo and convert it in the
 									// right format
 									if (oIsResource) {
 										try {
-											Log.v(TAG, "Reading Photo from <" + object + ">.");
+											Log.v(TAG, "Reading Photo from <"
+													+ object + ">.");
 											URLConnection photoConnection = new URL(
 													object).openConnection();
-											InputStream photoStream = photoConnection.getInputStream();
-														
-											InputStream photo64Stream = new Base64.InputStream(photoStream, Base64.ENCODE);
+											InputStream photoStream = photoConnection
+													.getInputStream();
+
+											InputStream photo64Stream = new Base64.InputStream(
+													photoStream, Base64.ENCODE);
 
 											StringBuilder sb = new StringBuilder();
-											BufferedReader reader = new BufferedReader(new InputStreamReader(photo64Stream));
+											BufferedReader reader = new BufferedReader(
+													new InputStreamReader(
+															photo64Stream));
 											String line;
-											
+
 											while ((line = reader.readLine()) != null) {
 												sb.append(line);
 											}
-											
+
 											object = sb.toString();
 										} catch (MalformedURLException e) {
 											Log.e(TAG,
@@ -315,7 +326,7 @@ public class ContactProvider extends ContentProvider {
 										object = null;
 									}
 								}
-								cc.addTriple(subject, predicat, object,
+								cc.addTriple(subject, predicate, object,
 										oIsResource, false);
 							} else {
 								Log.e(TAG,

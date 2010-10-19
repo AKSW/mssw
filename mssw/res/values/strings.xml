@@ -7,7 +7,6 @@
 	<string name="your_webid">Your WebID</string>
 	<string name="new_WebID">New WebID</string>
 	<string name="add_WebID">Add WebID</string>
-	<string name="add_WebID_QR">Add WebID from ...</string>
 	<string name="add_to_WebID">Add to your WebID</string>
 	<string name="add">Add</string>
 	<string name="preferences">Preferences</string>
@@ -16,6 +15,7 @@
 	<string name="contacts">Contacts</string>
 	<string name="browse">Browse</string>
 	<string name="search">Search</string>
+	<string name="scan">Scan a Code</string>
 	<string name="sync">Synchronize</string>
 	<string name="load">Load</string>
 	<string name="name">Name</string>
@@ -33,4 +33,14 @@
 	<string name="no_webid">There is no data for this WebIDs</string>
 	<string name="example_webid">http://people.comiles.eu/example</string>
 	<string name="my_name">My Name</string>
+	<string name="search_hint">Enter WebID</string>
+	<string name="scan_webid">Scan WebID</string>
+	<string name="install_zxing">You have to install \'zxing\' Barcode Scanner to use this feature.</string>
+	<string name="firstrun_webid_titel">Configuration of WebID</string>
+	<string name="firstrun_webid_message">Please enter your WebID:</string>
+	<string name="firstrun_cert_titel">Configuration of certificate</string>
+	<string name="firstrun_cert_message">Please enter the password for the certificate file:</string>
+	<string name="firstrun_nocert_titel">Configuration of certificate</string>
+	<string name="firstrun_nocert_message">There is no certificate file installed on your SD-Card. You can install one, by putting it into the folder \'/Android/data/org.aksw.msw/files/\' its name should be \'privatekey.p12\'. You can enter the password in \'Preferences > Mobile Semantic Web > Privatekey Password\'.</string>
+	<string name="show_password">Show password</string>
 </resources>

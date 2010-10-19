@@ -18,14 +18,14 @@ public class ContactCursor extends AbstractCursor {
 	
 	public void addTriple(Triple tripple) {
 		triples.add(tripple);
-		//Log.v(TAG, "added Triple. s = " + tripple.subject + " p = " + tripple.predicat + " o = " + tripple.object + ".");
+		//Log.v(TAG, "added Triple. s = " + tripple.subject + " p = " + tripple.predicate + " o = " + tripple.object + ".");
 	}
 
-	public void addTriple(String subject, String predicat, String object,
+	public void addTriple(String subject, String predicate, String object,
 			boolean oIsResource, boolean oIsBlankNode) {
-		triples.add(new Triple(subject, predicat, object, oIsResource,
+		triples.add(new Triple(subject, predicate, object, oIsResource,
 				oIsBlankNode));
-		//Log.v(TAG, "added Triple. s = " + subject + " p = " + predicat + " o = " + object + ".");
+		//Log.v(TAG, "added Triple. s = " + subject + " p = " + predicate + " o = " + object + ".");
 	}
 
 	public void addDataset() {
@@ -34,7 +34,7 @@ public class ContactCursor extends AbstractCursor {
 
 	@Override
 	public String[] getColumnNames() {
-		return new String[] { "_id", "subject", "predicat", "object",
+		return new String[] { "_id", "subject", "predicate", "object",
 				"oIsResource", "oIsBlankNode" };
 	}
 
@@ -87,7 +87,7 @@ public class ContactCursor extends AbstractCursor {
 		case 1:
 			return triples.get(mPos).subject;
 		case 2:
-			return triples.get(mPos).predicat;
+			return triples.get(mPos).predicate;
 		case 3:
 			return triples.get(mPos).object;
 		case 4:
@@ -105,13 +105,13 @@ public class ContactCursor extends AbstractCursor {
 	}
 
 	public class Triple {
-		public String subject, predicat, object;
+		public String subject, predicate, object;
 		public boolean oIsResource, oIsBlankNode;
 
-		public Triple(String subject, String predicat, String object,
+		public Triple(String subject, String predicate, String object,
 				boolean oIsResource, boolean oIsBlankNode) {
 				this.subject = subject;
-				this.predicat = predicat;
+				this.predicate = predicate;
 				this.object = object;
 				this.oIsResource = oIsResource;
 				this.oIsBlankNode = oIsBlankNode;
@@ -122,7 +122,7 @@ public class ContactCursor extends AbstractCursor {
 		Log.v(TAG, "ContactCursor Data Check!");
 		for (int i = 0; i < triples.size(); i++) {
 			Triple tr = triples.get(i);
-			Log.v(TAG, "s = " + tr.subject + " p = " + tr.predicat + " o = " + tr.object + ".");
+			Log.v(TAG, "s = " + tr.subject + " p = " + tr.predicate + " o = " + tr.object + ".");
 		}
 		Log.v(TAG, "Done");
  	}

@@ -24,6 +24,10 @@ public class TripleCursor extends AbstractCursor {
 
 	private ArrayList<Statement> properties;
 
+	public TripleCursor() {
+		// If you create a cursor with nothing, nothing will work
+	}
+
 	public TripleCursor(Resource subject) {
 		this(subject, null, false);
 	}
@@ -68,15 +72,19 @@ public class TripleCursor extends AbstractCursor {
 
 	@Override
 	public String[] getColumnNames() {
-		String[] names = { "_id", "subject", "predicat", "object",
-				"predicatReadable", "objectReadable", "oIsResource",
-				"oIsBlankNode", "objectName" };
+		String[] names = { "_id", "subject", "predicate", "object",
+				"subjectType", "objectType", "predicateReadable",
+				"objectReadable", "oIsResource", "oIsBlankNode" };
 		return names;
 	}
 
 	@Override
 	public int getCount() {
-		return this.properties.size();
+		if (this.properties != null) {
+			return this.properties.size();
+		} else {
+			return 0;
+		}
 	}
 
 	@Override
@@ -101,7 +109,23 @@ public class TripleCursor extends AbstractCursor {
 		switch (column) {
 		case 0:
 			return mPos;
-		case 6:
+		case 4:
+			if (stmt.getSubject().isURIResource()) {
+				return 0;
+			} else if (stmt.getSubject().isAnon()) {
+				return 1;
+			} else if (stmt.getSubject().isLiteral()) {
+				return 2;
+			}
+		case 5:
+			if (stmt.getObject().isURIResource()) {
+				return 0;
+			} else if (stmt.getObject().isAnon()) {
+				return 1;
+			} else if (stmt.getObject().isLiteral()) {
+				return 2;
+			}
+		case 8:
 			Log.v(TAG, "asks if the object is a Resource, I would say: '"
 					+ stmt.getObject().isResource() + "'.");
 			if (stmt.getObject().isResource()) {
@@ -109,7 +133,7 @@ public class TripleCursor extends AbstractCursor {
 			} else {
 				return 0;
 			}
-		case 7:
+		case 9:
 			Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
 					+ stmt.getObject().isAnon() + "'.");
 			if (stmt.getObject().isAnon()) {
@@ -136,6 +160,10 @@ public class TripleCursor extends AbstractCursor {
 		return 0;
 	}
 
+	/**
+	 * subject_type 0 - NamedResource, 1 - AnonymousResource, 2 - Literal
+	 * object_type 0 - NamedResource, 1 - AnonymousResource, 2 - Literal
+	 */
 	@Override
 	public String getString(int column) {
 		// Log.v(TAG, "getString(" + column + "," + mPos + ").");
@@ -157,8 +185,24 @@ public class TripleCursor extends AbstractCursor {
 				return lit.getLexicalForm();
 			}
 		case 4:
-			return stmt.getPredicate().getLocalName();
+			if (stmt.getSubject().isURIResource()) {
+				return "0";
+			} else if (stmt.getSubject().isAnon()) {
+				return "1";
+			} else if (stmt.getSubject().isLiteral()) {
+				return "2";
+			}
 		case 5:
+			if (stmt.getObject().isURIResource()) {
+				return "0";
+			} else if (stmt.getObject().isAnon()) {
+				return "1";
+			} else if (stmt.getObject().isLiteral()) {
+				return "2";
+			}
+		case 6:
+			return stmt.getPredicate().getLocalName();
+		case 7:
 			RDFNode node = stmt.getObject();
 			if (node.isLiteral()) {
 				Literal lit = (Literal) node;
@@ -168,18 +212,19 @@ public class TripleCursor extends AbstractCursor {
 				Resource res = (Resource) node;
 				// TODO implement a method to search for rdfs:label, foaf:name
 				// or something like that
-				return TripleProvider.getLable(res);
+				// return TripleProvider.getLable(res);
+				return res.getURI();
 			} else {
 				// what could a object be, if it is neither literal, nor a
 				// resource?
 				// I don't know
 				return null;
 			}
-		case 6:
+		case 8:
 			// Log.v(TAG, "asks if the object is a Resource, I would say: '"
 			// + stmt.getObject().isResource() + "'.");
 			return stmt.getObject().isResource() ? "true" : "false";
-		case 7:
+		case 9:
 			// Log.v(TAG, "asks if the object is a BlankNode, I would say: '"
 			// + stmt.getObject().isAnon() + "'.");
 			return stmt.getObject().isAnon() ? "true" : "false";
