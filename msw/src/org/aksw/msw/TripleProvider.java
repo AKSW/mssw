@@ -6,10 +6,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.net.ssl.SSLSocketFactory;
-
-import org.aksw.msw.foafssl.TrustManagerFactory;
-
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
@@ -80,7 +76,7 @@ public class TripleProvider extends ContentProvider {
 
 	private static final int UPDATE_ALL = 50;
 	private static final int UPDATE_THIS = 51;
-	
+
 	private static final int CONFIG_FOAFSSL = 61;
 
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
@@ -137,6 +133,7 @@ public class TripleProvider extends ContentProvider {
 		case RESOURCE_TMP:
 		case RESOURCE_SAVE:
 		case RESOURCE_OFFLINE:
+		case CONFIG_FOAFSSL:
 			return mimeTypeResItm;
 		case WORLD:
 			return mimeTypeResDir;
@@ -233,9 +230,9 @@ public class TripleProvider extends ContentProvider {
 			} else {
 				return null;
 			}
-		/**
-		 * The following cases are not implemented at the moment
-		 */
+			/**
+			 * The following cases are not implemented at the moment
+			 */
 		case RESOURCES:
 		case WORLD:
 		case SPARQL:
@@ -340,16 +337,10 @@ public class TripleProvider extends ContentProvider {
 				break;
 			}
 		case CONFIG_FOAFSSL:
-			if (path.size() > 2) {
-				int retval = changePassword(values);
-				if (retval > 0) {
-					return 1;
-				} else {
-					break;
-				}
+			int retval = changePassword(values);
+			if (retval > 0) {
+				return 1;
 			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
 				break;
 			}
 		}
@@ -510,7 +501,7 @@ public class TripleProvider extends ContentProvider {
 
 		return Uri.parse(uri);
 	}
-	
+
 	private int changePassword(ContentValues values) {
 		String password = (String) values.get("password");
 		SharedPreferences prefs = getConfiguration();
@@ -522,7 +513,7 @@ public class TripleProvider extends ContentProvider {
 			return 0;
 		}
 	}
-	
+
 	private boolean isFoafSslEnabled() {
 		File storage = Environment.getExternalStorageDirectory();
 		File keyFile = new File(storage, Constants.CERT_FILE);
@@ -541,7 +532,6 @@ public class TripleProvider extends ContentProvider {
 	public static String getLable(Resource resource) {
 		return resource.getLocalName();
 	}
-	
 
 	private SharedPreferences getConfiguration() {
 
