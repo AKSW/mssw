@@ -2,5 +2,5 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 <string name="error">Fehler</string>
 <string name="no_core_titel">&quot;Semantic Web Core&quot; fehlt</string>
-<string name="no_core_message">Sie müssen den &quot;Semantic Web Core&quot; installieren, damit der FOAF-Browser funktioniert. Sie können ihn im Android-Market (market://search?q=aksw) oder auf unserer Projekthomepage (http://code.google.com/p/mssw/) finden.</string>
+<string name="no_core_message">Sie müssen den &quot;Semantic Web Core&quot; installieren, damit der FOAF-Browser funktioniert. Sie können ihn im Android-Market (suchen sie nach \"aksw\") oder auf unserer Projekthomepage (\"http://code.google.com/p/mssw\") finden.</string>
 </resources>
