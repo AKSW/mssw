@@ -128,7 +128,9 @@ public class FirstRun extends Activity {
 						}
 
 						if (showPassword != null && passwordInput != null) {
-							showPassword.setOnCheckedChangeListener(new PasswordCheckedChangeListener(passwordInput));
+							showPassword
+									.setOnCheckedChangeListener(new PasswordCheckedChangeListener(
+											passwordInput));
 						}
 					}
 				} else {
@@ -190,46 +192,49 @@ public class FirstRun extends Activity {
 
 		@Override
 		public void onClick(View v) {
-			String valueText = value.getText().toString();
 			boolean goOn = true;
 			if (key == null) {
 
-			} else if (key.equals("password")) {
-				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
-						+ "/config/foafssl/");
-
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-						+ ">.");
-
-				ContentValues values = new ContentValues();
-				values.put("password", valueText);
-
-				int ret = getContentResolver().update(contentUri, values, null,
-						null);
-				if (ret > 0) {
-					goOn = true;
-				} else {
-					Intent intent = new Intent(Constants.INTENT_ERROR);
-					intent.putExtra("error_titel",
-							getString(R.string.error_write_password_titel));
-					intent.putExtra("error_message",
-							getString(R.string.error_write_password_message));
-					startActivity(intent);
-				}
 			} else {
-				SharedPreferences prefs = PreferenceManager
-						.getDefaultSharedPreferences(getApplicationContext());
-				Editor editor = prefs.edit();
-				editor.putString(key, valueText);
-				if (editor.commit()) {
-					goOn = true;
+				String valueText = value.getText().toString();
+				
+				if (key.equals("password")) {
+					Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
+							+ "/config/foafssl/");
+
+					ContentValues values = new ContentValues();
+					values.put("password", valueText);
+
+					int ret = getContentResolver().update(contentUri, values,
+							null, null);
+					if (ret > 0) {
+						goOn = true;
+					} else {
+						goOn = false;
+						Intent intent = new Intent(Constants.INTENT_ERROR);
+						intent.putExtra("error_titel",
+								getString(R.string.error_write_password_titel));
+						intent.putExtra(
+								"error_message",
+								getString(R.string.error_write_password_message));
+						startActivity(intent);
+					}
 				} else {
-					Intent intent = new Intent(Constants.INTENT_ERROR);
-					intent.putExtra("error_titel",
-							getString(R.string.error_write_webid_titel));
-					intent.putExtra("error_message",
-							getString(R.string.error_write_webid_message));
-					startActivity(intent);
+					SharedPreferences prefs = PreferenceManager
+							.getDefaultSharedPreferences(getApplicationContext());
+					Editor editor = prefs.edit();
+					editor.putString(key, valueText);
+					if (editor.commit()) {
+						goOn = true;
+					} else {
+						goOn = false;
+						Intent intent = new Intent(Constants.INTENT_ERROR);
+						intent.putExtra("error_titel",
+								getString(R.string.error_write_webid_titel));
+						intent.putExtra("error_message",
+								getString(R.string.error_write_webid_message));
+						startActivity(intent);
+					}
 				}
 			}
 			if (goOn) {
