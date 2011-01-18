@@ -1,5 +1,7 @@
 package org.aksw.mssw.browser;
 
+import java.util.Stack;
+
 import org.aksw.mssw.CommonMethods;
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
@@ -17,6 +19,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 
@@ -31,6 +34,9 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	protected String selectedWebID;
 	protected String searchTerm;
 	protected int selectedTab = 0;
+	
+
+	private Stack<String> historyStack = new Stack<String>(); //  && !historyStack.empty()
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -49,6 +55,9 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 			SharedPreferences sharedPreferences = PreferenceManager
 					.getDefaultSharedPreferences(getApplicationContext());
 
+			/**
+			 * Variable me is needed to check if a webID is set, else start first-run-wizard
+			 */
 			String me = sharedPreferences.getString("me", null);
 
 			if (me != null) {
@@ -58,6 +67,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 					selectedWebID = sharedPreferences.getString("me",
 							Constants.EXAMPLE_webId);
 				}
+				selectionChanged();
 
 				handleIntent(getIntent());
 
@@ -68,7 +78,6 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 				/* This is bad, because I repeat very similar code three times */
 				intent = new Intent().setClass(this, BrowserMeCard.class);
-				// intent.setData(Uri.parse(selectedWebID));
 				spec = tabHost.newTabSpec("meCard");
 				spec.setIndicator(getString(R.string.profile),
 						res.getDrawable(R.drawable.ic_tab_mecard));
@@ -77,7 +86,6 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 				/* This is bad, because I repeat very similar code three times */
 				intent = new Intent().setClass(this, BrowserContacts.class);
-				// intent.setData(Uri.parse(selectedWebID));
 				spec = tabHost.newTabSpec("Contacts");
 				spec.setIndicator(getString(R.string.contacts),
 						res.getDrawable(R.drawable.ic_tab_contacts));
@@ -86,9 +94,6 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 				/* This is bad, because I repeat very similar code three times */
 				intent = new Intent().setClass(this, BrowserBrowse.class);
-				if (searchTerm != null) {
-					// intent.setData(Uri.parse(searchTerm));
-				}
 				spec = tabHost.newTabSpec("Browser");
 				spec.setIndicator(getString(R.string.browse),
 						res.getDrawable(R.drawable.ic_tab_browse));
@@ -147,6 +152,20 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 					selectedTab = 0;
 					selectionChanged();
 				}
+			} else if (action.equals(Constants.INTENT_BACK)) {
+				if (historyStack.size() > 1) {
+					historyStack.pop(); // removing the last WebID
+					selectedWebID = historyStack.pop(); // setting the new WebID 
+					selectedTab = 0;
+					Log.v(TAG, "Go back in History to WebId <" + selectedWebID + "> Intent.");
+					selectionChanged();
+				} else {
+					Log.v(TAG, "History is empty, giving back call to super.");
+					// TODO handle the case that nothing is on the stack
+					// maybe call some system function to go back in stack
+					super.onKeyDown(intent.getIntExtra("keyCode", 0), (KeyEvent)intent.getParcelableExtra("event"));
+					super.onBackPressed();
+				}
 			} else if (action.equals(Intent.ACTION_SEARCH)) {
 				data = intent.getStringExtra(SearchManager.QUERY);
 				Log.v(TAG, "Search WebId <" + data + "> Intent.");
@@ -170,13 +189,14 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		SharedPreferences sp = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
 		Log.v(TAG, "Selection changed <" + selectedWebID + ">.");
-		if (selectedWebID != null
-				|| !selectedWebID.equals(sp.getString("selectedWebID", null))) {
+		// selectedWebID != null || 
+		if (!selectedWebID.equals(sp.getString("selectedWebID", null))) {
 			Log.v(TAG, "Writing selectedWebID <" + selectedWebID
 					+ "> to config.");
 			Editor spEdit = sp.edit();
 			spEdit.putString("selectedWebID", selectedWebID);
 			spEdit.commit();
+			historyStack.push(selectedWebID);
 		}
 	}
 

@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -52,7 +53,7 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 		setContentView(R.layout.browser_mecard);
 		// empty = (TextView) this.findViewById(android.R.id.empty);
 		// empty.setText("");
-
+/*
 		Intent intent = getIntent();
 		if (intent != null) {
 			String data = intent.getDataString();
@@ -60,7 +61,7 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 				selectedWebID = data;
 			}
 		}
-
+*/
 		/**
 		 * retrieve WebID first from savedInstanceState than from
 		 * SharedPreferences
@@ -107,6 +108,28 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 			return super.onOptionsItemSelected(item);
 		}
 	}
+	
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onKeyDown()
+	 */
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		/*
+		 * should manage a stack with the history of browsed users
+		 */
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			Log.v(TAG, "Back-Button pressed in MeCard");
+			Intent i = new Intent(Constants.INTENT_BACK);
+			i.putExtra("keyCode", keyCode);
+			i.putExtra("event", event);
+			startActivity(i);
+			return true;
+		}
+
+        // Otherwise fall through to parent
+        return super.onKeyDown(keyCode, event);
+	}
+
 
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");

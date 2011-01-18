@@ -62,6 +62,7 @@ public class FoafMapper {
 			String packageName = context.getPackageName();
 			PackageInfo pkgInfo = context.getPackageManager().getPackageInfo(
 					packageName, 0);
+			// get current installed version of msw
 			latestVersion = pkgInfo.versionCode;
 		} catch (NameNotFoundException e) {
 			Log.v(TAG,
