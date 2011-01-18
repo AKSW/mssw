@@ -2,7 +2,6 @@ package org.aksw.mssw.browser;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
@@ -16,6 +15,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -61,7 +61,7 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 		SharedPreferences sharedPreferences = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
-
+/*
 		Intent intent = getIntent();
 		if (intent != null) {
 			String data = intent.getDataString();
@@ -70,6 +70,7 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 				search();
 			}
 		}
+		*/
 	}
 
 	@Override
@@ -188,6 +189,27 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 
 		search();
 		return false;
+	}
+
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onKeyDown()
+	 */
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		/*
+		 * should manage a stack with the history of browsed users
+		 */
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			Log.v(TAG, "Back-Button pressed in Browser");
+			Intent i = new Intent(Constants.INTENT_BACK);
+			i.putExtra("keyCode", keyCode);
+			i.putExtra("event", event);
+			startActivity(i);
+			return true;
+		}
+
+        // Otherwise fall through to parent
+        return super.onKeyDown(keyCode, event);
 	}
 
 	@Override

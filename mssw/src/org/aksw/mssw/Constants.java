@@ -36,6 +36,7 @@ public final class Constants {
 	
 	public static final String INTENT_ADD_WEBID = "org.aksw.mssw.ADD_WEBID";
 	public static final String INTENT_VIEW_WEBID = "org.aksw.mssw.VIEW_WEBID";
+	public static final String INTENT_BACK = "org.aksw.mssw.BACK";
 	public static final String INTENT_ERROR = "org.aksw.mssw.ERROR";
 	public static final String INTENT_FIRSTRUN = "org.aksw.mssw.FIRSTRUN";
 	
