@@ -103,7 +103,8 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		mm = new ModelManager(getContext());
+		mm = new ModelManager();
+		mm.setPrivateKeyPassword(this.getConfiguration().getString("privatekey_password", ""));
 		return true;
 	}
 

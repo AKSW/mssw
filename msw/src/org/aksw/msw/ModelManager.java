@@ -19,10 +19,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.aksw.msw.foafssl.TrustManagerFactory;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -49,20 +46,17 @@ public class ModelManager {
 
 	private static HashMap<String, ModelMaker> modelMakers;
 
-	private Context context;
-	private SharedPreferences sharedPreferences;
-
 	private static FoafMapper fm;
+	private static String privateKeyPassword = "";
 
-	public ModelManager(Context contextIn) {
-		context = contextIn;
+	public ModelManager() {
 
 		File storage = Environment.getExternalStorageDirectory();
 
 		String state = Environment.getExternalStorageState();
 		if (Environment.MEDIA_MOUNTED.equals(state)
 				|| Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-			fm = new FoafMapper(storage, Constants.RULE_FILE, context);
+			fm = new FoafMapper(storage, Constants.RULE_FILE);
 		} else {
 			Log.v(TAG,
 					"Can not get ruleset file, because external storrage is not mounted.");
@@ -114,6 +108,12 @@ public class ModelManager {
 		return modelMakers.get("cache").createDefaultModel();
 	}
 
+	/**
+	 * Get a Model
+	 * @param uri The URI of the model you want to have
+	 * @param makerKey If it is or should be a "web", "inf", "local" or "cache" model.
+	 * @return The model
+	 */
 	public Model getModel(String uri, String makerKey) {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
@@ -131,7 +131,7 @@ public class ModelManager {
 					"You have to give an uri, to get a Model, that is the deal. Returning 'null'.");
 		} else {
 			Log.v(TAG,
-					"ExternalStorrage not mounted, couldn't get model, returning 'null'.");
+					"ExternalStorrage (SD-Card) not mounted, couldn't get model, returning 'null'.");
 		}
 		return model;
 	}
@@ -273,6 +273,14 @@ public class ModelManager {
 			}
 		}
 	}
+	
+	/**
+	 * TODO: I think this way of handling a password is not secure
+	 * @param password
+	 */
+	public void setPrivateKeyPassword(String password) {
+		privateKeyPassword = password;
+	}
 
 	public void updateResource(String uri) {
 
@@ -298,11 +306,8 @@ public class ModelManager {
 				// storage.getAbsolutePath();
 				if (keyFile.isFile()) {
 
-					SharedPreferences prefs = getConfiguration();
-
 					SSLSocketFactory socketFactory = TrustManagerFactory
-							.getFactory(keyFile,
-									prefs.getString("privatekey_password", ""));
+							.getFactory(keyFile, privateKeyPassword);
 
 					HostnameVerifier hostNameVerifier = TrustManagerFactory
 							.getVerifier();
@@ -518,16 +523,5 @@ public class ModelManager {
 		} else {
 			return null;
 		}
-	}
-
-	private SharedPreferences getConfiguration() {
-
-		if (context == null) {
-			Log.v(TAG, "Context is null");
-		}
-		sharedPreferences = PreferenceManager
-				.getDefaultSharedPreferences(context);
-
-		return sharedPreferences;
 	}
 }
