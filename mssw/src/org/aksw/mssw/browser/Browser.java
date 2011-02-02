@@ -104,6 +104,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 			} else {
 				// Start first run wizard
 				Intent intent = new Intent(Constants.INTENT_FIRSTRUN);
+				intent.putExtra("sender", "browser.onCreate");
 				intent.putExtra("progress", 0);
 				startActivity(intent);
 				finish();
