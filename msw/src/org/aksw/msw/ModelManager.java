@@ -1,13 +1,18 @@
 package org.aksw.msw;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,6 +30,7 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.ModelMaker;
@@ -276,6 +282,80 @@ public class ModelManager {
 
 	public void updateResource(String uri) {
 
+	}
+	
+	/**
+	 * Write triples from the outgoing model to the server
+	 * @param uri
+	 */
+	public void commitOutgoing() {
+		//TODO: get commitModel and SPARQL-Endpoint
+		Log.v(TAG, "Commiting outgoing Model");
+		String commitModel = "http://10.0.2.2/~natanael/ontowiki/natanael";
+		String sparqlEndpointString = "http://10.0.2.2/~natanael/ontowiki/update";
+		try {
+			URL sparqlEndpointUri = new URL(sparqlEndpointString);
+			if(modelExists("http://outgoing", "local")) {
+				Model outgoing = modelMakers.get("local").getModel("http://outgoing");
+				StmtIterator iterator = outgoing.listStatements();
+				Statement stmt = null;
+				String statements = "";
+				while (iterator.hasNext()) {
+					stmt = iterator.next();
+					RDFNode object = stmt.getObject();
+					if (!object.isAnon()) {
+						String objectString = null;
+						if (object.isLiteral()) {
+							Literal objectLiteral = (Literal) object;
+							objectString =  "\"" + objectLiteral.getString() + "\"";
+							//TODO: Add Language-Tag or Datatype
+						} else if (object.isURIResource()) {
+							Resource objectResource = (Resource) object;
+							objectString = "<" + objectResource.getURI() + ">";
+						} else {
+							Log.e(TAG, "The Object is not Anonym, not a Literal and not a URIResource, what is it?");
+						}
+						// TODO: The third case shouldn't happen, but if the following lines shouldn't be executed
+						statements = statements +
+						"<" + stmt.getSubject().getURI() + ">" +
+						"<" + stmt.getPredicate().getURI() + ">" +
+						objectString +
+						".";
+					}
+				}
+				String query = "INSERT DATA INTO <" + commitModel + "> {" + statements + "}";
+				query = URLEncoder.encode(query, "UTF-8");
+
+				Log.v(TAG, "Preparing query=" + query);
+				
+				URLConnection conn = sparqlEndpointUri.openConnection();
+				conn.setDoOutput(true);
+				OutputStreamWriter output = new OutputStreamWriter(conn.getOutputStream());
+				output.write("query=" + query);
+				output.flush();
+				Log.v(TAG, "Connecting Connection");
+				conn.connect();
+				String line;
+				boolean error = false;
+			    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			    while ((line = reader.readLine()) != null) {
+			      Log.v(TAG, "Output of SPARQL-Endoint: " + line);
+			      error = true;
+			    }
+				output.close();
+				reader.close();
+				if (error) {
+					Log.e(TAG, "Error sending query");
+				}
+			}
+		} catch (MalformedURLException e) {
+			Log.e(TAG, "The specified SPARQL-Endpoint-Uri " + sparqlEndpointString + " is malformed.", e);
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG, "Could not encode the SPARQL/Update query for the because the encoding is not supported.", e);
+		} catch (IOException e) {
+			Log.e(TAG, "Problem connection to SPARQL-Endpoint" + sparqlEndpointString + ".", e);
+		}
+		
 	}
 
 	public void clearCache() {
