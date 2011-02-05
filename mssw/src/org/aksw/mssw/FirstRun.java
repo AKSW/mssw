@@ -142,11 +142,6 @@ public class FirstRun extends Activity {
 					}
 				} else {
 					// ready
-					
-					// TODO: should show a completed screen to fix problems,
-					// when going back in history to the finished first-run-wizard
-					// at the moment when you go back from foaf-browser and ran
-					// the first-run before this intend will be fired again and again.
 
 					setContentView(R.layout.firstrun_ready);
 					
