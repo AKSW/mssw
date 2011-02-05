@@ -78,6 +78,7 @@ public class TripleProvider extends ContentProvider {
 	private static final int UPDATE_THIS = 51;
 
 	private static final int CONFIG_FOAFSSL = 61;
+	private static final int CONFIG_DEFAULTRESOURCE = 62;
 
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
@@ -95,6 +96,7 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "update/*", UPDATE_THIS);
 		uriMatcher.addURI(AUTHORITY, "update/", UPDATE_ALL);
 		uriMatcher.addURI(AUTHORITY, "config/foafssl/", CONFIG_FOAFSSL);
+		uriMatcher.addURI(AUTHORITY, "config/defaultResource/", CONFIG_DEFAULTRESOURCE);
 	}
 
 	private static ModelManager mm;
@@ -103,7 +105,8 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		mm = new ModelManager(getContext());
+		String defaultResource = getConfiguration().getString("defaultResource", null);
+		mm = new ModelManager(getContext(), defaultResource);
 		return true;
 	}
 
