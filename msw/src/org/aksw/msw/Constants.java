@@ -43,6 +43,7 @@ public final class Constants {
 	
 	public static final String PROP_hasData = "http://ns.aksw.org/Android/hasData";
 	public static final String PROP_rdfType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+	public static final String PROP_updateEndpoint = "http://ns.aksw.org/update/queryEndpoint";
 
 	public static final String DATA_KINDS_PREFIX = "http://ns.aksw.org/Android/ContactsContract.";
 	public static final String COMMON_DATA_KINDS_PREFIX = DATA_KINDS_PREFIX
