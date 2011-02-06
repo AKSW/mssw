@@ -36,7 +36,7 @@ public class FoafProvider extends ContentProvider implements
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
 	/**
-	 * Static values which represent the different pathes of the query uris
+	 * Static values which represent the different paths of the query uris
 	 */
 	private static final int WORLD = 1;
 	private static final int ME = 100;
@@ -50,7 +50,7 @@ public class FoafProvider extends ContentProvider implements
 	private static final int SEARCH = 300;
 
 	/**
-	 * The UriMatcher, which parses the incoming querie-uris
+	 * The UriMatcher, which parses the incoming query-uris
 	 */
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 

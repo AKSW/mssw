@@ -78,6 +78,7 @@ public class TripleProvider extends ContentProvider {
 	private static final int UPDATE_THIS = 51;
 
 	private static final int CONFIG_FOAFSSL = 61;
+	private static final int CONFIG_DEFAULTRESOURCE = 62;
 
 	private static final UriMatcher uriMatcher = new UriMatcher(WORLD);
 
@@ -95,6 +96,7 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "update/*", UPDATE_THIS);
 		uriMatcher.addURI(AUTHORITY, "update/", UPDATE_ALL);
 		uriMatcher.addURI(AUTHORITY, "config/foafssl/", CONFIG_FOAFSSL);
+		uriMatcher.addURI(AUTHORITY, "config/defaultResource/", CONFIG_DEFAULTRESOURCE);
 	}
 
 	private static ModelManager mm;
@@ -103,7 +105,8 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		mm = new ModelManager();
+		String defaultResource = getConfiguration().getString("defaultResource", null);
+		mm = new ModelManager(defaultResource);
 		mm.setPrivateKeyPassword(this.getConfiguration().getString("privatekey_password", ""));
 		return true;
 	}
@@ -470,13 +473,17 @@ public class TripleProvider extends ContentProvider {
 
 	private Uri addTriple(String uri, ContentValues values) {
 
-		Model model = mm.getModel(uri, "web");
+		// seams to give a model from web
+		Model model = mm.getModel("http://outgoing", "local");
 
+		// TODO: ontowiki update uri SPARQL/Update
 		try {
 			String subject = values.getAsString("subject");
 			String predicate = values.getAsString("predicate");
 			String object = values.getAsString("object");
 
+			Log.v(TAG, "Adding <" + subject + ">  <" + predicate + "> <" + object + "> to outgoing model");
+			
 			if (model.supportsTransactions()) {
 				model.begin();
 			}
@@ -492,6 +499,7 @@ public class TripleProvider extends ContentProvider {
 			if (model.supportsTransactions()) {
 				model.commit();
 			}
+			mm.commitOutgoing();
 		} catch (JenaException e) {
 			Log.e(TAG, "Exception on adding triple to resource <" + uri
 					+ ">. (rollback)", e);

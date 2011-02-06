@@ -4,10 +4,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,6 +26,7 @@ import org.aksw.msw.foafssl.TrustManagerFactory;
 import android.os.Environment;
 import android.util.Log;
 
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.ModelMaker;
@@ -39,6 +44,8 @@ public class ModelManager {
 
 	private static final String TAG = "MswModelManager";
 
+	private static ModelManager INSTANCE;
+
 	private static File webModelsFiles;
 	private static File infModelsFiles;
 	private static File localModelsFiles;
@@ -46,10 +53,21 @@ public class ModelManager {
 
 	private static HashMap<String, ModelMaker> modelMakers;
 
-	private static FoafMapper fm;
 	private static String privateKeyPassword = "";
+	private String defaultResourceUri;
+	private FoafMapper fm;
 
-	public ModelManager() {
+	public static ModelManager getInstance() {
+		// TODO: what should we do with the arguments? context and so on
+		return INSTANCE;
+	}
+
+	public ModelManager(String defaultResourceIn) {
+		if (defaultResourceIn == null) {
+			this.defaultResourceUri = "http://10.0.2.2/~natanael/ontowiki/natanael";
+		} else {
+			this.defaultResourceUri = defaultResourceIn;
+		}
 
 		File storage = Environment.getExternalStorageDirectory();
 
@@ -283,6 +301,172 @@ public class ModelManager {
 	}
 
 	public void updateResource(String uri) {
+
+	}
+
+	/**
+	 * Write triples from the outgoing model to the server
+	 * 
+	 * @param uri
+	 */
+	public void commitOutgoing() {
+		// TODO: get defaultResourceUri and SPARQL-Endpoint
+		Log.v(TAG, "Commiting outgoing Model");
+
+		String sparqlEndpointUri = null;
+		try {
+			if (modelExists("http://outgoing", "local")) {
+				Model outgoing = modelMakers.get("local").getModel(
+						"http://outgoing");
+				Model defaultModel = modelMakers.get("web").getModel(
+						defaultResourceUri);
+				Resource defaultResource = defaultModel
+						.getResource(defaultResourceUri);
+				Statement updateEndpointStmt = defaultResource
+						.getProperty(defaultModel
+								.getProperty(Constants.PROP_updateEndpoint));
+				if (updateEndpointStmt == null) {
+					Log.v(TAG,
+							"The configured default Model has no updateEndPoint");
+				} else if (updateEndpointStmt.getObject().isAnon()) {
+					Log.v(TAG,
+							"The configured default Model has a anonymous updateEndPoint");
+				} else {
+					if (updateEndpointStmt.getObject().isLiteral()) {
+						Literal l = (Literal) updateEndpointStmt.getObject();
+						sparqlEndpointUri = l.getString();
+					} else if (updateEndpointStmt.getObject().isURIResource()) {
+						Resource r = (Resource) updateEndpointStmt.getObject();
+						sparqlEndpointUri = r.getURI();
+					} else {
+						// impossible
+					}
+					URL sparqlEndpoint = new URL(sparqlEndpointUri);
+
+					StmtIterator iterator = outgoing.listStatements();
+					Statement stmt = null;
+					String statements = "";
+					while (iterator.hasNext()) {
+						stmt = iterator.next();
+						RDFNode object = stmt.getObject();
+						if (!object.isAnon()) {
+							String objectString = null;
+							if (object.isLiteral()) {
+								Literal objectLiteral = (Literal) object;
+								objectString = "\"" + objectLiteral.getString()
+										+ "\"";
+								// TODO: Add Language-Tag or Datatype
+							} else if (object.isURIResource()) {
+								Resource objectResource = (Resource) object;
+								objectString = "<" + objectResource.getURI()
+										+ ">";
+							} else {
+								Log.e(TAG,
+										"The Object is not Anonym, not a Literal and not a URIResource, what is it?");
+							}
+							// TODO: The third case shouldn't happen, but if the
+							// following lines shouldn't be executed
+							statements = statements + "<"
+									+ stmt.getSubject().getURI() + ">" + "<"
+									+ stmt.getPredicate().getURI() + ">"
+									+ objectString + ".";
+						}
+					}
+					String query = "INSERT DATA INTO <" + defaultResourceUri
+							+ "> {" + statements + "}";
+					query = URLEncoder.encode(query, "UTF-8");
+
+					Log.v(TAG, "Preparing query=" + query);
+
+					URLConnection conn = sparqlEndpoint.openConnection();
+
+					conn.setDoOutput(true);
+					conn.setDoInput(true);
+					conn.setUseCaches(false);
+
+					// doing Output
+					OutputStreamWriter output = new OutputStreamWriter(
+							conn.getOutputStream());
+					output.write("query=" + query);
+					output.flush();
+
+					Log.v(TAG, "Connecting Connection");
+					// TODO: find out if we need this
+					// conn.connect();
+					Log.v(TAG,
+							"Ready writing to the connection and closing output");
+					output.close();
+
+					boolean error = false;
+
+					if (conn instanceof HttpURLConnection) {
+						int responseCode = ((HttpURLConnection) conn)
+								.getResponseCode();
+						String responseMessage = ((HttpURLConnection) conn)
+								.getResponseMessage();
+						Log.v(TAG, "Response(" + responseCode + "): "
+								+ responseMessage);
+
+						if ((responseCode % 100) > 3) {
+							error = true;
+						}
+
+						int lenth = conn.getContentLength();
+						String type = conn.getContentType();
+						Log.v(TAG, "Content lenth: " + lenth + " type: " + type);
+						
+						// reading doesn't work
+						//if (lenth > 0) {
+						//	String line;
+						//	line = conn.getContentType();
+						//	// doing Input
+						//	Log.v(TAG,
+						//			"Start reading from the connection, contentType: "
+						//					+ line);
+						//	DataInputStream input = new DataInputStream(
+						//			conn.getInputStream());
+
+							// BufferedReader input = new BufferedReader();
+						//	while ((line = input.readLine()) != null) {
+						//		line = input.readLine();
+						//		Log.v(TAG, "Output of SPARQL-Endoint: " + line);
+						//	}
+						//	Log.v(TAG,
+						//			"Ready reading from the connection and closing input");
+						//	input.close();
+						//}
+					}
+
+					if (error) {
+						Log.e(TAG, "Error sending query");
+					} else {
+						if (outgoing.supportsTransactions()) {
+							outgoing.begin();
+						}
+
+						/*
+						 * empty outgoing model
+						 */
+						outgoing.removeAll();
+
+						if (outgoing.supportsTransactions()) {
+							outgoing.commit();
+						}
+					}
+				}
+
+			}
+		} catch (MalformedURLException e) {
+			Log.e(TAG, "The specified SPARQL-Endpoint-Uri " + sparqlEndpointUri
+					+ " is malformed.", e);
+		} catch (UnsupportedEncodingException e) {
+			Log.e(TAG,
+					"Could not encode the SPARQL/Update query for the because the encoding is not supported.",
+					e);
+		} catch (IOException e) {
+			Log.e(TAG, "Problem connection to SPARQL-Endpoint "
+					+ sparqlEndpointUri + ".", e);
+		}
 
 	}
 
