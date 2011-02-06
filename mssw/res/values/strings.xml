@@ -42,5 +42,7 @@
 	<string name="firstrun_cert_message">Please enter the password for the certificate file:</string>
 	<string name="firstrun_nocert_titel">Configuration of certificate</string>
 	<string name="firstrun_nocert_message">There is no certificate file installed on your SD-Card. You can install one, by putting it into the folder \'/Android/data/org.aksw.msw/files/\' its name should be \'privatekey.p12\'. You can enter the password in \'Preferences > Mobile Semantic Web > Privatekey Password\'.</string>
+	<string name="firstrun_ready_titel">Configuration ready</string>
+	<string name="firstrun_ready_message">You have finished the configuration, now you can use the FOAF-Browser.</string>
 	<string name="show_password">Show password</string>
 </resources>

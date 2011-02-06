@@ -54,11 +54,12 @@ public final class R {
         public static final int error=0x7f030005;
         public static final int firstrun_cert=0x7f030006;
         public static final int firstrun_nocert=0x7f030007;
-        public static final int firstrun_webid=0x7f030008;
-        public static final int mecard_properties=0x7f030009;
-        public static final int profile_viewer=0x7f03000a;
-        public static final int properties_row=0x7f03000b;
-        public static final int properties_row1=0x7f03000c;
+        public static final int firstrun_ready=0x7f030008;
+        public static final int firstrun_webid=0x7f030009;
+        public static final int mecard_properties=0x7f03000a;
+        public static final int profile_viewer=0x7f03000b;
+        public static final int properties_row=0x7f03000c;
+        public static final int properties_row1=0x7f03000d;
     }
     public static final class menu {
         public static final int browse=0x7f060000;
@@ -86,6 +87,8 @@ public final class R {
         public static final int firstrun_cert_titel=0x7f05002d;
         public static final int firstrun_nocert_message=0x7f050030;
         public static final int firstrun_nocert_titel=0x7f05002f;
+        public static final int firstrun_ready_message=0x7f050032;
+        public static final int firstrun_ready_titel=0x7f050031;
         public static final int firstrun_webid_message=0x7f05002c;
         public static final int firstrun_webid_titel=0x7f05002b;
         public static final int hello=0x7f050007;
@@ -110,7 +113,7 @@ public final class R {
         public static final int search=0x7f050015;
         public static final int search_hint=0x7f050028;
         public static final int sex=0x7f05001e;
-        public static final int show_password=0x7f050031;
+        public static final int show_password=0x7f050033;
         public static final int sync=0x7f050017;
         public static final int town=0x7f05001d;
         public static final int triplestore=0x7f05001f;

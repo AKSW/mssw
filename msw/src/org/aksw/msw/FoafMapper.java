@@ -26,15 +26,21 @@ public class FoafMapper {
 			rules = Rule.rulesFromURL(ruleFile.getAbsolutePath());
 			reasoner = new GenericRuleReasoner(rules);
 		} else {
-			Log.e(TAG, "There is no rules-file (" + ruleFile.getAbsolutePath() + "), maybe the update checker failed.");
+			Log.e(TAG, "There is no rules-file (" + ruleFile.getAbsolutePath()
+					+ "), maybe the update checker failed.");
 		}
 	}
 
-	public InfModel map(Model model) {
-		InfModel infmodel = ModelFactory.createInfModel(reasoner, model);
-		infmodel.prepare();
+	public Model map(Model model) {
+		if (reasoner != null) {
+			InfModel infmodel = ModelFactory.createInfModel(reasoner, model);
+			infmodel.prepare();
 
-		return infmodel;
+			return infmodel;
+		} else {
+			Log.e(TAG, "No reasoner specified");
+			return model;
+		}
 	}
 
 }
