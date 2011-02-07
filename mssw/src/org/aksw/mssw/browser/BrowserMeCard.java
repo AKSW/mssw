@@ -20,6 +20,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.SimpleCursorAdapter;
@@ -128,6 +129,36 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 
         // Otherwise fall through to parent
         return super.onKeyDown(keyCode, event);
+	}
+	
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		String uri;
+		String predicate;
+
+		Cursor rc = rca.getCursor();
+		
+		if (rc.moveToPosition(position)) {
+			predicate = rc.getString(2);
+			uri = rc.getString(3);
+			if(uri != null && predicate != null){
+				Log.v(TAG, predicate);
+				Log.v(TAG, uri);
+				
+				for(int index = 0; index < Constants.PROPS_webactive.length; index++) {            
+			        if (Constants.PROPS_webactive[index].equals(predicate)) {
+			        	Intent i = new Intent(Intent.ACTION_VIEW);
+					    i.setData(Uri.parse(uri));
+					    startActivity(i);
+			        	break;
+			        }
+			    } 
+			}else{
+				Log.v(TAG, "uri == null");
+			}
+		}
+		
+		super.onListItemClick(l, v, position, id);
 	}
 
 
