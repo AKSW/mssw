@@ -48,6 +48,7 @@ public final class Constants {
 		"http://xmlns.com/foaf/0.1/depiction",
 		"http://xmlns.com/foaf/0.1/workplaceHomepage",
 		"http://xmlns.com/foaf/0.1/schoolHomepage",
+		"http://xmlns.com/foaf/0.1/curretProject",
 		"http://xmlns.com/foaf/0.1/weblog"
 	};
 
