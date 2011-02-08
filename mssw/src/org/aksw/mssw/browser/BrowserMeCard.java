@@ -6,6 +6,7 @@ import java.net.URLEncoder;
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.NameHelper;
 import org.aksw.mssw.R;
+import org.aksw.mssw.content.PropertyCursor;
 
 import android.app.ListActivity;
 import android.content.Intent;
@@ -23,7 +24,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
-import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 public class BrowserMeCard extends ListActivity implements OnSharedPreferenceChangeListener {
@@ -182,7 +182,7 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 
 			String[] from = new String[] { "predicateReadable", "objectReadable" };
 			int[] to = { R.id.key, R.id.value };
-			rca = new SimpleCursorAdapter(getApplicationContext(),
+			rca = new PropertyCursor(getApplicationContext(),
 					R.layout.mecard_properties, rc, from, to);
 
 			ListView list = (ListView) this.findViewById(android.R.id.list);
