@@ -99,7 +99,6 @@ public class NameHelper {
 		} catch (InterruptedException e) {
 			Log.v(TAG, "MetaThread was interrupted");
 		}
-
 	}
 
 	private class GetNameThread extends Thread {
