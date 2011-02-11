@@ -1,4 +1,4 @@
-package org.aksw.msw;
+package org.aksw.mssw.triplestore;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -120,7 +120,7 @@ public class FoafMapper {
 		
 		if (update) {
 			InputStream in = context.getResources().openRawResource(
-					R.raw.defaultmapping);
+					org.aksw.mssw.R.raw.defaultmapping);
 
 			FileOutputStream out = null;
 

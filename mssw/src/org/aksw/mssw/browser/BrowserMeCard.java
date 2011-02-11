@@ -166,7 +166,6 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 		
 		selectedWebID = webid;
-		
 
 		name.setText(nh.getName(selectedWebID));
 

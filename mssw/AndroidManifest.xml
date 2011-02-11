@@ -62,6 +62,14 @@
 			android:label="MSSW Browser-Contacts" android:theme="@android:style/Theme.NoTitleBar" />
 		<activity android:name=".browser.BrowserBrowse"
 			android:label="MSSW Browser-Browse" android:theme="@android:style/Theme.NoTitleBar" />
+		<activity android:name="MswPreferenceActivity"
+			android:label="MSW Preferences">
+			<intent-filter>
+				<action android:name="org.aksw.mssw.triplestore.PREFERENCE" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.PREFERENCE" />
+			</intent-filter>
+		</activity>
 		<service android:name=".contact.AccountAuthenticatorService"
 			android:exported="true" android:process=":auth">
 			<intent-filter>
@@ -70,7 +78,7 @@
 			<meta-data android:name="android.accounts.AccountAuthenticator"
 				android:resource="@xml/authenticator" />
 		</service>
-		<service android:name=".contact.ContactsSyncAdapterService"
+		<service android:name="contact.ContactsSyncAdapterService"
 			android:exported="true">
 			<intent-filter>
 				<action android:name="android.content.SyncAdapter" />
@@ -78,6 +86,8 @@
 			<meta-data android:name="android.content.SyncAdapter"
 				android:resource="@xml/sync_contacts" />
 		</service>
+		<provider android:authorities="org.aksw.mssw.triplestore.tripleprovider"
+			android:name=".triplestore.TripleProvider" />
 		<provider android:authorities="org.aksw.mssw.content.foafprovider"
 			android:name=".content.FoafProvider" />
 		<provider android:authorities="org.aksw.mssw.contact.contactprovider"
@@ -88,6 +98,8 @@
 
 	<uses-permission android:name="android.permission.READ_CONTACTS" />
 	<uses-permission android:name="android.permission.WRITE_CONTACTS" />
+	
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 	
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
