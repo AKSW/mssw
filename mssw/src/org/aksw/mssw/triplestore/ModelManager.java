@@ -1,4 +1,4 @@
-package org.aksw.msw;
+package org.aksw.mssw.triplestore;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,7 +21,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
-import org.aksw.msw.foafssl.TrustManagerFactory;
+import org.aksw.mssw.foafssl.TrustManagerFactory;
 
 import android.os.Environment;
 import android.util.Log;
