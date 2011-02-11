@@ -1,4 +1,4 @@
-package org.aksw.msw;
+package org.aksw.mssw.triplestore;
 
 import java.util.ArrayList;
 
