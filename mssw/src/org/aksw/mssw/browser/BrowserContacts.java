@@ -7,12 +7,14 @@ import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -38,10 +40,26 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	private ResourceCursorAdapter rca;
 
 	private MenuManager menuManager;
+	
+	// link to self from threads
+	private ListActivity self;
+	
+	// progress dialog
+	private ProgressDialog pd;
+	
+	// handler for callbacks to the UI thread
+    private final Handler mHandler = new Handler();
+    
+    // data vars for threads
+	private Cursor rc;
+    private String[] from;
+    private int[] to;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.browser_contacts);
+		
+		self = this;
 
 		/*
 		Intent intent = getIntent();
@@ -130,39 +148,62 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
         // Otherwise fall through to parent
         return super.onKeyDown(keyCode, event);
 	}
+	
+	// Create runnable for posting
+    final Runnable mUpdateResults = new Runnable() {
+        public void run() {
+        	updateList();
+        }
+    };
+    
+	public void updateList(){		
+		rca = new SimpleCursorAdapter(getApplicationContext(),
+				R.layout.contact_row, rc, from, to);
+
+		ListView list = (ListView) self.findViewById(android.R.id.list);
+		list.setAdapter(rca);
+		
+		pd.dismiss();
+	}
+	
+	private class webIDGetter extends Thread {
+		public void run() {
+			try {
+				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+						+ "/person/friends/"
+						+ URLEncoder.encode(selectedWebID, Constants.ENC));
+
+				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+						+ ">.");
+
+				rc = managedQuery(contentUri, null, null, null, null);
+
+				from = new String[] { "name", "relationReadable" };
+				to = new int[] { R.id.firstLine, R.id.secondLine };
+				
+				mHandler.post(mUpdateResults);
+			} catch (UnsupportedEncodingException e) {
+				Log.e(TAG,
+						"Could not encode URI and so couldn't get Resource from "
+								+ Constants.FOAF_AUTHORITY + ".", e);
+				TextView empty = (TextView) self.findViewById(android.R.id.empty);
+				empty.setText("Could not encode URI and so couldn't get Resource from "
+						+ Constants.FOAF_AUTHORITY + ".");
+			}
+		}
+	}
 
 
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 
+		pd = ProgressDialog.show(this, "Working..", "Getting WebID data..", true, false);
+		
 		selectedWebID = webid;
-
-		try {
-			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-					+ "/person/friends/"
-					+ URLEncoder.encode(selectedWebID, Constants.ENC));
-
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
-
-			Cursor rc = managedQuery(contentUri, null, null, null, null);
-
-			String[] from = new String[] { "name", "relationReadable" };
-			int[] to = { R.id.firstLine, R.id.secondLine };
-			rca = new SimpleCursorAdapter(getApplicationContext(),
-					R.layout.contact_row, rc, from, to);
-
-			ListView list = (ListView) this.findViewById(android.R.id.list);
-			list.setAdapter(rca);
-
-		} catch (UnsupportedEncodingException e) {
-			Log.e(TAG,
-					"Could not encode URI and so couldn't get Resource from "
-							+ Constants.FOAF_AUTHORITY + ".", e);
-			TextView empty = (TextView) this.findViewById(android.R.id.empty);
-			empty.setText("Could not encode URI and so couldn't get Resource from "
-					+ Constants.FOAF_AUTHORITY + ".");
-		}
+		
+		webIDGetter wig = new webIDGetter();
+		wig.start();
+		
 		return true;
 	}
 
