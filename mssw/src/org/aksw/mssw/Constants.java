@@ -30,7 +30,7 @@ public final class Constants {
 	/**
 	 * Static values for querying the TripleProvider
 	 */
-	public static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
+	public static final String TRIPLE_AUTHORITY = "org.aksw.mssw.triplestore.tripleprovider";
 	public static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
 			+ TRIPLE_AUTHORITY);
 	
@@ -47,6 +47,7 @@ public final class Constants {
 	public static String[] PROPS_webactive = {
 		"http://xmlns.com/foaf/0.1/depiction",
 		"http://xmlns.com/foaf/0.1/workplaceHomepage",
+		"http://xmlns.com/foaf/0.1/workInfoHomepage",
 		"http://xmlns.com/foaf/0.1/schoolHomepage",
 		"http://xmlns.com/foaf/0.1/curretProject",
 		"http://xmlns.com/foaf/0.1/weblog"

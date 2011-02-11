@@ -1,4 +1,4 @@
-package org.aksw.msw.foafssl;
+package org.aksw.mssw.foafssl;
 
 import java.io.File;
 import java.io.FileInputStream;

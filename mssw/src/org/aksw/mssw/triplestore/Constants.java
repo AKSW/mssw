@@ -1,4 +1,4 @@
-package org.aksw.msw;
+package org.aksw.mssw.triplestore;
 
 import java.io.File;
 import java.util.HashMap;
@@ -7,12 +7,12 @@ import android.net.Uri;
 
 public final class Constants {
 
-	public static final String TRIPLE_AUTHORITY = "org.aksw.msw.tripleprovider";
+	public static final String TRIPLE_AUTHORITY = "org.aksw.mssw.triplestore.tripleprovider";
 	public static final Uri TRIPLE_CONTENT_URI = Uri.parse("content://"
 			+ TRIPLE_AUTHORITY);
 
 	public static final String FILES_PATH = "Android" + File.separator + "data"
-			+ File.separator + "org.aksw.msw" + File.separator + "files";
+			+ File.separator + "org.aksw.mssw.triplestore" + File.separator + "files";
 
 	public static final String CERT_FILE = FILES_PATH + File.separator
 			+ "privatekey.p12";
