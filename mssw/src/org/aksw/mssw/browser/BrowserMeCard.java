@@ -6,6 +6,7 @@ import java.net.URLEncoder;
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.NameHelper;
 import org.aksw.mssw.R;
+import org.aksw.mssw.content.PropertyCursor;
 
 import android.app.ListActivity;
 import android.content.Intent;
@@ -20,9 +21,9 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
-import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 public class BrowserMeCard extends ListActivity implements OnSharedPreferenceChangeListener {
@@ -129,6 +130,36 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
         // Otherwise fall through to parent
         return super.onKeyDown(keyCode, event);
 	}
+	
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		String uri;
+		String predicate;
+
+		Cursor rc = rca.getCursor();
+		
+		if (rc.moveToPosition(position)) {
+			predicate = rc.getString(2);
+			uri = rc.getString(3);
+			if(uri != null && predicate != null){
+				Log.v(TAG, predicate);
+				Log.v(TAG, uri);
+				
+				for(int index = 0; index < Constants.PROPS_webactive.length; index++) {            
+			        if (Constants.PROPS_webactive[index].equals(predicate)) {
+			        	Intent i = new Intent(Intent.ACTION_VIEW);
+					    i.setData(Uri.parse(uri));
+					    startActivity(i);
+			        	break;
+			        }
+			    } 
+			}else{
+				Log.v(TAG, "uri == null");
+			}
+		}
+		
+		super.onListItemClick(l, v, position, id);
+	}
 
 
 	public boolean selectionChanged(String webid) {
@@ -151,7 +182,7 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 
 			String[] from = new String[] { "predicateReadable", "objectReadable" };
 			int[] to = { R.id.key, R.id.value };
-			rca = new SimpleCursorAdapter(getApplicationContext(),
+			rca = new PropertyCursor(getApplicationContext(),
 					R.layout.mecard_properties, rc, from, to);
 
 			ListView list = (ListView) this.findViewById(android.R.id.list);
