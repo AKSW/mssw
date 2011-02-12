@@ -1,6 +1,6 @@
-package org.aksw.msw;
+package org.aksw.mssw;
 
-import org.aksw.msw.update.UpdateChecker;
+import org.aksw.mssw.update.UpdateChecker;
 
 import android.app.Application;
 import android.util.Log;
