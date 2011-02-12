@@ -1,4 +1,4 @@
-package org.aksw.msw.update;
+package org.aksw.mssw.update;
 
 import java.util.ArrayList;
 import java.util.List;

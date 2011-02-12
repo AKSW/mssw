@@ -1,4 +1,4 @@
-package org.aksw.msw.update;
+package org.aksw.mssw.update;
 
 public class MswUpdateException extends Exception {
 

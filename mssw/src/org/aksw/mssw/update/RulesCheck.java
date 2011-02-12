@@ -1,4 +1,4 @@
-package org.aksw.msw.update;
+package org.aksw.mssw.update;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,8 +8,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.aksw.msw.Constants;
-import org.aksw.msw.R;
+import org.aksw.mssw.Constants;
+import org.aksw.mssw.R;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -71,8 +71,7 @@ public class RulesCheck extends UpdateCheck {
 		Log.v(TAG, "configure RulesCheck");
 
 		if (!consistency) {
-			InputStream in = context.getResources().openRawResource(
-					R.raw.defaultmapping);
+			InputStream in = context.getResources().openRawResource(R.raw.defaultmapping);
 
 			FileOutputStream out = null;
 

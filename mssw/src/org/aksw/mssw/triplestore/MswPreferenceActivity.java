@@ -1,5 +1,7 @@
 package org.aksw.mssw.triplestore;
 
+import org.aksw.mssw.Constants;
+
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.net.Uri;
