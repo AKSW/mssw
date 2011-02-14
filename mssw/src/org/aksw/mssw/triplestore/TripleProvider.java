@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.aksw.mssw.Constants;
+
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
