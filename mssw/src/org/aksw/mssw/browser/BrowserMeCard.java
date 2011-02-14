@@ -9,12 +9,14 @@ import org.aksw.mssw.R;
 import org.aksw.mssw.content.PropertyCursor;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -44,9 +46,26 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 
 	private MenuManager menuManager;
 	private NameHelper nh;
+	
+	// link to self from threads
+	private ListActivity self;
+	
+	// progress dialog
+	private ProgressDialog pd;
+	
+	// handler for callbacks to the UI thread
+    private final Handler mHandler = new Handler();
+	
+	// data vars for threads
+	private Cursor rc;
+    private String[] from;
+    private int[] to;
+    private String webIDName;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		self = this;
 
 		/**
 		 * Load View for MeCard
@@ -86,7 +105,6 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 		menuManager = new MenuManager();
 
 		selectionChanged(selectedWebID);
-
 	}
 
 	@Override
@@ -165,46 +183,61 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 		
+		pd = ProgressDialog.show(this, "Working..", "Getting WebID data..", true, false);
+		
 		selectedWebID = webid;
 		
-
-		name.setText(nh.getName(selectedWebID));
-
-		try {
-			Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-					+ "/person/mecard/"
-					+ URLEncoder.encode(selectedWebID, Constants.ENC));
-
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
-
-			Cursor rc = managedQuery(contentUri, null, null, null, null);
-
-			String[] from = new String[] { "predicateReadable", "objectReadable" };
-			int[] to = { R.id.key, R.id.value };
-			rca = new PropertyCursor(getApplicationContext(),
-					R.layout.mecard_properties, rc, from, to);
-
-			ListView list = (ListView) this.findViewById(android.R.id.list);
-			list.setAdapter(rca);
-
-			// Resources res = getResources(); // Resource object to get
-			// Drawables
-
-			/*
-			 * this.photo = (ImageView) this.findViewById(R.id.mecard_picture);
-			 * this.photo.setImageDrawable (res.getDrawable(R.drawable.icon));
-			 */
-
-		} catch (UnsupportedEncodingException e) {
-			Log.e(TAG,
-					"Could not encode URI and so couldn't get Resource from "
-							+ Constants.FOAF_AUTHORITY + ".", e);
-			empty.setText("Could not encode URI and so couldn't get Resource from "
-					+ Constants.FOAF_AUTHORITY + ".");
-		}
+		webIDGetter wig = new webIDGetter();
+		wig.start();
 		
 		return true;
+	}
+
+    // Create runnable for posting
+    final Runnable mUpdateResults = new Runnable() {
+        public void run() {
+        	updateList();
+        }
+    };
+    
+	public void updateList(){
+		name.setText(webIDName);
+		
+		rca = new PropertyCursor(self.getApplicationContext(),
+				R.layout.mecard_properties, rc, from, to);
+
+		ListView list = (ListView) self.findViewById(android.R.id.list);
+		list.setAdapter(rca);
+		
+		pd.dismiss();
+	}
+	
+	private class webIDGetter extends Thread {
+		public void run() {
+			webIDName = nh.getName(selectedWebID);
+			
+			try {
+				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+						+ "/person/mecard/"
+						+ URLEncoder.encode(selectedWebID, Constants.ENC));
+
+				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
+						+ ">.");
+
+				rc = managedQuery(contentUri, null, null, null, null);
+
+				from = new String[] { "predicateReadable", "objectReadable" };
+				to = new int[] { R.id.key, R.id.value };
+				
+				mHandler.post(mUpdateResults);
+			} catch (UnsupportedEncodingException e) {
+				Log.e(TAG,
+						"Could not encode URI and so couldn't get Resource from "
+								+ Constants.FOAF_AUTHORITY + ".", e);
+				empty.setText("Could not encode URI and so couldn't get Resource from "
+						+ Constants.FOAF_AUTHORITY + ".");
+			}
+		}
 	}
 
 	@Override
