@@ -107,7 +107,7 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		String defaultResource = getConfiguration().getString("defaultResource", null);
+		String defaultResource = getConfiguration().getString("me", null);
 		mm = new ModelManager(getContext(), defaultResource);
 		return true;
 	}

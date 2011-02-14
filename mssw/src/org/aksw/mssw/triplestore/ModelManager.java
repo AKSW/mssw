@@ -71,7 +71,8 @@ public class ModelManager {
 	public ModelManager(Context contextIn, String defaultResourceIn) {
 		context = contextIn;
 		if (defaultResourceIn == null) {
-			this.defaultResourceUri = "http://10.0.2.2/~natanael/ontowiki/natanael";
+			//this.defaultResourceUri = null;
+			Log.e(TAG, "No default resource was specifiend. Commiting outgoing modell will not work.");
 		} else {
 			this.defaultResourceUri = defaultResourceIn;
 		}
