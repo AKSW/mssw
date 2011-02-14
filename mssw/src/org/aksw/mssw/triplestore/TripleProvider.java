@@ -1,10 +1,12 @@
-package org.aksw.msw;
+package org.aksw.mssw.triplestore;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.aksw.mssw.Constants;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -34,7 +36,7 @@ import com.hp.hpl.jena.shared.JenaException;
 public class TripleProvider extends ContentProvider {
 
 	private static final String TAG = "TripleProvider";
-	public static final String AUTHORITY = "org.aksw.msw.tripleprovider";
+	public static final String AUTHORITY = "org.aksw.mssw.triplestore.tripleprovider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	public static final String DISPLAY_NAME = "TripleProvider";
 
@@ -126,7 +128,7 @@ public class TripleProvider extends ContentProvider {
 		// String mimeTypeResDir =
 		// "vnd.android.cursor.dir/vnd.aksw.msw.resource";
 		// String mimeTypeTriple = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
-		String mimeTypeResItm = "vnd.android.cursor.dir/vnd.aksw.msw.triple";
+		String mimeTypeResItm = "vnd.android.cursor.dir/vnd.aksw.mssw.triplestore.triple";
 		String mimeTypeResDir = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.resource";
 		String mimeTypeTriple = "vnd.android.cursor.dir/vnd.com.hp.hpl.jena.rdf.model.statement";
 

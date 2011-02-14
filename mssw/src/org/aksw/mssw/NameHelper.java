@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.locks.ReentrantLock;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -19,6 +20,8 @@ public class NameHelper {
 	private static HashMap<String, String> names;
 	private static LinkedList<String> projection;
 	private Context context;
+	
+	private ReentrantLock rLock = new ReentrantLock();
 
 	static {
 		projection = new LinkedList<String>();
@@ -96,7 +99,6 @@ public class NameHelper {
 		} catch (InterruptedException e) {
 			Log.v(TAG, "MetaThread was interrupted");
 		}
-
 	}
 
 	private class GetNameThread extends Thread {
@@ -108,6 +110,7 @@ public class NameHelper {
 		}
 
 		public void run() {
+			rLock.lock();
 			ContentResolver cr = context.getContentResolver();
 			try {
 				if (CommonMethods.checkForTripleProvider(cr)) {
@@ -160,6 +163,8 @@ public class NameHelper {
 			} catch (UnsupportedEncodingException e) {
 				Log.e(TAG, "Could not encode uri for query. Skipping <" + uri
 						+ ">", e);
+			} finally {
+				rLock.unlock();
 			}
 			Log.v(TAG, "Ready with getting Name: " + names.get(uri) + ".");
 		}
