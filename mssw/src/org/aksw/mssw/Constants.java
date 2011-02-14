@@ -124,9 +124,11 @@ public final class Constants {
 			"http://purl.org/vocab/relationship/wouldLikeToKnow" };
 
 	public static String[] PROPS_nameProps = { "http://xmlns.com/foaf/0.1/name",
+			"http://rdfs.org/sioc/ns#name",
 			"http://xmlns.com/foaf/0.1/givenName",
 			"http://xmlns.com/foaf/0.1/familyName",
-			"http://xmlns.com/foaf/0.1/nick" };
+			"http://xmlns.com/foaf/0.1/nick",
+			"http://xmlns.com/foaf/0.1/surname" };
 
 	public static String[] PROPS_pictureProps = { "http://xmlns.com/foaf/0.1/depiction" };
 	
