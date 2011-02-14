@@ -12,6 +12,7 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
@@ -33,7 +34,7 @@ import com.hp.hpl.jena.shared.JenaException;
  * @author natanael
  * 
  */
-public class TripleProvider extends ContentProvider {
+public class TripleProvider extends ContentProvider implements OnSharedPreferenceChangeListener {
 
 	private static final String TAG = "TripleProvider";
 	public static final String AUTHORITY = "org.aksw.mssw.triplestore.tripleprovider";
@@ -111,6 +112,8 @@ public class TripleProvider extends ContentProvider {
 		mm = new ModelManager(getContext(), defaultResource);
 		return true;
 	}
+
+	
 
 	@Override
 	public void onLowMemory() {
@@ -475,7 +478,7 @@ public class TripleProvider extends ContentProvider {
 	private Uri addTriple(String uri, ContentValues values) {
 
 		// seams to give a model from web
-		Model model = mm.getModel("http://outgoing", "local");
+		Model model = mm.getModel(Constants.OUTGOING_MODEL, "local");
 
 		// TODO: ontowiki update uri SPARQL/Update
 		try {
@@ -483,7 +486,7 @@ public class TripleProvider extends ContentProvider {
 			String predicate = values.getAsString("predicate");
 			String object = values.getAsString("object");
 
-			Log.v(TAG, "Adding <" + subject + ">  <" + predicate + "> <" + object + "> to outgoing model");
+			Log.v(TAG, "Adding <" + subject + "> <" + predicate + "> <" + object + "> to outgoing model");
 			
 			if (model.supportsTransactions()) {
 				model.begin();
@@ -549,6 +552,21 @@ public class TripleProvider extends ContentProvider {
 				.getDefaultSharedPreferences(getContext());
 
 		return sharedPreferences;
+	}
+
+
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		
+		if (key == "me") {
+			String me = sharedPreferences.getString(key, null);
+			if (mm != null) {
+				mm.changeDefaultResourceUri(me);
+			}
+
+		}
 	}
 
 }

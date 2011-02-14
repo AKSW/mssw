@@ -99,6 +99,16 @@ public class ModelManager {
 		}
 
 	}
+	
+	public void changeDefaultResourceUri(String defaultResourceIn) {
+		if (defaultResourceIn == null) {
+			//this.defaultResourceUri = null;
+			Log.e(TAG, "changing default resource, but no default resource was specifiend. Commiting outgoing modell will not work.");
+		} else {
+			this.defaultResourceUri = defaultResourceIn;
+		}
+
+	}
 
 	private boolean initModelMakers() {
 		String state = Environment.getExternalStorageState();
@@ -183,6 +193,13 @@ public class ModelManager {
 
 			if (modelExists(uri, "local")) {
 				model.add(modelMakers.get("local").openModel(uri));
+			}
+			
+			/**
+			 * add also the data from outgoing model for the defaultResource
+			 */
+			if (uri == defaultResourceUri) {
+				model.add(modelMakers.get("local").openModel(Constants.OUTGOING_MODEL));
 			}
 
 			// add the according inference model
@@ -309,9 +326,9 @@ public class ModelManager {
 
 		String sparqlEndpointUri = null;
 		try {
-			if (modelExists("http://outgoing", "local")) {
+			if (defaultResourceUri != null && modelExists(Constants.OUTGOING_MODEL, "local")) {
 				Model outgoing = modelMakers.get("local").getModel(
-						"http://outgoing");
+						Constants.OUTGOING_MODEL);
 				Model defaultModel = modelMakers.get("web").getModel(
 						defaultResourceUri);
 				Resource defaultResource = defaultModel

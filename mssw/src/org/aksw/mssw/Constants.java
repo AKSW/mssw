@@ -45,6 +45,7 @@ public final class Constants {
 	public static final String PROP_updateEndpoint = "http://ns.aksw.org/update/queryEndpoint";
 
 	public static final String EXAMPLE_webId = "http://people.comiles.eu/example";
+	public static final String OUTGOING_MODEL = "http://outgoing";
 
 	/**
 	 * Static values for querying the FoafProvider
