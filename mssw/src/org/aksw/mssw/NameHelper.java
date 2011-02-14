@@ -113,53 +113,48 @@ public class NameHelper {
 			rLock.lock();
 			ContentResolver cr = context.getContentResolver();
 			try {
-				if (CommonMethods.checkForTripleProvider(cr)) {
-					Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
-							+ "/resource/tmp/"
-							+ URLEncoder.encode(uri, Constants.ENC));
+				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
+						+ "/resource/tmp/"
+						+ URLEncoder.encode(uri, Constants.ENC));
 
-					Log.v(TAG,
-							"Starting Query with uri: <"
-									+ contentUri.toString() + ">.");
+				Log.v(TAG,
+						"Starting Query with uri: <"
+								+ contentUri.toString() + ">.");
 
-					Cursor rc = cr.query(contentUri,
-							projection.toArray(new String[] {}), null, null,
-							null);
+				Cursor rc = cr.query(contentUri,
+						projection.toArray(new String[] {}), null, null,
+						null);
 
-					if (rc != null) {
-						String predicate;
-						String name = "";
-						
-						/**
-						 * quality is a measure of the quality of the resulting string for a name
-						 * the less the better. The worst is no name in this case we will use the uri. 
-						 */
-						int quality = projection.size();
-						while (rc.moveToNext()) {
-							predicate = rc.getString(rc
-									.getColumnIndex("predicate"));
-							Log.v(TAG,
-									"Got name '"
-											+ rc.getString(rc
-													.getColumnIndex("object"))
-											+ "' with güfak: "
-											+ projection.indexOf(predicate));
-							if (projection.indexOf(predicate) < quality) {
-								quality = projection.indexOf(predicate);
-								name = rc
-										.getString(rc.getColumnIndex("object"));
-							}
-						}
-						if (quality < projection.size()) {
-							names.put(uri, name);
-						} else {
-							names.put(uri, uri);
+				if (rc != null) {
+					String predicate;
+					String name = "";
+					
+					/**
+					 * quality is a measure of the quality of the resulting string for a name
+					 * the less the better. The worst is no name in this case we will use the uri. 
+					 */
+					int quality = projection.size();
+					while (rc.moveToNext()) {
+						predicate = rc.getString(rc
+								.getColumnIndex("predicate"));
+						Log.v(TAG,
+								"Got name '"
+										+ rc.getString(rc
+												.getColumnIndex("object"))
+										+ "' with güfak: "
+										+ projection.indexOf(predicate));
+						if (projection.indexOf(predicate) < quality) {
+							quality = projection.indexOf(predicate);
+							name = rc
+									.getString(rc.getColumnIndex("object"));
 						}
 					}
-				} else {
-					Log.v(TAG, "No TripleProvider available.");
+					if (quality < projection.size()) {
+						names.put(uri, name);
+					} else {
+						names.put(uri, uri);
+					}
 				}
-
 			} catch (UnsupportedEncodingException e) {
 				Log.e(TAG, "Could not encode uri for query. Skipping <" + uri
 						+ ">", e);
