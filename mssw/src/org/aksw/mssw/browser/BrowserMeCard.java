@@ -1,12 +1,12 @@
 package org.aksw.mssw.browser;
 
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLEncoder;
 
 import org.aksw.mssw.Constants;
-import org.aksw.mssw.NameHelper;
 import org.aksw.mssw.R;
-import org.aksw.mssw.content.PropertyCursor;
 
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -24,8 +25,10 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 public class BrowserMeCard extends ListActivity implements OnSharedPreferenceChangeListener {
@@ -45,7 +48,6 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	private ResourceCursorAdapter rca;
 
 	private MenuManager menuManager;
-	private NameHelper nh;
 	
 	// link to self from threads
 	private ListActivity self;
@@ -60,7 +62,6 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	private Cursor rc;
     private String[] from;
     private int[] to;
-    private String webIDName;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -97,8 +98,6 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 						Constants.EXAMPLE_webId);
 			}
 		}
-
-		nh = new NameHelper(getApplicationContext());
 
 		name = (TextView) this.findViewById(R.id.mecard_name);
 
@@ -201,21 +200,66 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
     };
     
 	public void updateList(){
-		name.setText(webIDName);
-		
-		rca = new PropertyCursor(self.getApplicationContext(),
+		// get data
+		rca = new SimpleCursorAdapter(self.getApplicationContext(),
 				R.layout.mecard_properties, rc, from, to);
-
+		// assign data to list
 		ListView list = (ListView) self.findViewById(android.R.id.list);
 		list.setAdapter(rca);
 		
+		// find name in data
+		String predicate;
+		String webIDName = "";
+		String webIDPic = "";
+		int index = 0;
+		int quality = Constants.PROPS_nameProps.length;
+		while (rc.moveToNext()) {
+			predicate = rc.getString(rc.getColumnIndex("predicate"));
+			for(index = 0; index < Constants.PROPS_nameProps.length; index++) {            
+                if (Constants.PROPS_nameProps[index].equals(predicate)) {
+                        Log.v(TAG, "found name: "+predicate);
+                        if (index < quality) {
+            				quality = index;
+            				webIDName = rc.getString(rc.getColumnIndex("object"));
+            			}
+                }
+            }
+			for(index = 0; index < Constants.PROPS_pictureProps.length; index++) {            
+                if (Constants.PROPS_pictureProps[index].equals(predicate)) {
+                        Log.v(TAG, "found pic: "+predicate);
+                        webIDPic = rc.getString(rc.getColumnIndex("object"));
+            			break;
+                }
+            }
+		}
+		if(webIDName.length() > 1) name.setText(webIDName);
+		if(webIDPic.length() > 1){
+			ImageView img = (ImageView) self.findViewById(R.id.mecard_icon);
+	        Drawable bm = loadImageFromWeb(webIDPic);
+	        if(bm != null) img.setImageDrawable(bm);
+		}
+		
+		// remove loader
 		pd.dismiss();
 	}
 	
+	private Drawable loadImageFromWeb(String url){
+        Log.i("IMGLOAD", "Fetching image");
+        try{
+            InputStream is = (InputStream) new URL(url).getContent();
+            Drawable d = Drawable.createFromStream(is, "src");
+            Log.i("IMGLOAD", "Created image from stream");
+            return d;
+        }catch (Exception e) {
+            //TODO handle error
+            Log.i("IMGLOAD", "Error fetching image");
+            System.out.println("Exc="+e);
+            return null;
+        }
+	}
+	
 	private class webIDGetter extends Thread {
-		public void run() {
-			webIDName = nh.getName(selectedWebID);
-			
+		public void run() {			
 			try {
 				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
 						+ "/person/mecard/"
