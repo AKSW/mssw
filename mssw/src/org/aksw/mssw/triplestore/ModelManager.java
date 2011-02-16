@@ -137,9 +137,12 @@ public class ModelManager {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
 		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
+			Log.v(TAG, "getting model from "+makerKey);
 			if (modelExists(uri, makerKey)) {
+				Log.v(TAG, "model is in cache");
 				model = modelMakers.get(makerKey).openModel(uri);
 			} else {
+				Log.v(TAG, "creating new model");
 				model = createModel(uri, makerKey);
 				if (model != null && makerKey.equals("web")) {
 					readSSL(uri, model);
@@ -162,8 +165,10 @@ public class ModelManager {
 			// read and write access
 			if (persistant) {
 				if (modelExists(uri, "web")) {
+					Log.v(TAG, "got model from web cache");
 					model = modelMakers.get("web").openModel(uri);
 				} else {
+					Log.v(TAG, "created new model in web cache");
 					model = createModel(uri, "web");
 					if (model != null) {
 						readSSL(uri, model);
@@ -171,8 +176,10 @@ public class ModelManager {
 				}
 			} else {
 				if (modelExists(uri, "cache")) {
+					Log.v(TAG, "got model from mem cache");
 					model = modelMakers.get("cache").openModel(uri);
 				} else {
+					Log.v(TAG, "created new model in mem cache");
 					model = modelMakers.get("cache").openModel(uri);
 					model = readSSL(uri, null);
 				}
@@ -189,8 +196,10 @@ public class ModelManager {
 				Model infModel;
 				if (modelExists(uri, "inf")
 						&& !modelMakers.get("inf").openModel(uri).isEmpty()) {
+					Log.v(TAG, "get model from inf cache");
 					infModel = modelMakers.get("inf").openModel(uri);
 				} else {
+					Log.v(TAG, "created new model in inf cache");
 					infModel = createModel(uri, "inf");
 					// TODO have to check if infModel != null
 					// TODO move the model mapping out to just add ist
@@ -227,6 +236,7 @@ public class ModelManager {
 	}
 
 	public void updateResources() {
+		Log.v(TAG, "updating resources");
 
 		// should check if a internet connection is possible before
 
@@ -468,6 +478,7 @@ public class ModelManager {
 	}
 
 	protected Model readSSL(String url, Model model) {
+		Log.v(TAG, "reading ssl");
 
 		String state = Environment.getExternalStorageState();
 
@@ -559,17 +570,22 @@ public class ModelManager {
 	}
 
 	private Model read(String uri, Model model, InputStream inputstream) {
+		Log.v(TAG, "reading regular");
 
 		if (model == null) {
 			model = modelMakers.get("cache").openModel(uri);
 		}
 		Model tmp = modelMakers.get("cache").createFreshModel();
+		Log.v(TAG, "created tmp model");
 		try {
 			if (inputstream == null) {
+				Log.v(TAG, "reading from uri");
 				tmp.read(uri);
 			} else {
+				Log.v(TAG, "reading from inputstream");
 				tmp.read(inputstream, uri);
 			}
+			Log.v(TAG, "done reading");
 		} catch (DoesNotExistException e) {
 			Log.e(TAG, "Could not get <" + uri + "> into temp model,"
 					+ "check the existence with your webbrowser.", e);
@@ -579,8 +595,10 @@ public class ModelManager {
 
 		// TODO should include also all blanknodes in the connected graph
 		Resource subj = new ResourceImpl(uri);
+		Log.v(TAG, "got resource");
 		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
 				(RDFNode) null);
+		Log.v(TAG, "created selector");
 
 		// String queryString = "";
 
@@ -592,10 +610,13 @@ public class ModelManager {
 				if (model.supportsTransactions()) {
 					// model.abort();
 					model.begin();
+					Log.v(TAG, "began transaction");
 				}
 				model.add(tmp.query(selector));
+				Log.v(TAG, "added data from tmp");
 				if (model.supportsTransactions()) {
 					model.commit();
+					Log.v(TAG, "commited transaction");
 				}
 
 			} catch (JenaException e) {
