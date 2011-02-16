@@ -6,10 +6,8 @@ package org.aksw.mssw.content;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.aksw.mssw.Constants;
-import org.aksw.mssw.NameHelper;
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -364,7 +362,6 @@ public class FoafProvider extends ContentProvider implements
 				String relation;
 				String relationReadable;
 				boolean isResource;
-				NameHelper nh = new NameHelper(getContext());
 				ArrayList<String> uris = new ArrayList<String>();
 				while (rc.moveToNext()) {
 					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
@@ -376,7 +373,6 @@ public class FoafProvider extends ContentProvider implements
 					}
 				}
 				rc.moveToPosition(-1);
-				HashMap<String, String> names = nh.getNames(uris);
 				PersonCursor pc = new PersonCursor();
 				while (rc.moveToNext()) {
 					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
@@ -388,7 +384,7 @@ public class FoafProvider extends ContentProvider implements
 						relation = rc.getString(rc.getColumnIndex("predicate"));
 						relationReadable = rc.getString(rc
 								.getColumnIndex("predicateReadable"));
-						pc.addPerson(uri, relation, names.get(uri),
+						pc.addPerson(uri, relation, uri,
 								relationReadable, null);
 					}
 				}
@@ -452,14 +448,13 @@ public class FoafProvider extends ContentProvider implements
 						null, null, null);
 
 				if (rc != null) {
-					NameHelper nh = new NameHelper(getContext());
 					PersonCursor pc = new PersonCursor();
 					String webid;
 					while (rc.moveToNext()) {
 
 						webid = rc.getString(rc.getColumnIndex("subject"));
 						if (webid.equals(searchTerm)) {
-							pc.addPerson(webid, null, nh.getName(webid), null,
+							pc.addPerson(webid, null, webid, null,
 									null);
 							break;
 						}

@@ -214,7 +214,6 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 		int index = 0;
 		int quality = Constants.PROPS_nameProps.length;
 		while (rc.moveToNext()) {
-			Log.v("RESULTS", rc.getString(rc.getColumnIndex("object")));
 			predicate = rc.getString(rc.getColumnIndex("predicate"));
 			for(index = 0; index < Constants.PROPS_nameProps.length; index++) {            
                 if (Constants.PROPS_nameProps[index].equals(predicate)) {

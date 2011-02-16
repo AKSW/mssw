@@ -381,12 +381,16 @@ public class TripleProvider extends ContentProvider {
 		if (uri.startsWith("http:") || uri.startsWith("https:")) {
 			switch (mode) {
 			case TMP:
+				Log.v(TAG, "tmp resource");
 				return queryResource(uri, false);
 			case SAV:
+				Log.v(TAG, "sav resource");
 				return queryResource(uri, true);
 			case OFF:
+				Log.v(TAG, "off resource");
 				return queryResource(uri, true);
 			default:
+				Log.v(TAG, "default resource");
 				return queryResource(uri, true);
 			}
 		} else {
