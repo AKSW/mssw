@@ -214,6 +214,7 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 		int index = 0;
 		int quality = Constants.PROPS_nameProps.length;
 		while (rc.moveToNext()) {
+			Log.v("RESULTS", rc.getString(rc.getColumnIndex("object")));
 			predicate = rc.getString(rc.getColumnIndex("predicate"));
 			for(index = 0; index < Constants.PROPS_nameProps.length; index++) {            
                 if (Constants.PROPS_nameProps[index].equals(predicate)) {
@@ -233,11 +234,17 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
             }
 		}
 		if(webIDName.length() > 1) name.setText(webIDName);
+		
+		// set image
+		Drawable bm;
 		if(webIDPic.length() > 1){
-			ImageView img = (ImageView) self.findViewById(R.id.mecard_icon);
-	        Drawable bm = loadImageFromWeb(webIDPic);
-	        if(bm != null) img.setImageDrawable(bm);
+	        bm = loadImageFromWeb(webIDPic);
+	        if(bm == null) bm = getResources().getDrawable(R.drawable.icon); 
+		}else{
+			bm = getResources().getDrawable(R.drawable.icon);
 		}
+		ImageView img = (ImageView) self.findViewById(R.id.mecard_icon);
+		img.setImageDrawable(bm);
 		
 		// remove loader
 		pd.dismiss();
