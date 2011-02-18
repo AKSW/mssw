@@ -361,31 +361,23 @@ public class FoafProvider extends ContentProvider implements
 			if (rc != null) {
 				String relation;
 				String relationReadable;
-				boolean isResource;
-				ArrayList<String> uris = new ArrayList<String>();
-				while (rc.moveToNext()) {
-					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
-					//isResource = rc.getString(rc.getColumnIndex("oIsResource"))
-					//		.equals("true");
-					isResource = objectType < 2 ? true : false;
-					if (isResource) {
-						uris.add(rc.getString(rc.getColumnIndex("object")));
-					}
-				}
-				rc.moveToPosition(-1);
 				PersonCursor pc = new PersonCursor();
 				while (rc.moveToNext()) {
 					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
-					//isResource = rc.getString(rc.getColumnIndex("oIsResource"))
-					//		.equals("true");
-					isResource = objectType < 2 ? true : false;
-					if (isResource) {
-						uri = rc.getString(rc.getColumnIndex("object"));
-						relation = rc.getString(rc.getColumnIndex("predicate"));
-						relationReadable = rc.getString(rc
-								.getColumnIndex("predicateReadable"));
-						pc.addPerson(uri, relation, uri,
-								relationReadable, null);
+					Log.v(TAG, "foaf:knows objectType: "+objectType);
+					switch(objectType){
+						case 0: // if it's literal url 
+							uri = rc.getString(rc.getColumnIndex("object"));
+							Log.v(TAG, "foaf:knows object: "+uri);
+							relation = rc.getString(rc.getColumnIndex("predicate"));
+							relationReadable = rc.getString(rc
+									.getColumnIndex("predicateReadable"));
+							pc.addPerson(uri, relation, uri,
+									relationReadable, null);
+							break;
+						case 1: // if it's blank node
+							// TODO parse blank nodes
+							break;
 					}
 				}
 				return pc;
