@@ -66,8 +66,7 @@ public class FoafMapper {
 				if (ruleFile.isFile()) {
 					try {
 						// FileReader fr = ;
-						BufferedReader br = new BufferedReader(
-								new FileReader(ruleFile), 8);
+						BufferedReader br = new BufferedReader(new FileReader(ruleFile), 8);
 						String bufVal;
 						bufVal = br.readLine();
 						if (bufVal.equals(NOTVERSIONED_HEAD)) {
@@ -76,8 +75,7 @@ public class FoafMapper {
 						} else {
 							if (bufVal.contains(VERSION_KEY)) {
 								int offset = bufVal.indexOf(VERSION_KEY) + VERSION_KEY.length();
-								installedVersion = Integer.parseInt(bufVal.substring(offset)
-									.trim());
+								installedVersion = Integer.parseInt(bufVal.substring(offset).trim());
 								bufVal = br.readLine();
 							}
 							if (bufVal.contains(UPDATE_HEAD)) {

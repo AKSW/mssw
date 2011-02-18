@@ -118,7 +118,6 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-
 		boolean ret = menuManager.itemSelected(this, item, selectedWebID);
 		if (ret) {
 			return true;
@@ -150,18 +149,13 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
-		String uri;
-		String predicate;
-
 		Cursor rc = rca.getCursor();
-		
 		if (rc.moveToPosition(position)) {
-			predicate = rc.getString(2);
-			uri = rc.getString(3);
+			String predicate = rc.getString(2);
+			String uri = rc.getString(3);
 			if(uri != null && predicate != null){
 				Log.v(TAG, predicate);
 				Log.v(TAG, uri);
-				
 				for(int index = 0; index < Constants.PROPS_webactive.length; index++) {            
 			        if (Constants.PROPS_webactive[index].equals(predicate)) {
 			        	Intent i = new Intent(Intent.ACTION_VIEW);
@@ -258,8 +252,7 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
             return d;
         }catch (Exception e) {
             //TODO handle error
-            Log.i("IMGLOAD", "Error fetching image");
-            System.out.println("Exc="+e);
+            Log.e("IMGLOAD", "Error fetching image");
             return null;
         }
 	}
@@ -291,8 +284,7 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	}
 
 	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-			String key) {
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		Log.v(TAG, "SharedPreference changed.");
 		if (key == "selectedWebID") {
 			String selectedWebIDnew = sharedPreferences.getString(key,

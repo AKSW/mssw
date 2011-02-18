@@ -47,6 +47,11 @@ import com.hp.hpl.jena.shared.JenaException;
 public class ModelManager {
 
 	private static final String TAG = "MswModelManager";
+	
+	private static final String INDEX = "http://ns.aksw.org/Android/SysOnt/index";
+	private static final String MODEL = "http://ns.aksw.org/Android/SysOnt/Model";
+	private static final String CONTAINS = "http://ns.aksw.org/Android/SysOnt/contains";
+	private static final String RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 
 	private static ModelManager INSTANCE;
 
@@ -79,12 +84,10 @@ public class ModelManager {
 		File storage = Environment.getExternalStorageDirectory();
 
 		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state)
-				|| Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+		if (Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
 			fm = new FoafMapper(storage, Constants.RULE_FILE, context);
 		} else {
-			Log.v(TAG,
-					"Can not get ruleset file, because external storrage is not mounted.");
+			Log.v(TAG, "Can not get ruleset file, because external storrage is not mounted.");
 		}
 
 		webModelsFiles = new File(storage, Constants.WEB_MODELS_DIR);
@@ -101,23 +104,20 @@ public class ModelManager {
 
 	private boolean initModelMakers() {
 		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
+		if (state.equals(Environment.MEDIA_MOUNTED)) {
 			// read and write access
 			webModelsFiles.mkdirs();
 			infModelsFiles.mkdirs();
 			localModelsFiles.mkdirs();
 
 			modelMakers = new HashMap<String, ModelMaker>();
-			modelMakers.put("web", ModelFactory
-					.createFileModelMaker(webModelsFiles.getAbsolutePath()));
-			modelMakers.put("inf", ModelFactory
-					.createFileModelMaker(infModelsFiles.getAbsolutePath()));
-			modelMakers.put("local", ModelFactory
-					.createFileModelMaker(localModelsFiles.getAbsolutePath()));
+			modelMakers.put("web", ModelFactory.createFileModelMaker(webModelsFiles.getAbsolutePath()));
+			modelMakers.put("inf", ModelFactory.createFileModelMaker(infModelsFiles.getAbsolutePath()));
+			modelMakers.put("local", ModelFactory.createFileModelMaker(localModelsFiles.getAbsolutePath()));
 			modelMakers.put("cache", ModelFactory.createMemModelMaker());
 
 			return true;
-		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+		} else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
 			// We can only read the media
 			return false;
 		} else {
@@ -136,7 +136,7 @@ public class ModelManager {
 	public Model getModel(String uri, String makerKey) {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
+		if (state.equals(Environment.MEDIA_MOUNTED) && uri != null) {
 			Log.v(TAG, "getting model from "+makerKey);
 			if (modelExists(uri, makerKey)) {
 				Log.v(TAG, "model is in cache");
@@ -161,7 +161,7 @@ public class ModelManager {
 	public Model getModel(String uri, boolean persistant, boolean inferenced) {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
+		if (state.equals(Environment.MEDIA_MOUNTED) && uri != null) {
 			// read and write access
 			if (persistant) {
 				if (modelExists(uri, "web")) {
@@ -194,8 +194,7 @@ public class ModelManager {
 			// add the according inference model
 			if (inferenced) {
 				Model infModel;
-				if (modelExists(uri, "inf")
-						&& !modelMakers.get("inf").openModel(uri).isEmpty()) {
+				if (modelExists(uri, "inf") && !modelMakers.get("inf").openModel(uri).isEmpty()) {
 					Log.v(TAG, "get model from inf cache");
 					infModel = modelMakers.get("inf").openModel(uri);
 				} else {
@@ -214,9 +213,7 @@ public class ModelManager {
 								infModel.commit();
 							}
 						} catch (JenaException e) {
-							Log.e(TAG,
-									"Exception on updating model. (rollback)",
-									e);
+							Log.e(TAG, "Exception on updating model. (rollback)", e);
 							if (infModel.supportsTransactions()) {
 								infModel.abort();
 							}
@@ -319,21 +316,18 @@ public class ModelManager {
 		String sparqlEndpointUri = null;
 		try {
 			if (modelExists("http://outgoing", "local")) {
-				Model outgoing = modelMakers.get("local").getModel(
-						"http://outgoing");
-				Model defaultModel = modelMakers.get("web").getModel(
-						defaultResourceUri);
-				Resource defaultResource = defaultModel
-						.getResource(defaultResourceUri);
-				Statement updateEndpointStmt = defaultResource
-						.getProperty(defaultModel
-								.getProperty(Constants.PROP_updateEndpoint));
+				Model outgoing = modelMakers.get("local").getModel("http://outgoing");
+				Model defaultModel = modelMakers.get("web").getModel(defaultResourceUri);
+				Resource defaultResource = defaultModel.getResource(defaultResourceUri);
+				Statement updateEndpointStmt = defaultResource.getProperty(
+					defaultModel.getProperty(
+						Constants.PROP_updateEndpoint
+					)
+				);
 				if (updateEndpointStmt == null) {
-					Log.v(TAG,
-							"The configured default Model has no updateEndPoint");
+					Log.v(TAG,"The configured default Model has no updateEndPoint");
 				} else if (updateEndpointStmt.getObject().isAnon()) {
-					Log.v(TAG,
-							"The configured default Model has a anonymous updateEndPoint");
+					Log.v(TAG,"The configured default Model has a anonymous updateEndPoint");
 				} else {
 					if (updateEndpointStmt.getObject().isLiteral()) {
 						Literal l = (Literal) updateEndpointStmt.getObject();
@@ -356,16 +350,13 @@ public class ModelManager {
 							String objectString = null;
 							if (object.isLiteral()) {
 								Literal objectLiteral = (Literal) object;
-								objectString = "\"" + objectLiteral.getString()
-										+ "\"";
+								objectString = "\"" + objectLiteral.getString() + "\"";
 								// TODO: Add Language-Tag or Datatype
 							} else if (object.isURIResource()) {
 								Resource objectResource = (Resource) object;
-								objectString = "<" + objectResource.getURI()
-										+ ">";
+								objectString = "<" + objectResource.getURI() + ">";
 							} else {
-								Log.e(TAG,
-										"The Object is not Anonym, not a Literal and not a URIResource, what is it?");
+								Log.e(TAG, "The Object is not Anonym, not a Literal and not a URIResource, what is it?");
 							}
 							// TODO: The third case shouldn't happen, but if the
 							// following lines shouldn't be executed
@@ -375,8 +366,7 @@ public class ModelManager {
 									+ objectString + ".";
 						}
 					}
-					String query = "INSERT DATA INTO <" + defaultResourceUri
-							+ "> {" + statements + "}";
+					String query = "INSERT DATA INTO <" + defaultResourceUri + "> {" + statements + "}";
 					query = URLEncoder.encode(query, "UTF-8");
 
 					Log.v(TAG, "Preparing query=" + query);
@@ -388,27 +378,22 @@ public class ModelManager {
 					conn.setUseCaches(false);
 
 					// doing Output
-					OutputStreamWriter output = new OutputStreamWriter(
-							conn.getOutputStream());
+					OutputStreamWriter output = new OutputStreamWriter(conn.getOutputStream());
 					output.write("query=" + query);
 					output.flush();
 
 					Log.v(TAG, "Connecting Connection");
 					// TODO: find out if we need this
 					// conn.connect();
-					Log.v(TAG,
-							"Ready writing to the connection and closing output");
+					Log.v(TAG,"Ready writing to the connection and closing output");
 					output.close();
 
 					boolean error = false;
 
 					if (conn instanceof HttpURLConnection) {
-						int responseCode = ((HttpURLConnection) conn)
-								.getResponseCode();
-						String responseMessage = ((HttpURLConnection) conn)
-								.getResponseMessage();
-						Log.v(TAG, "Response(" + responseCode + "): "
-								+ responseMessage);
+						int responseCode = ((HttpURLConnection) conn).getResponseCode();
+						String responseMessage = ((HttpURLConnection) conn).getResponseMessage();
+						Log.v(TAG, "Response(" + responseCode + "): " + responseMessage);
 
 						if ((responseCode % 100) > 3) {
 							error = true;
@@ -460,15 +445,11 @@ public class ModelManager {
 
 			}
 		} catch (MalformedURLException e) {
-			Log.e(TAG, "The specified SPARQL-Endpoint-Uri " + sparqlEndpointUri
-					+ " is malformed.", e);
+			Log.e(TAG, "The specified SPARQL-Endpoint-Uri " + sparqlEndpointUri + " is malformed.", e);
 		} catch (UnsupportedEncodingException e) {
-			Log.e(TAG,
-					"Could not encode the SPARQL/Update query for the because the encoding is not supported.",
-					e);
+			Log.e(TAG, "Could not encode the SPARQL/Update query for the because the encoding is not supported.", e);
 		} catch (IOException e) {
-			Log.e(TAG, "Problem connection to SPARQL-Endpoint "
-					+ sparqlEndpointUri + ".", e);
+			Log.e(TAG, "Problem connection to SPARQL-Endpoint " + sparqlEndpointUri + ".", e);
 		}
 
 	}
@@ -485,7 +466,7 @@ public class ModelManager {
 		if (model == null) {
 			model = modelMakers.get("cache").createDefaultModel();
 		}
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
+		if (state.equals(Environment.MEDIA_MOUNTED)) {
 			try {
 				// We can read and write the media
 				File storage = Environment.getExternalStorageDirectory();
@@ -496,28 +477,24 @@ public class ModelManager {
 
 					SharedPreferences prefs = getConfiguration();
 
-					SSLSocketFactory socketFactory = TrustManagerFactory
-							.getFactory(keyFile,
-									prefs.getString("privatekey_password", ""));
+					SSLSocketFactory socketFactory = TrustManagerFactory.getFactory(
+							keyFile,
+							prefs.getString("privatekey_password", "")
+					);
 
-					HostnameVerifier hostNameVerifier = TrustManagerFactory
-							.getVerifier();
+					HostnameVerifier hostNameVerifier = TrustManagerFactory.getVerifier();
 
 					if (socketFactory != null) {
 						try {
-
-							HttpsURLConnection
-									.setDefaultSSLSocketFactory(socketFactory);
-							HttpsURLConnection
-									.setDefaultHostnameVerifier(hostNameVerifier);
+							HttpsURLConnection.setDefaultSSLSocketFactory(socketFactory);
+							HttpsURLConnection.setDefaultHostnameVerifier(hostNameVerifier);
 
 							URLConnection conn = new URL(url).openConnection();
 
 							/**
 							 * Set the Accept-Header
 							 */
-							conn.setRequestProperty("accept",
-									Constants.REQUEST_PROPERTY);
+							conn.setRequestProperty("accept", Constants.REQUEST_PROPERTY);
 							conn.setDoOutput(true);
 							conn.setDoInput(true);
 							conn.setUseCaches(true);
@@ -543,13 +520,9 @@ public class ModelManager {
 						} catch (FileNotFoundException e) {
 							Log.e(TAG, "Couldn't find File.", e);
 						} catch (ConnectException e) {
-							Log.e(TAG,
-									"Jena couldn't connect to the server for: '"
-											+ url + "'.'", e);
+							Log.e(TAG, "Jena couldn't connect to the server for: '" + url + "'.'", e);
 						} catch (IOException e) {
-							Log.e(TAG,
-									"Input/Output Error while creating or using Socket.",
-									e);
+							Log.e(TAG, "Input/Output Error while creating or using Socket.", e);
 						}
 					} else {
 						Log.v(TAG, "Socket Factory is null.");
@@ -557,8 +530,7 @@ public class ModelManager {
 					}
 
 				} else {
-					Log.i(TAG,
-							"Couldn't get private Key, reading without FOAF+SSL features.");
+					Log.i(TAG, "Couldn't get private Key, reading without FOAF+SSL features.");
 					read(url, model, null);
 				}
 			} catch (DoesNotExistException e) {
@@ -587,8 +559,7 @@ public class ModelManager {
 			}
 			Log.v(TAG, "done reading");
 		} catch (DoesNotExistException e) {
-			Log.e(TAG, "Could not get <" + uri + "> into temp model,"
-					+ "check the existence with your webbrowser.", e);
+			Log.e(TAG, "Could not get <" + uri + "> into temp model," + "check the existence with your webbrowser.", e);
 		} catch (JenaException e) {
 			Log.e(TAG, "Error on reading <" + uri + "> into temp model.", e);
 		}
@@ -596,8 +567,7 @@ public class ModelManager {
 		// TODO should include also all blanknodes in the connected graph
 		Resource subj = new ResourceImpl(uri);
 		Log.v(TAG, "got resource");
-		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
-				(RDFNode) null);
+		SimpleSelector selector = new SimpleSelector(subj, (Property) null, (RDFNode) null);
 		Log.v(TAG, "created selector");
 
 		// String queryString = "";
@@ -631,11 +601,6 @@ public class ModelManager {
 
 		return model;
 	}
-
-	private static final String INDEX = "http://ns.aksw.org/Android/SysOnt/index";
-	private static final String MODEL = "http://ns.aksw.org/Android/SysOnt/Model";
-	private static final String CONTAINS = "http://ns.aksw.org/Android/SysOnt/contains";
-	private static final String RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 
 	private ArrayList<String> listModels(String makerKey) {
 
@@ -688,9 +653,7 @@ public class ModelManager {
 	}
 
 	private boolean modelExists(String uri, String makerKey) {
-
 		return listModels(makerKey).contains(uri);
-
 	}
 
 	private Model createModel(String uri, String makerKey) {
@@ -731,8 +694,7 @@ public class ModelManager {
 		if (context == null) {
 			Log.v(TAG, "Context is null");
 		}
-		sharedPreferences = PreferenceManager
-				.getDefaultSharedPreferences(context);
+		sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 
 		return sharedPreferences;
 	}

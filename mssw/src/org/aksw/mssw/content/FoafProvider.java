@@ -117,18 +117,18 @@ public class FoafProvider extends ContentProvider implements
 
 		int match = uriMatcher.match(uri);
 		switch (match) {
-		case ME:
-		case PERSON:
-		case ME_FRIEND_ADD:
-			return mimeTypeResItm;
-		case WORLD:
-		case ME_MECARD:
-		case ME_FRIENDS:
-		case PERSON_MECARD:
-		case PERSON_FRIENDS:
-			return mimeTypeResDir;
-		default:
-			return null;
+			case ME:
+			case PERSON:
+			case ME_FRIEND_ADD:
+				return mimeTypeResItm;
+			case WORLD:
+			case ME_MECARD:
+			case ME_FRIENDS:
+			case PERSON_MECARD:
+			case PERSON_FRIENDS:
+				return mimeTypeResDir;
+			default:
+				return null;
 		}
 	}
 
@@ -138,8 +138,7 @@ public class FoafProvider extends ContentProvider implements
 	 *      java.lang.String)
 	 */
 	@Override
-	public Cursor query(Uri uri, String[] projection, String selection,
-			String[] selectionArgs, String sortOrder) {
+	public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
 		Log.v(TAG, "Starting query");
 
@@ -148,10 +147,10 @@ public class FoafProvider extends ContentProvider implements
 		 */
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
 
-		for (int i = 0; i < path.size(); i++) {
-			Log.v(TAG, "path(" + i + "/" + path.size() + "): " + path.get(i)
-					+ ".");
-		}
+		/* Not very kewl to log using loops >_>
+		 * for (int i = 0; i < path.size(); i++) {
+			Log.v(TAG, "path(" + i + "/" + path.size() + "): " + path.get(i) + ".");
+		}*/
 
 		/**
 		 * The determined URI-format
@@ -161,39 +160,39 @@ public class FoafProvider extends ContentProvider implements
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
 
 		switch (match) {
-		case ME:
-			return getMe(projection);
-		case PERSON:
-			if (path.size() > 1) {
-				return getPerson(path.get(1), projection);
-			}
-			break;
-		case ME_MECARD:
-			return getMeCard(projection);
-		case PERSON_MECARD:
-			if (path.size() > 2) {
-				return getMeCard(path.get(2), projection);
-			}
-			break;
-		case ME_FRIENDS:
-			return getFriends(projection);
-		case PERSON_FRIENDS:
-			if (path.size() > 2) {
-				return getFriends(path.get(2), projection);
-			}
-			break;
-		case PERSON_PICTURE:
-			if (path.size() > 2) {
-				return getPicture(path.get(2), projection);
-			}
-			break;
-		case SEARCH:
-			if (path.size() > 1) {
-				return search(path.get(1));
-			}
-			break;
-		default:
-			return null;
+			case ME:
+				return getMe(projection);
+			case PERSON:
+				if (path.size() > 1) {
+					return getPerson(path.get(1), projection);
+				}
+				break;
+			case ME_MECARD:
+				return getMeCard(projection);
+			case PERSON_MECARD:
+				if (path.size() > 2) {
+					return getMeCard(path.get(2), projection);
+				}
+				break;
+			case ME_FRIENDS:
+				return getFriends(projection);
+			case PERSON_FRIENDS:
+				if (path.size() > 2) {
+					return getFriends(path.get(2), projection);
+				}
+				break;
+			case PERSON_PICTURE:
+				if (path.size() > 2) {
+					return getPicture(path.get(2), projection);
+				}
+				break;
+			case SEARCH:
+				if (path.size() > 1) {
+					return search(path.get(1));
+				}
+				break;
+			default:
+				return null;
 		}
 
 		Log.v(TAG, "Size of path (" + path.size() + ") to short. <" + uri + ">");
@@ -207,18 +206,17 @@ public class FoafProvider extends ContentProvider implements
 	 * android.content.ContentValues, java.lang.String, java.lang.String[])
 	 */
 	@Override
-	public int update(Uri uri, ContentValues values, String selection,
-			String[] selectionArgs) {
+	public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
 
 		int match = uriMatcher.match(uri);
 		switch (match) {
-		case ME_FRIEND_ADD:
-			String webid = values.getAsString("webid");
-			String relation = values.getAsString("relation");
-			addFriend(webid, relation);
-			return 1;
-		default:
-			return 0;
+			case ME_FRIEND_ADD:
+				String webid = values.getAsString("webid");
+				String relation = values.getAsString("relation");
+				addFriend(webid, relation);
+				return 1;
+			default:
+				return 0;
 		}
 	}
 
@@ -233,20 +231,19 @@ public class FoafProvider extends ContentProvider implements
 
 		int match = uriMatcher.match(uri);
 		switch (match) {
-		case ME_FRIEND_ADD:
-			String webid = values.getAsString("webid");
-			String relation = values.getAsString("relation");
-			return addFriend(webid, relation);
-			// return Uri.parse((String) values.get("webid"));
-		default:
-			return null;
+			case ME_FRIEND_ADD:
+				String webid = values.getAsString("webid");
+				String relation = values.getAsString("relation");
+				return addFriend(webid, relation);
+				// return Uri.parse((String) values.get("webid"));
+			default:
+				return null;
 		}
 	}
 
 
 	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-			String key) {
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		Log.v(TAG, "Shared Preference Changed key = \"" + key + "\".");
 		if (key == "me") {
 			me = sharedPreferences.getString(key, Constants.EXAMPLE_webId);
@@ -346,18 +343,15 @@ public class FoafProvider extends ContentProvider implements
 
 		try {
 			Uri contentUri;
-			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/"
-					+ URLEncoder.encode(uri, Constants.ENC));
+			contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/" + URLEncoder.encode(uri, Constants.ENC));
 
-			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-					+ ">.");
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
 
 			if (projection == null) {
 				projection = Constants.PROPS_relations;
 			}
 
-			Cursor rc = getContentResolver().query(contentUri, Constants.PROPS_relations, null,
-					null, null);
+			Cursor rc = getContentResolver().query(contentUri, Constants.PROPS_relations, null, null, null);
 			if (rc != null) {
 				String relation;
 				String relationReadable;
