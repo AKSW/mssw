@@ -90,8 +90,7 @@ public class TripleProvider extends ContentProvider {
 		uriMatcher.addURI(AUTHORITY, "resource/save/*", RESOURCE_SAVE);
 		uriMatcher.addURI(AUTHORITY, "resource/offline/*", RESOURCE_OFFLINE);
 		uriMatcher.addURI(AUTHORITY, "resource/addData/*", RESOURCE_ADD_DATA);
-		uriMatcher.addURI(AUTHORITY, "resource/addTriple/*",
-				RESOURCE_ADD_TRIPLE);
+		uriMatcher.addURI(AUTHORITY, "resource/addTriple/*", RESOURCE_ADD_TRIPLE);
 		uriMatcher.addURI(AUTHORITY, "resource/*", RESOURCE);
 		uriMatcher.addURI(AUTHORITY, "bnode/*/*", BNODE);
 		uriMatcher.addURI(AUTHORITY, "sparql/*", SPARQL);
@@ -115,8 +114,7 @@ public class TripleProvider extends ContentProvider {
 	@Override
 	public void onLowMemory() {
 		super.onLowMemory();
-		Log.v(TAG,
-				"TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
+		Log.v(TAG, "TripleProvider gets toled about low memory. Should destroy Memmodels and so on.");
 		mm.clearCache();
 	}
 
@@ -134,24 +132,24 @@ public class TripleProvider extends ContentProvider {
 
 		int match = uriMatcher.match(uri);
 		switch (match) {
-		case RESOURCE:
-		case RESOURCE_TMP:
-		case RESOURCE_SAVE:
-		case RESOURCE_OFFLINE:
-		case CONFIG_FOAFSSL:
-			return mimeTypeResItm;
-		case WORLD:
-			return mimeTypeResDir;
-		case SPARQL:
-			/**
-			 * sparql is not implemented, because androjena doesn't include ARQ
-			 * 2010-08-19 androjena works on ARQ support, but I don't need it
-			 * now
-			 */
-		case BNODE:
-			return mimeTypeTriple;
-		default:
-			return null;
+			case RESOURCE:
+			case RESOURCE_TMP:
+			case RESOURCE_SAVE:
+			case RESOURCE_OFFLINE:
+			case CONFIG_FOAFSSL:
+				return mimeTypeResItm;
+			case WORLD:
+				return mimeTypeResDir;
+			case SPARQL:
+				/**
+				 * sparql is not implemented, because androjena doesn't include ARQ
+				 * 2010-08-19 androjena works on ARQ support, but I don't need it
+				 * now
+				 */
+			case BNODE:
+				return mimeTypeTriple;
+			default:
+				return null;
 		}
 	}
 
@@ -171,80 +169,73 @@ public class TripleProvider extends ContentProvider {
 	 *            unused
 	 */
 	@Override
-	public Cursor query(Uri uri, String[] properties, String selection,
-			String[] selectionArgs, String sortOrder) {
+	public Cursor query(Uri uri, String[] properties, String selection, String[] selectionArgs, String sortOrder) {
 		Log.v(TAG, "Starting query");
 
 		Resource res = null;
 
-		boolean complement;
-
-		if (selection == null) {
-			complement = false;
-		} else {
-			complement = true;
-		}
+		boolean complement = selection != null;
 
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
 
 		Log.v(TAG, "path.size() = " + path.size() + ".");
 
+		/*
 		for (int i = 0; i < path.size(); i++) {
-			Log.v(TAG, "path(" + i + "/" + path.size() + "): " + path.get(i)
-					+ ".");
-		}
+			Log.v(TAG, "path(" + i + "/" + path.size() + "): " + path.get(i) + ".");
+		}*/
 
 		int match = uriMatcher.match(uri);
 
 		Log.v(TAG, "Matching URI <" + uri + "> match: (" + match + ").");
 
 		switch (match) {
-		case RESOURCE:
-			if (path.size() > 1) {
-				Log.v(TAG, "getResource: <" + path.get(1) + ">");
-				res = getResource(path.get(1), match);
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-			}
-			break;
-		case RESOURCE_TMP:
-		case RESOURCE_SAVE:
-		case RESOURCE_OFFLINE:
-			if (path.size() > 2) {
-				Log.v(TAG, "getResource: <" + path.get(2) + ">");
-				res = getResource(path.get(2), match);
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-			}
-			break;
-		case BNODE:
-			if (path.size() > 2) {
-				Log.v(TAG, "getBlankNode: <" + path.get(2) + "> from model <"
-						+ path.get(1) + ">.");
-				res = getBlankNode(path.get(2), path.get(1), true);
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-			}
-			break;
-		case CONFIG_FOAFSSL:
-			if (isFoafSslEnabled()) {
-				return new TripleCursor();
-			} else {
+			case RESOURCE:
+				if (path.size() > 1) {
+					Log.v(TAG, "getResource: <" + path.get(1) + ">");
+					res = getResource(path.get(1), match);
+				} else {
+					Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+							+ uri + ">");
+				}
+				break;
+			case RESOURCE_TMP:
+			case RESOURCE_SAVE:
+			case RESOURCE_OFFLINE:
+				if (path.size() > 2) {
+					Log.v(TAG, "getResource: <" + path.get(2) + ">");
+					res = getResource(path.get(2), match);
+				} else {
+					Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+							+ uri + ">");
+				}
+				break;
+			case BNODE:
+				if (path.size() > 2) {
+					Log.v(TAG, "getBlankNode: <" + path.get(2) + "> from model <"
+							+ path.get(1) + ">.");
+					res = getBlankNode(path.get(2), path.get(1), true);
+				} else {
+					Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+							+ uri + ">");
+				}
+				break;
+			case CONFIG_FOAFSSL:
+				if (isFoafSslEnabled()) {
+					return new TripleCursor();
+				} else {
+					return null;
+				}
+				/**
+				 * The following cases are not implemented at the moment
+				 */
+			case RESOURCES:
+			case WORLD:
+			case SPARQL:
+			default:
+				Log.v(TAG, "Return null because unimplemented URI was queried: ("
+						+ match + ")");
 				return null;
-			}
-			/**
-			 * The following cases are not implemented at the moment
-			 */
-		case RESOURCES:
-		case WORLD:
-		case SPARQL:
-		default:
-			Log.v(TAG, "Return null because unimplemented URI was queried: ("
-					+ match + ")");
-			return null;
 		}
 
 		if (res != null) {
@@ -265,22 +256,21 @@ public class TripleProvider extends ContentProvider {
 		int match = uriMatcher.match(uri);
 
 		switch (match) {
-		case RESOURCE_ADD_TRIPLE:
-			if (path.size() > 2) {
-				return addTriple(path.get(2), values);
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-				break;
-			}
-		case RESOURCE_ADD_DATA:
-			if (path.size() > 2) {
-				return addData(path.get(2), values);
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-				break;
-			}
+			case RESOURCE_ADD_TRIPLE:
+				if (path.size() > 2) {
+					return addTriple(path.get(2), values);
+				} else {
+					Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+							+ uri + ">");
+					break;
+				}
+			case RESOURCE_ADD_DATA:
+				if (path.size() > 2) {
+					return addData(path.get(2), values);
+				} else {
+					Log.v(TAG, "Size of path (" + path.size() + ") to short. <" + uri + ">");
+					break;
+				}
 		}
 		return null;
 
@@ -288,66 +278,63 @@ public class TripleProvider extends ContentProvider {
 
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
-		throw new UnsupportedOperationException(
-				"The TripleProvider is not capable of deleting Resources, sorry.");
+		throw new UnsupportedOperationException("The TripleProvider is not capable of deleting Resources, sorry.");
 		// return 0;
 	}
 
 	@Override
-	public int update(Uri uri, ContentValues values, String selection,
-			String[] selectionArgs) {
+	public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
 
 		ArrayList<String> path = new ArrayList<String>(uri.getPathSegments());
 
 		int match = uriMatcher.match(uri);
 
 		switch (match) {
-		case UPDATE_ALL:
-			mm.updateResources();
-			return 2;
-		case UPDATE_THIS:
-
-			if (path.size() > 1) {
-				mm.updateResource(path.get(1));
-				return 1;
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-				break;
-			}
-		case RESOURCE_ADD_DATA:
-			if (path.size() > 2) {
-				Uri retval = addData(path.get(2), values);
-				if (retval != null) {
+			case UPDATE_ALL:
+				mm.updateResources();
+				return 2;
+			case UPDATE_THIS:
+				if (path.size() > 1) {
+					mm.updateResource(path.get(1));
+					return 1;
+				} else {
+					Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+							+ uri + ">");
+					break;
+				}
+			case RESOURCE_ADD_DATA:
+				if (path.size() > 2) {
+					Uri retval = addData(path.get(2), values);
+					if (retval != null) {
+						return 1;
+					} else {
+						break;
+					}
+				} else {
+					Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+							+ uri + ">");
+					break;
+				}
+			case RESOURCE_ADD_TRIPLE:
+				if (path.size() > 2) {
+					Uri retval = addTriple(path.get(2), values);
+					if (retval != null) {
+						return 1;
+					} else {
+						break;
+					}
+				} else {
+					Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
+							+ uri + ">");
+					break;
+				}
+			case CONFIG_FOAFSSL:
+				int retval = changePassword(values);
+				if (retval > 0) {
 					return 1;
 				} else {
 					break;
 				}
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-				break;
-			}
-		case RESOURCE_ADD_TRIPLE:
-			if (path.size() > 2) {
-				Uri retval = addTriple(path.get(2), values);
-				if (retval != null) {
-					return 1;
-				} else {
-					break;
-				}
-			} else {
-				Log.v(TAG, "Size of path (" + path.size() + ") to short. <"
-						+ uri + ">");
-				break;
-			}
-		case CONFIG_FOAFSSL:
-			int retval = changePassword(values);
-			if (retval > 0) {
-				return 1;
-			} else {
-				break;
-			}
 		}
 		return 0;
 	}
@@ -366,8 +353,7 @@ public class TripleProvider extends ContentProvider {
 
 	private Resource getBlankNode(String id, String uri, boolean persistant) {
 		boolean inferenced = true;
-		Resource resource = mm.getModel(uri, persistant, inferenced)
-				.createResource(new AnonId(id));
+		Resource resource = mm.getModel(uri, persistant, inferenced).createResource(new AnonId(id));
 		/*
 		 * StmtIterator iterator = resource.listProperties(); while
 		 * (iterator.hasNext()) { String triple =
@@ -380,22 +366,21 @@ public class TripleProvider extends ContentProvider {
 	private Resource getResource(String uri, int mode) {
 		if (uri.startsWith("http:") || uri.startsWith("https:")) {
 			switch (mode) {
-			case TMP:
-				Log.v(TAG, "tmp resource");
-				return queryResource(uri, false);
-			case SAV:
-				Log.v(TAG, "sav resource");
-				return queryResource(uri, true);
-			case OFF:
-				Log.v(TAG, "off resource");
-				return queryResource(uri, true);
-			default:
-				Log.v(TAG, "default resource");
-				return queryResource(uri, true);
+				case TMP:
+					Log.v(TAG, "tmp resource");
+					return queryResource(uri, false);
+				case SAV:
+					Log.v(TAG, "sav resource");
+					return queryResource(uri, true);
+				case OFF:
+					Log.v(TAG, "off resource");
+					return queryResource(uri, true);
+				default:
+					Log.v(TAG, "default resource");
+					return queryResource(uri, true);
 			}
 		} else {
-			Log.e(TAG, "The Resource <" + uri
-					+ "> starts with an unsupportet scheme.");
+			Log.e(TAG, "The Resource <" + uri + "> starts with an unsupportet scheme.");
 			return null;
 		}
 	}
@@ -410,8 +395,7 @@ public class TripleProvider extends ContentProvider {
 	private Resource queryResource(String uri, boolean persistant) {
 		boolean inferenced = true;
 
-		Resource resource = mm.getModel(uri, persistant, inferenced)
-				.getResource(uri);
+		Resource resource = mm.getModel(uri, persistant, inferenced).getResource(uri);
 		/*
 		 * StmtIterator iterator = resource.listProperties(); while
 		 * (iterator.hasNext()) { String triple =
@@ -467,8 +451,7 @@ public class TripleProvider extends ContentProvider {
 				model.commit();
 			}
 		} catch (JenaException e) {
-			Log.e(TAG, "Exception on updating model of resource <" + uri
-					+ ">. (rollback)", e);
+			Log.e(TAG, "Exception on updating model of resource <" + uri + ">. (rollback)", e);
 			if (model.supportsTransactions()) {
 				model.abort();
 			}
@@ -548,10 +531,7 @@ public class TripleProvider extends ContentProvider {
 	}
 
 	private SharedPreferences getConfiguration() {
-
-		SharedPreferences sharedPreferences = PreferenceManager
-				.getDefaultSharedPreferences(getContext());
-
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
 		return sharedPreferences;
 	}
 

@@ -14,6 +14,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -70,33 +71,28 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 			Resources res = getResources(); // Resource object to get
 											// Drawables
-			TabHost.TabSpec spec; // Reusable TabSpec for each tab
-			Intent intent; // Reusable Intent for each tab
 
-			/* This is bad, because I repeat very similar code three times */
-			intent = new Intent().setClass(this, BrowserMeCard.class);
-			spec = tabHost.newTabSpec("meCard");
-			spec.setIndicator(getString(R.string.profile),
-					res.getDrawable(R.drawable.ic_tab_mecard));
-			spec.setContent(intent);
-			tabHost.addTab(spec);
+			/* add meCard tab */
+			addTab(
+					new Intent().setClass(this, BrowserMeCard.class), 
+					getString(R.string.profile), 
+					res.getDrawable(R.drawable.ic_tab_mecard)
+			);
 
-			/* This is bad, because I repeat very similar code three times */
-			intent = new Intent().setClass(this, BrowserContacts.class);
-			spec = tabHost.newTabSpec("Contacts");
-			spec.setIndicator(getString(R.string.contacts),
-					res.getDrawable(R.drawable.ic_tab_contacts));
-			spec.setContent(intent);
-			tabHost.addTab(spec);
+			/* add contacts tab */
+			addTab(
+					new Intent().setClass(this, BrowserContacts.class),
+					getString(R.string.contacts),
+					res.getDrawable(R.drawable.ic_tab_contacts)
+			);
 
-			/* This is bad, because I repeat very similar code three times */
-			intent = new Intent().setClass(this, BrowserBrowse.class);
-			spec = tabHost.newTabSpec("Browser");
-			spec.setIndicator(getString(R.string.browse),
-					res.getDrawable(R.drawable.ic_tab_browse));
-			spec.setContent(intent);
-			tabHost.addTab(spec);
-
+			/* add browse tab */
+			addTab(
+					new Intent().setClass(this, BrowserBrowse.class),
+					getString(R.string.browse),
+					res.getDrawable(R.drawable.ic_tab_browse)
+			);
+			
 			tabHost.setCurrentTab(selectedTab);
 		} else {
 			// Start first run wizard
@@ -106,6 +102,13 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 			startActivity(intent);
 			finish();
 		}
+	}
+	
+	private void addTab(Intent intent, String tabName, Drawable icon){
+		TabHost.TabSpec spec = tabHost.newTabSpec(tabName);
+		spec.setIndicator(tabName,icon);
+		spec.setContent(intent);
+		tabHost.addTab(spec);
 	}
 
 	@Override

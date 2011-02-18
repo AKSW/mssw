@@ -112,13 +112,9 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
-		String uri;
-
 		Cursor rc = rca.getCursor();
 		if (rc.moveToPosition(position)) {
-			uri = rc.getString(rc.getColumnIndex("webid"));
-
-			// uri = "http://sebastian.tramp.name";
+			String uri = rc.getString(rc.getColumnIndex("webid"));
 			Intent i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(uri));
 			startActivity(i);
 		} else {
@@ -197,7 +193,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 
-		pd = ProgressDialog.show(this, "Working..", "Getting WebID data..", true, false);
+		pd = ProgressDialog.show(this, "Working..", "Getting WebID contacts..", true, false);
 		
 		selectedWebID = webid;
 		
@@ -208,8 +204,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	}
 
 	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-			String key) {
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		if (key == "selectedWebID") {
 			String selectedWebIDnew = sharedPreferences.getString(key,
 					Constants.EXAMPLE_webId);
