@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
+import org.aksw.mssw.triplestore.PersonCursor;
 
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -165,14 +166,42 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	private class webIDGetter extends Thread {
 		public void run() {
 			try {
-				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-						+ "/person/friends/"
-						+ URLEncoder.encode(selectedWebID, Constants.ENC));
+				//Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+					//	+ "/person/friends/"
+					//	+ URLEncoder.encode(selectedWebID, Constants.ENC));
+				Log.v(TAG, "getFriends: <" + selectedWebID + ">");
+				
+				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/" + 
+						URLEncoder.encode(selectedWebID, Constants.ENC));
 
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-						+ ">.");
-
-				rc = managedQuery(contentUri, null, null, null, null);
+				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+				
+				rc = getContentResolver().query(contentUri, Constants.PROPS_relations, null, null, null);
+				PersonCursor pc = new PersonCursor();
+				
+				if (rc != null) {
+					String relation;
+					String relationReadable;
+					String uri;
+					while (rc.moveToNext()) {
+						int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
+						Log.v(TAG, "foaf:knows objectType: "+objectType);
+						switch(objectType){
+							case 0: // if it's literal url 
+								uri = rc.getString(rc.getColumnIndex("object"));
+								Log.v(TAG, "foaf:knows object: "+uri);
+								relation = rc.getString(rc.getColumnIndex("predicate"));
+								relationReadable = rc.getString(rc.getColumnIndex("predicateReadable"));
+								pc.addPerson(uri, relation, uri, relationReadable, null);
+								break;
+							case 1: // if it's blank node
+								// TODO parse blank nodes
+								break;
+						}
+					}
+				}
+				
+				rc = pc;
 
 				from = new String[] { "name", "relationReadable" };
 				to = new int[] { R.id.firstLine, R.id.secondLine };
@@ -181,10 +210,10 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 			} catch (UnsupportedEncodingException e) {
 				Log.e(TAG,
 						"Could not encode URI and so couldn't get Resource from "
-								+ Constants.FOAF_AUTHORITY + ".", e);
+								+ Constants.TRIPLE_AUTHORITY + ".", e);
 				TextView empty = (TextView) self.findViewById(android.R.id.empty);
 				empty.setText("Could not encode URI and so couldn't get Resource from "
-						+ Constants.FOAF_AUTHORITY + ".");
+						+ Constants.TRIPLE_AUTHORITY + ".");
 			}
 		}
 	}

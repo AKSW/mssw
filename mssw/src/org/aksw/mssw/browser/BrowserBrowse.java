@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
+import org.aksw.mssw.triplestore.PersonCursor;
 
 import android.app.ListActivity;
 import android.content.ActivityNotFoundException;
@@ -94,16 +95,35 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 
 	private void search() {
 
-		if (searchTerm != null) {
+		if (searchTerm != null && (searchTerm.startsWith("http:") || searchTerm.startsWith("https:")) ) {
 			try {
-				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-						+ "/search/"
-						+ URLEncoder.encode(searchTerm, Constants.ENC));
+				//Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+				
+				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/tmp/"
+											+ URLEncoder.encode(searchTerm, Constants.ENC));
+				
+				Log.i(TAG, "Getting WebID <" + searchTerm + ">.");
+				
+				String[] projection = { Constants.PROP_rdfType };
 
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-						+ ">.");
+				Cursor rc = getContentResolver().query(contentUri, projection, null, null, null);
+				
+				PersonCursor pc;
+				if (rc != null) {
+					pc = new PersonCursor();
+					String webid;
+					while (rc.moveToNext()) {
 
-				Cursor rc = managedQuery(contentUri, null, null, null, null);
+						webid = rc.getString(rc.getColumnIndex("subject"));
+						if (webid.equals(searchTerm)) {
+							pc.addPerson(webid, null, webid, null,
+									null);
+							break;
+						}
+					}
+				}else{
+					pc = null;
+				}
 
 				if (rc != null) {
 					String[] from = new String[] { "name", "webid" };
@@ -117,11 +137,11 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 			} catch (UnsupportedEncodingException e) {
 				Log.e(TAG,
 						"Could not encode searchterm and so couldn't get Resource from "
-								+ Constants.FOAF_AUTHORITY + ".", e);
+								+ Constants.TRIPLE_AUTHORITY + ".", e);
 				TextView empty = (TextView) this
 						.findViewById(android.R.id.empty);
 				empty.setText("Could not encode Searchterm and so couldn't get Resource from "
-						+ Constants.FOAF_AUTHORITY + ".");
+						+ Constants.TRIPLE_AUTHORITY + ".");
 			}
 		}
 	}
