@@ -260,14 +260,23 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	private class webIDGetter extends Thread {
 		public void run() {			
 			try {
-				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-						+ "/person/mecard/"
+				//Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+					//	+ "/person/mecard/"
+					//	+ URLEncoder.encode(selectedWebID, Constants.ENC));
+				
+				Log.v(TAG, "getMeCard: <" + selectedWebID + ">");
+				
+				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/" 
 						+ URLEncoder.encode(selectedWebID, Constants.ENC));
 
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-						+ ">.");
+				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
 
-				rc = managedQuery(contentUri, null, null, null, null);
+				String[] projection = new String[Constants.PROPS_relations.length+1];
+				System.arraycopy(Constants.PROPS_relations, 0, projection, 0, Constants.PROPS_relations.length);
+				projection[Constants.PROPS_relations.length] = Constants.PROP_hasData;
+				String selection = "complement";
+				
+				rc = getContentResolver().query(contentUri, projection, selection, null, null);
 
 				from = new String[] { "predicateReadable", "objectReadable" };
 				to = new int[] { R.id.key, R.id.value };
@@ -276,9 +285,9 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 			} catch (UnsupportedEncodingException e) {
 				Log.e(TAG,
 						"Could not encode URI and so couldn't get Resource from "
-								+ Constants.FOAF_AUTHORITY + ".", e);
+								+ Constants.TRIPLE_AUTHORITY + ".", e);
 				empty.setText("Could not encode URI and so couldn't get Resource from "
-						+ Constants.FOAF_AUTHORITY + ".");
+						+ Constants.TRIPLE_AUTHORITY + ".");
 			}
 		}
 	}

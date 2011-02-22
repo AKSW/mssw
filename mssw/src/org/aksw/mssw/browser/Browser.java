@@ -1,5 +1,6 @@
 package org.aksw.mssw.browser;
 
+import java.net.URLEncoder;
 import java.util.Stack;
 
 import org.aksw.mssw.Constants;
@@ -222,16 +223,23 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 		public void run() {
 			try {
-				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-						+ "/me/friend/add");
-
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-						+ ">.");
+				//Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+				String relation = Constants.PROP_knows;
+				
+				Uri contentUri;
+				contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/addTriple/"
+										+ URLEncoder.encode(selectedWebID, Constants.ENC));
 
 				ContentValues values = new ContentValues();
-				values.put("webid", webid);
+				values.put("subject", selectedWebID);
+				values.put("predicate", relation);
+				values.put("object", webid);
+
+				Log.i(TAG, "Adding new friend");
+				Log.i(TAG,  "You <" + selectedWebID + "> will know <" + relation + "> a new Person <" + webid + ">.");
 
 				Uri result = getContentResolver().insert(contentUri, values);
+				
 				if (result != null) {
 					// return true;
 				} else {

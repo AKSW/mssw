@@ -47,13 +47,6 @@ public final class Constants {
 	public static final String EXAMPLE_webId = "http://people.comiles.eu/example";
 
 	/**
-	 * Static values for querying the FoafProvider
-	 */
-	public static final String FOAF_AUTHORITY = "org.aksw.mssw.content.foafprovider";
-	public static final Uri FOAF_CONTENT_URI = Uri.parse("content://"
-			+ FOAF_AUTHORITY);
-
-	/**
 	 * Static values for querying the Mssw-ContactProvider
 	 */
 	public static final String CONTACT_AUTHORITY = "org.aksw.mssw.contact.contactprovider";

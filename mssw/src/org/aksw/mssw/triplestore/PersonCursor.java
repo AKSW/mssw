@@ -1,4 +1,4 @@
-package org.aksw.mssw.content;
+package org.aksw.mssw.triplestore;
 
 import java.util.LinkedList;
 
