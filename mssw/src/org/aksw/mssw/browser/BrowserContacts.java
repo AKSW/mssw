@@ -157,7 +157,26 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	public void updateList(){		
 		rca = new SimpleCursorAdapter(getApplicationContext(),R.layout.contact_row, rc, from, to);
 		
-		getNames();
+		if(nameGetters != null && nameGetters.length > 0){
+			for(int i = 0; i < nameGetters.length; i++){
+				try{
+					nameGetters[i].interrupt();
+					nameGetters[i].stop();
+					nameGetters[i].destroy();
+				}catch(Exception e){
+					Log.v(TAG, "nameGetter kill exception", e);
+				}
+			}
+		}
+		
+		nameGetters = new NameGetter[rc.getCount()];
+		names = new String[rc.getCount()];
+		while(rc.moveToNext()){
+			nameGetters[rc.getPosition()] = new NameGetter();
+			nameGetters[rc.getPosition()].setNum(rc.getPosition());
+			nameGetters[rc.getPosition()].setUri(rc.getString(1));
+			nameGetters[rc.getPosition()].start();
+		}
 
 		ListView list = (ListView) self.findViewById(android.R.id.list);
 		list.setAdapter(rca);
@@ -222,57 +241,32 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	
 	// name request
 	private String[] names;
-	private NameGetter nameGetter;
-	
-	private void getNames(){
-		if(nameGetter != null){
-			try{
-				nameGetter.interrupt();
-				nameGetter.stop();
-			}catch(Exception e){
-				Log.e(TAG, "nameGetter kill exception", e);
-			}
-		}
-		
-		nameGetter = new NameGetter();
-		names = new String[rc.getCount()];
-		String[] uris = new String[rc.getCount()];
-		
-		rc.moveToPosition(-1);
-		while(rc.moveToNext()){
-			uris[rc.getPosition()] = rc.getString(1);
-		}
-		
-		nameGetter = new NameGetter();
-		nameGetter.setUris(uris);
-		nameGetter.start();
-	}
-	
+	private NameGetter[] nameGetters;
 	private class NameGetter extends Thread {
-		private String[] _uri;
+		private int _num;
+		private String _uri;
 		
-		public void setUris(String[] uri){
+		public void setNum(int num){
+			_num = num;
+		}
+		
+		public void setUri(String uri){
 			_uri = uri;
 		}
 		
 		public void run() {
 			ContentResolver cr = getContentResolver();
-			String uri;
-			Uri contentUri;
-			Cursor rc;
-			String predicate;
-            String name;
-			
-			for(int i = 0; i < _uri.length; i++){
-				uri = _uri[i];
-				try {
-	                contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/tmp/"
-	                                + URLEncoder.encode(uri, Constants.ENC));
-	                Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
-	                rc = cr.query(contentUri, Constants.projection.toArray(new String[] {}), null, null,null);
-	                
-	                if (rc != null) {
-	                	name = "";
+			try {
+                Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
+                                + "/resource/tmp/"
+                                + URLEncoder.encode(_uri, Constants.ENC));
+                Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+                Cursor rc = cr.query(contentUri, Constants.projection.toArray(new String[] {}), null, null,null);
+                
+                if (rc != null) {
+                        String predicate;
+                        String name = "";
+                        
                         /**
                          * quality is a measure of the quality of the resulting string for a name
                          * the less the better. The worst is no name in this case we will use the uri. 
@@ -290,16 +284,24 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
                                 }
                         }
                         if (quality < Constants.projection.size()) {
-                        	names[i] = name;
+                        	names[_num] = name;
+                        }else{
+                        	names[_num] = "-1";
                         }
-	                }
-	                Log.v(TAG, "Ready with getting Name: " + names[i] + ".");
-				} catch (UnsupportedEncodingException e) {
-	                Log.e(TAG, "Could not encode uri for query. Skipping <" + _uri + ">", e);
-				}
+                }
+                
+                boolean done = true;
+                for(int i = 0; i<names.length; i++){
+                	if(names[i] == null){
+                		done = false;
+                		break;
+                	}
+                }
+                if(done) mHandler.post(mUpdateNames);
+			} catch (UnsupportedEncodingException e) {
+                Log.e(TAG, "Could not encode uri for query. Skipping <" + _uri + ">", e);
 			}
-			
-			mHandler.post(mUpdateNames);
+			Log.v(TAG, "Ready with getting Name: " + names[_num] + ".");
 		}
 	}
 	// Create runnable for posting
@@ -314,7 +316,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 		PersonCursor pc = new PersonCursor();
 		rc.moveToPosition(-1);
 		while(rc.moveToNext()){
-			if(names[rc.getPosition()] == null){
+			if(names[rc.getPosition()] == "-1"){
 				pc.addPerson(rc.getString(1), rc.getString(2), rc.getString(3), rc.getString(4), null);
 			}else{
 				pc.addPerson(rc.getString(1), rc.getString(2), names[rc.getPosition()], rc.getString(4), null);
