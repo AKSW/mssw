@@ -9,6 +9,7 @@ import org.aksw.mssw.triplestore.PersonCursor;
 
 import android.app.ListActivity;
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -154,8 +155,9 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
     };
     
 	public void updateList(){		
-		rca = new SimpleCursorAdapter(getApplicationContext(),
-				R.layout.contact_row, rc, from, to);
+		rca = new SimpleCursorAdapter(getApplicationContext(),R.layout.contact_row, rc, from, to);
+		
+		getNames();
 
 		ListView list = (ListView) self.findViewById(android.R.id.list);
 		list.setAdapter(rca);
@@ -216,6 +218,114 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 						+ Constants.TRIPLE_AUTHORITY + ".");
 			}
 		}
+	}
+	
+	// name request
+	private String[] names;
+	private NameGetter nameGetter;
+	
+	private void getNames(){
+		if(nameGetter != null){
+			try{
+				nameGetter.interrupt();
+				nameGetter.stop();
+			}catch(Exception e){
+				Log.e(TAG, "nameGetter kill exception", e);
+			}
+		}
+		
+		nameGetter = new NameGetter();
+		names = new String[rc.getCount()];
+		String[] uris = new String[rc.getCount()];
+		
+		rc.moveToPosition(-1);
+		while(rc.moveToNext()){
+			uris[rc.getPosition()] = rc.getString(1);
+		}
+		
+		nameGetter = new NameGetter();
+		nameGetter.setUris(uris);
+		nameGetter.start();
+	}
+	
+	private class NameGetter extends Thread {
+		private String[] _uri;
+		
+		public void setUris(String[] uri){
+			_uri = uri;
+		}
+		
+		public void run() {
+			ContentResolver cr = getContentResolver();
+			String uri;
+			Uri contentUri;
+			Cursor rc;
+			String predicate;
+            String name;
+			
+			for(int i = 0; i < _uri.length; i++){
+				uri = _uri[i];
+				try {
+	                contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/tmp/"
+	                                + URLEncoder.encode(uri, Constants.ENC));
+	                Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+	                rc = cr.query(contentUri, Constants.projection.toArray(new String[] {}), null, null,null);
+	                
+	                if (rc != null) {
+	                	name = "";
+                        /**
+                         * quality is a measure of the quality of the resulting string for a name
+                         * the less the better. The worst is no name in this case we will use the uri. 
+                         */
+                        int quality = Constants.projection.size();
+                        while (rc.moveToNext()) {
+                                predicate = rc.getString(rc.getColumnIndex("predicate"));
+                                Log.v(TAG,"Got name '" + rc.getString(
+                                		rc.getColumnIndex("object"))+ "' with güfak: "+ 
+                                		Constants.projection.indexOf(predicate)
+                                );
+                                if (Constants.projection.indexOf(predicate) < quality) {
+                                        quality = Constants.projection.indexOf(predicate);
+                                        name = rc.getString(rc.getColumnIndex("object"));
+                                }
+                        }
+                        if (quality < Constants.projection.size()) {
+                        	names[i] = name;
+                        }
+	                }
+	                Log.v(TAG, "Ready with getting Name: " + names[i] + ".");
+				} catch (UnsupportedEncodingException e) {
+	                Log.e(TAG, "Could not encode uri for query. Skipping <" + _uri + ">", e);
+				}
+			}
+			
+			mHandler.post(mUpdateNames);
+		}
+	}
+	// Create runnable for posting
+    final Runnable mUpdateNames = new Runnable() {
+        public void run() {
+        	updateNames();
+        }
+    };
+	public void updateNames(){
+		Log.v(TAG, "updating names list");
+		
+		PersonCursor pc = new PersonCursor();
+		rc.moveToPosition(-1);
+		while(rc.moveToNext()){
+			if(names[rc.getPosition()] == null){
+				pc.addPerson(rc.getString(1), rc.getString(2), rc.getString(3), rc.getString(4), null);
+			}else{
+				pc.addPerson(rc.getString(1), rc.getString(2), names[rc.getPosition()], rc.getString(4), null);
+			}
+		}
+		rc = pc;
+		rca.changeCursor(rc);
+		
+		/*rca = new SimpleCursorAdapter(getApplicationContext(),R.layout.contact_row, rc, from, to);
+		ListView list = (ListView) self.findViewById(android.R.id.list);
+		list.setAdapter(rca);*/
 	}
 
 
