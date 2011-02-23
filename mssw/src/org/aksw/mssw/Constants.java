@@ -2,6 +2,7 @@ package org.aksw.mssw;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import android.net.Uri;
 
@@ -199,5 +200,18 @@ public final class Constants {
 				COMMON_DATA_KINDS_PREFIX + "StructuredPostal");
 		MIME_TYPES.put("vnd.android.cursor.item/website",
 				COMMON_DATA_KINDS_PREFIX + "Website");
+	}
+	
+	/**
+	 * Properties for name lookup
+	 */
+	public static LinkedList<String> projection;
+	static {
+        projection = new LinkedList<String>();
+        projection.add("http://xmlns.com/foaf/0.1/name");
+        projection.add("http://rdfs.org/sioc/ns#name");
+        projection.add("http://www.w3.org/2000/01/rdf-schema#label");
+        projection.add("http://xmlns.com/foaf/0.1/nick");
+        projection.add("http://xmlns.com/foaf/0.1/surname");
 	}
 }
