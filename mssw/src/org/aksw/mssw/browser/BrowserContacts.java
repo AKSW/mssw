@@ -169,7 +169,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
 				
 				rc = getContentResolver().query(contentUri, Constants.PROPS_relations, null, null, null);
-				PersonCursor pc = new PersonCursor();
+				PersonCursor pc = new PersonCursor(new refreshList());
 				
 				if (rc != null) {
 					String relation;
@@ -239,6 +239,28 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 				// TODO change view
 			}
 		}
+	}
+	
+	public interface refreshCallback{
+		void refreshInterface();
+	}
+	
+	private class refreshList implements refreshCallback{
+		public void refreshInterface(){
+			Log.v(TAG, "refreshing list");
+			mHandler.post(mUpdateList);
+		}
+	}
+	
+	// Create runnable for posting
+    final Runnable mUpdateList = new Runnable() {
+        public void run() {
+        	refreshListData();
+        }
+    };
+    
+	public void refreshListData(){		
+		rca.notifyDataSetChanged();
 	}
 
 }

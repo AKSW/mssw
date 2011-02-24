@@ -3,6 +3,7 @@ package org.aksw.mssw.triplestore;
 import java.util.LinkedList;
 
 import org.aksw.mssw.Constants;
+import org.aksw.mssw.browser.BrowserContacts.refreshCallback;
 
 import com.hp.hpl.jena.rdf.model.Resource;
 
@@ -15,10 +16,16 @@ public class PersonCursor extends AbstractCursor {
 	private static final String TAG = "PersonCursor";
 
 	private LinkedList<String[]> persons;
-
+	
+	private refreshCallback refresher;	
+	
 	public PersonCursor() {
 		persons = new LinkedList<String[]>();
-		
+	}
+	
+	public PersonCursor(refreshCallback ref) {
+		persons = new LinkedList<String[]>();
+		refresher = ref;
 	}
 	
 	public void addPerson(String uri, String relation, String name, String relationReadable, String picture) {
@@ -155,20 +162,11 @@ public class PersonCursor extends AbstractCursor {
 			} catch (Exception e) {
 				persons.get(_num)[2] = _uri;
                 Log.e(TAG, "Could not encode uri for query. Skipping <" + _uri + ">", e);
-			}
+			}			
 			Log.v(TAG, "Ready with getting Name: " + persons.get(_num)[2] + ".");
+			
+			if(refresher != null && persons.get(_num)[2] != _uri) refresher.refreshInterface();
 		}
-	}
-	// Create runnable for posting
-    final Runnable mUpdateNames = new Runnable() {
-        public void run() {
-        	updateNames();
-        }
-    };
-	private void updateNames(){
-		Log.v(TAG, "updating names list");
-		
-		this.notifyAll();
 	}
 
 }
