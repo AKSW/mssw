@@ -51,6 +51,8 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	// handler for callbacks to the UI thread
     private final Handler mHandler = new Handler();
     
+    private String defaultResource; 
+    
     // data vars for threads
 	private Cursor rc;
     private String[] from;
@@ -61,23 +63,14 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 		setContentView(R.layout.browser_contacts);
 		
 		self = this;
-
-		/*
-		Intent intent = getIntent();
-		if (intent != null) {
-			String data = intent.getDataString();
-			if (data != null) {
-				selectedWebID = data;
-			}
-		}
-		*/
+		
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+		defaultResource = sharedPreferences.getString("defaultResource", null);
 
 		/**
 		 * retrieve WebID first from savedInstanceState than from
 		 * SharedPreferences
 		 */
-		SharedPreferences sharedPreferences = PreferenceManager
-				.getDefaultSharedPreferences(getApplicationContext());
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 		if (selectedWebID == null) {
 			selectedWebID = sharedPreferences.getString("selectedWebID", null);
@@ -154,8 +147,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
     };
     
 	public void updateList(){		
-		rca = new SimpleCursorAdapter(getApplicationContext(),
-				R.layout.contact_row, rc, from, to);
+		rca = new SimpleCursorAdapter(getApplicationContext(),R.layout.contact_row, rc, from, to);
 
 		ListView list = (ListView) self.findViewById(android.R.id.list);
 		list.setAdapter(rca);
@@ -200,6 +192,9 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 						}
 					}
 				}
+				
+				//get names
+				pc.requestNames(getApplicationContext(), defaultResource);
 				
 				rc = pc;
 
