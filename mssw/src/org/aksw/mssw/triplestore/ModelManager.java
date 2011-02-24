@@ -658,7 +658,7 @@ public class ModelManager {
 
 	private Model createModel(String uri, String makerKey) {
 		if (modelMakers.get(makerKey) != null) {
-			if (makerKey == "cache" || modelExists(uri, makerKey)) {
+			if (makerKey.equals("cache") || modelExists(uri, makerKey)) {
 				return modelMakers.get(makerKey).openModel(uri);
 			} else {
 				Model indexMod = modelMakers.get(makerKey).openModel("index");
