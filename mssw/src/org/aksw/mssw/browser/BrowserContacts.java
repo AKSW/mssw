@@ -9,7 +9,6 @@ import org.aksw.mssw.triplestore.PersonCursor;
 
 import android.app.ListActivity;
 import android.app.ProgressDialog;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -52,6 +51,8 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	// handler for callbacks to the UI thread
     private final Handler mHandler = new Handler();
     
+    private String defaultResource; 
+    
     // data vars for threads
 	private Cursor rc;
     private String[] from;
@@ -62,23 +63,14 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 		setContentView(R.layout.browser_contacts);
 		
 		self = this;
-
-		/*
-		Intent intent = getIntent();
-		if (intent != null) {
-			String data = intent.getDataString();
-			if (data != null) {
-				selectedWebID = data;
-			}
-		}
-		*/
+		
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+		defaultResource = sharedPreferences.getString("defaultResource", null);
 
 		/**
 		 * retrieve WebID first from savedInstanceState than from
 		 * SharedPreferences
 		 */
-		SharedPreferences sharedPreferences = PreferenceManager
-				.getDefaultSharedPreferences(getApplicationContext());
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 		if (selectedWebID == null) {
 			selectedWebID = sharedPreferences.getString("selectedWebID", null);
@@ -156,27 +148,6 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
     
 	public void updateList(){		
 		rca = new SimpleCursorAdapter(getApplicationContext(),R.layout.contact_row, rc, from, to);
-		
-		if(nameGetters != null && nameGetters.length > 0){
-			for(int i = 0; i < nameGetters.length; i++){
-				try{
-					nameGetters[i].interrupt();
-					nameGetters[i].stop();
-					nameGetters[i].destroy();
-				}catch(Exception e){
-					Log.v(TAG, "nameGetter kill exception", e);
-				}
-			}
-		}
-		
-		nameGetters = new NameGetter[rc.getCount()];
-		names = new String[rc.getCount()];
-		while(rc.moveToNext()){
-			nameGetters[rc.getPosition()] = new NameGetter();
-			nameGetters[rc.getPosition()].setNum(rc.getPosition());
-			nameGetters[rc.getPosition()].setUri(rc.getString(1));
-			nameGetters[rc.getPosition()].start();
-		}
 
 		ListView list = (ListView) self.findViewById(android.R.id.list);
 		list.setAdapter(rca);
@@ -222,6 +193,9 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 					}
 				}
 				
+				//get names
+				pc.requestNames(getApplicationContext(), defaultResource);
+				
 				rc = pc;
 
 				from = new String[] { "name", "relationReadable" };
@@ -237,97 +211,6 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 						+ Constants.TRIPLE_AUTHORITY + ".");
 			}
 		}
-	}
-	
-	// name request
-	private String[] names;
-	private NameGetter[] nameGetters;
-	private class NameGetter extends Thread {
-		private int _num;
-		private String _uri;
-		
-		public void setNum(int num){
-			_num = num;
-		}
-		
-		public void setUri(String uri){
-			_uri = uri;
-		}
-		
-		public void run() {
-			ContentResolver cr = getContentResolver();
-			try {
-                Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI
-                                + "/resource/tmp/"
-                                + URLEncoder.encode(_uri, Constants.ENC));
-                Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
-                Cursor rc = cr.query(contentUri, Constants.projection.toArray(new String[] {}), null, null,null);
-                
-                if (rc != null) {
-                        String predicate;
-                        String name = "";
-                        
-                        /**
-                         * quality is a measure of the quality of the resulting string for a name
-                         * the less the better. The worst is no name in this case we will use the uri. 
-                         */
-                        int quality = Constants.projection.size();
-                        while (rc.moveToNext()) {
-                                predicate = rc.getString(rc.getColumnIndex("predicate"));
-                                Log.v(TAG,"Got name '" + rc.getString(
-                                		rc.getColumnIndex("object"))+ "' with güfak: "+ 
-                                		Constants.projection.indexOf(predicate)
-                                );
-                                if (Constants.projection.indexOf(predicate) < quality) {
-                                        quality = Constants.projection.indexOf(predicate);
-                                        name = rc.getString(rc.getColumnIndex("object"));
-                                }
-                        }
-                        if (quality < Constants.projection.size()) {
-                        	names[_num] = name;
-                        }else{
-                        	names[_num] = "-1";
-                        }
-                }
-                
-                boolean done = true;
-                for(int i = 0; i<names.length; i++){
-                	if(names[i] == null){
-                		done = false;
-                		break;
-                	}
-                }
-                if(done) mHandler.post(mUpdateNames);
-			} catch (UnsupportedEncodingException e) {
-                Log.e(TAG, "Could not encode uri for query. Skipping <" + _uri + ">", e);
-			}
-			Log.v(TAG, "Ready with getting Name: " + names[_num] + ".");
-		}
-	}
-	// Create runnable for posting
-    final Runnable mUpdateNames = new Runnable() {
-        public void run() {
-        	updateNames();
-        }
-    };
-	public void updateNames(){
-		Log.v(TAG, "updating names list");
-		
-		PersonCursor pc = new PersonCursor();
-		rc.moveToPosition(-1);
-		while(rc.moveToNext()){
-			if(names[rc.getPosition()] == "-1"){
-				pc.addPerson(rc.getString(1), rc.getString(2), rc.getString(3), rc.getString(4), null);
-			}else{
-				pc.addPerson(rc.getString(1), rc.getString(2), names[rc.getPosition()], rc.getString(4), null);
-			}
-		}
-		rc = pc;
-		rca.changeCursor(rc);
-		
-		/*rca = new SimpleCursorAdapter(getApplicationContext(),R.layout.contact_row, rc, from, to);
-		ListView list = (ListView) self.findViewById(android.R.id.list);
-		list.setAdapter(rca);*/
 	}
 
 
