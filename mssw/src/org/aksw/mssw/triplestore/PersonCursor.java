@@ -17,13 +17,22 @@ public class PersonCursor extends AbstractCursor {
 
 	private LinkedList<String[]> persons;
 	
+	private PersonCursor self;
+	
+	private static int MAX_THREADS = 3;
+	private int counter;
+	private int offset;
+	private boolean done;
+	
 	private refreshCallback refresher;	
 	
 	public PersonCursor() {
+		self = this;
 		persons = new LinkedList<String[]>();
 	}
 	
 	public PersonCursor(refreshCallback ref) {
+		self = this;
 		persons = new LinkedList<String[]>();
 		refresher = ref;
 	}
@@ -36,12 +45,26 @@ public class PersonCursor extends AbstractCursor {
 	public void requestNames(Context context, String defaultResource){
 		mm = new ModelManager(context, defaultResource);
 		
-		nameGetters = new NameGetter[persons.size()];
-		for(int i = 0; i < persons.size(); i++){
-			nameGetters[i] = new NameGetter();
-			nameGetters[i].setNum(i);
-			nameGetters[i].setUri(persons.get(i)[0]);
-			nameGetters[i].start();
+		done = false;
+		offset = 0;
+		getNextNames();
+	}
+	
+	private void getNextNames(){
+		if( done ) return;
+		Log.v(TAG, "getting names");
+		nameGetters = new NameGetter[MAX_THREADS];
+		counter = 0;
+		for(int i = 0; i < MAX_THREADS; i++){
+			if(offset+i < persons.size()){
+				nameGetters[i] = new NameGetter();
+				nameGetters[i].setNum(offset+i);
+				nameGetters[i].setUri(persons.get(offset+i)[0]);
+				nameGetters[i].start();
+			}else{
+				done = true;
+				return;
+			}
 		}
 	}
 
@@ -110,8 +133,6 @@ public class PersonCursor extends AbstractCursor {
 		return false;
 	}
 	
-	
-	
 	// name request
 	private NameGetter[] nameGetters;
 	private static ModelManager mm;
@@ -165,6 +186,14 @@ public class PersonCursor extends AbstractCursor {
 			}			
 			Log.v(TAG, "Ready with getting Name: " + persons.get(_num)[2] + ".");
 			
+			Log.v(TAG, "Counter before inc: "+counter);
+			counter++;
+			Log.v(TAG, "Counter after inc: "+counter);
+			if(counter == MAX_THREADS){
+				Log.v(TAG, "counter == max. do job again");
+				offset += counter;
+	        	self.getNextNames();
+			};
 			if(refresher != null && persons.get(_num)[2] != _uri) refresher.refreshInterface();
 		}
 	}
