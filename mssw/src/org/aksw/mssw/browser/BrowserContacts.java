@@ -157,58 +157,60 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	
 	private class webIDGetter extends Thread {
 		public void run() {
-			try {
-				//Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-					//	+ "/person/friends/"
-					//	+ URLEncoder.encode(selectedWebID, Constants.ENC));
-				Log.v(TAG, "getFriends: <" + selectedWebID + ">");
-				
-				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/" + 
-						URLEncoder.encode(selectedWebID, Constants.ENC));
-
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
-				
-				rc = getContentResolver().query(contentUri, Constants.PROPS_relations, null, null, null);
-				PersonCursor pc = new PersonCursor(new refreshList());
-				
-				if (rc != null) {
-					String relation;
-					String relationReadable;
-					String uri;
-					while (rc.moveToNext()) {
-						int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
-						Log.v(TAG, "foaf:knows objectType: "+objectType);
-						switch(objectType){
-							case 0: // if it's literal url 
-								uri = rc.getString(rc.getColumnIndex("object"));
-								Log.v(TAG, "foaf:knows object: "+uri);
-								relation = rc.getString(rc.getColumnIndex("predicate"));
-								relationReadable = rc.getString(rc.getColumnIndex("predicateReadable"));
-								pc.addPerson(uri, relation, uri, relationReadable, null);
-								break;
-							case 1: // if it's blank node
-								// TODO parse blank nodes
-								break;
+			synchronized (Constants.CONTENT_THREAD) {
+				try {
+					//Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+						//	+ "/person/friends/"
+						//	+ URLEncoder.encode(selectedWebID, Constants.ENC));
+					Log.v(TAG, "getFriends: <" + selectedWebID + ">");
+					
+					Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/" + 
+							URLEncoder.encode(selectedWebID, Constants.ENC));
+	
+					Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+					
+					rc = getContentResolver().query(contentUri, Constants.PROPS_relations, null, null, null);
+					PersonCursor pc = new PersonCursor(new refreshList());
+					
+					if (rc != null) {
+						String relation;
+						String relationReadable;
+						String uri;
+						while (rc.moveToNext()) {
+							int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
+							Log.v(TAG, "foaf:knows objectType: "+objectType);
+							switch(objectType){
+								case 0: // if it's literal url 
+									uri = rc.getString(rc.getColumnIndex("object"));
+									Log.v(TAG, "foaf:knows object: "+uri);
+									relation = rc.getString(rc.getColumnIndex("predicate"));
+									relationReadable = rc.getString(rc.getColumnIndex("predicateReadable"));
+									pc.addPerson(uri, relation, uri, relationReadable, null);
+									break;
+								case 1: // if it's blank node
+									// TODO parse blank nodes
+									break;
+							}
 						}
 					}
+					
+					//get names
+					pc.requestNames(getApplicationContext(), defaultResource);
+					
+					rc = pc;
+	
+					from = new String[] { "name", "relationReadable" };
+					to = new int[] { R.id.firstLine, R.id.secondLine };
+					
+					mHandler.post(mUpdateResults);
+				} catch (UnsupportedEncodingException e) {
+					Log.e(TAG,
+							"Could not encode URI and so couldn't get Resource from "
+									+ Constants.TRIPLE_AUTHORITY + ".", e);
+					TextView empty = (TextView) self.findViewById(android.R.id.empty);
+					empty.setText("Could not encode URI and so couldn't get Resource from "
+							+ Constants.TRIPLE_AUTHORITY + ".");
 				}
-				
-				//get names
-				pc.requestNames(getApplicationContext(), defaultResource);
-				
-				rc = pc;
-
-				from = new String[] { "name", "relationReadable" };
-				to = new int[] { R.id.firstLine, R.id.secondLine };
-				
-				mHandler.post(mUpdateResults);
-			} catch (UnsupportedEncodingException e) {
-				Log.e(TAG,
-						"Could not encode URI and so couldn't get Resource from "
-								+ Constants.TRIPLE_AUTHORITY + ".", e);
-				TextView empty = (TextView) self.findViewById(android.R.id.empty);
-				empty.setText("Could not encode URI and so couldn't get Resource from "
-						+ Constants.TRIPLE_AUTHORITY + ".");
 			}
 		}
 	}
@@ -217,7 +219,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 
-		pd = ProgressDialog.show(this, "Working..", "Getting WebID contacts..", true, false);
+		pd = ProgressDialog.show( self , "Working..", "Getting WebID contacts..", true, false);
 		
 		selectedWebID = webid;
 		

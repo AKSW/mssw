@@ -176,7 +176,7 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 		
-		pd = ProgressDialog.show(this, "Working..", "Getting WebID data..", true, false);
+		pd = ProgressDialog.show( self , "Working..", "Getting WebID data..", true, false);
 		
 		selectedWebID = webid;
 		
@@ -258,36 +258,38 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	}
 	
 	private class webIDGetter extends Thread {
-		public void run() {			
-			try {
-				//Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-					//	+ "/person/mecard/"
-					//	+ URLEncoder.encode(selectedWebID, Constants.ENC));
-				
-				Log.v(TAG, "getMeCard: <" + selectedWebID + ">");
-				
-				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/" 
-						+ URLEncoder.encode(selectedWebID, Constants.ENC));
-
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
-
-				String[] projection = new String[Constants.PROPS_relations.length+1];
-				System.arraycopy(Constants.PROPS_relations, 0, projection, 0, Constants.PROPS_relations.length);
-				projection[Constants.PROPS_relations.length] = Constants.PROP_hasData;
-				String selection = "complement";
-				
-				rc = getContentResolver().query(contentUri, projection, selection, null, null);
-
-				from = new String[] { "predicateReadable", "objectReadable" };
-				to = new int[] { R.id.key, R.id.value };
-				
-				mHandler.post(mUpdateResults);
-			} catch (UnsupportedEncodingException e) {
-				Log.e(TAG,
-						"Could not encode URI and so couldn't get Resource from "
-								+ Constants.TRIPLE_AUTHORITY + ".", e);
-				empty.setText("Could not encode URI and so couldn't get Resource from "
-						+ Constants.TRIPLE_AUTHORITY + ".");
+		public void run() {	
+			synchronized (Constants.CONTENT_THREAD) {
+				try {
+					//Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
+						//	+ "/person/mecard/"
+						//	+ URLEncoder.encode(selectedWebID, Constants.ENC));
+					
+					Log.v(TAG, "getMeCard: <" + selectedWebID + ">");
+					
+					Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/" 
+							+ URLEncoder.encode(selectedWebID, Constants.ENC));
+	
+					Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+	
+					String[] projection = new String[Constants.PROPS_relations.length+1];
+					System.arraycopy(Constants.PROPS_relations, 0, projection, 0, Constants.PROPS_relations.length);
+					projection[Constants.PROPS_relations.length] = Constants.PROP_hasData;
+					String selection = "complement";
+					
+					rc = getContentResolver().query(contentUri, projection, selection, null, null);
+	
+					from = new String[] { "predicateReadable", "objectReadable" };
+					to = new int[] { R.id.key, R.id.value };
+					
+					mHandler.post(mUpdateResults);
+				} catch (UnsupportedEncodingException e) {
+					Log.e(TAG,
+							"Could not encode URI and so couldn't get Resource from "
+									+ Constants.TRIPLE_AUTHORITY + ".", e);
+					empty.setText("Could not encode URI and so couldn't get Resource from "
+							+ Constants.TRIPLE_AUTHORITY + ".");
+				}
 			}
 		}
 	}
