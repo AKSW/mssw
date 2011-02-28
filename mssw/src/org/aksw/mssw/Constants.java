@@ -8,6 +8,8 @@ import android.net.Uri;
 
 public final class Constants {
 	public static final String ENC = "UTF-8";
+	
+	public static final String CONTENT_THREAD = "ContentAccessThread";
 
 	public static final String FILES_PATH = "Android" + File.separator + "data"
 			+ File.separator + "org.aksw.mssw" + File.separator + "files";
