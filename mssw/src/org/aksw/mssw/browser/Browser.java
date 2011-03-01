@@ -35,7 +35,6 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	protected String selectedWebID;
 	protected String searchTerm;
 	protected int selectedTab = 0;
-	
 
 	private Stack<String> historyStack = new Stack<String>(); //  && !historyStack.empty()
 
