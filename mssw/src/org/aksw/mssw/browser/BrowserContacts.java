@@ -152,7 +152,9 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 		ListView list = (ListView) self.findViewById(android.R.id.list);
 		list.setAdapter(rca);
 		
-		pd.dismiss();
+		if(pd != null && pd.isShowing()){
+			pd.dismiss();
+		}
 	}
 	
 	private class webIDGetter extends Thread {
@@ -218,8 +220,12 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
-
-		pd = ProgressDialog.show( self , "Working..", "Getting WebID contacts..", true, false);
+		
+		try{
+			pd = ProgressDialog.show( self , "Working..", "Getting WebID contacts..", true, false);
+		}catch(Exception e){
+			pd = null;
+		}
 		
 		selectedWebID = webid;
 		

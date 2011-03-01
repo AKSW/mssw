@@ -176,8 +176,12 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	public boolean selectionChanged(String webid) {
 		Log.v(TAG, "selectionChanged: <" + webid + ">");
 		
-		pd = ProgressDialog.show( self , "Working..", "Getting WebID data..", true, false);
-		
+		try{
+			pd = ProgressDialog.show( self , "Working..", "Getting WebID data..", true, false);
+		}catch(Exception e){
+			pd = null;
+		}
+			
 		selectedWebID = webid;
 		
 		webIDGetter wig = new webIDGetter();
@@ -240,7 +244,9 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 		img.setImageDrawable(bm);
 		
 		// remove loader
-		pd.dismiss();
+		if(pd != null && pd.isShowing()){
+			pd.dismiss();
+		}
 	}
 	
 	private Drawable loadImageFromWeb(String url){
