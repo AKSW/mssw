@@ -146,7 +146,10 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
         }
     };
     
-	public void updateList(){		
+	public void updateList(){
+		from = new String[] { "name", "relationReadable" };
+		to = new int[] { R.id.firstLine, R.id.secondLine };
+		
 		rca = new SimpleCursorAdapter(getApplicationContext(),R.layout.contact_row, rc, from, to);
 
 		ListView list = (ListView) self.findViewById(android.R.id.list);
@@ -200,9 +203,6 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 					pc.requestNames(getApplicationContext(), defaultResource);
 					
 					rc = pc;
-	
-					from = new String[] { "name", "relationReadable" };
-					to = new int[] { R.id.firstLine, R.id.secondLine };
 					
 					mHandler.post(mUpdateResults);
 				} catch (UnsupportedEncodingException e) {

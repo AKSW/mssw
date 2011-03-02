@@ -4,6 +4,13 @@
 	android:layout_height="wrap_content" android:orientation="vertical">
 	<LinearLayout android:layout_width="fill_parent"
 	android:layout_height="wrap_content" android:orientation="horizontal">
+		<EditText android:id="@+id/webid_url"
+			android:layout_height="wrap_content" android:layout_weight="1" android:layout_width="wrap_content"/>
+		<Button android:text="@string/go" android:id="@+id/go_btn"
+			android:layout_height="wrap_content" android:layout_width="wrap_content" android:layout_weight="0"/>
+	</LinearLayout>
+	<LinearLayout android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:orientation="horizontal">
 		<Button android:text="@string/search" android:id="@+id/search"
 			android:layout_height="wrap_content" android:layout_width="fill_parent"
 			android:layout_weight="1" />

@@ -216,4 +216,13 @@ public final class Constants {
         projection.add("http://xmlns.com/foaf/0.1/nick");
         projection.add("http://xmlns.com/foaf/0.1/surname");
 	}
+	
+	/**
+	 * Properties for name lookup
+	 */
+	public static LinkedList<String> projectionImages;
+	static {
+		projectionImages = new LinkedList<String>();
+		projectionImages.add("http://xmlns.com/foaf/0.1/depiction");
+	}
 }

@@ -10,6 +10,7 @@ msw/.project
 traces/*
 logo/icon_templates-v2.0/*
 logo/sw-cube-v.svg
+release/
 
 syntax: regexp
 ^dist
