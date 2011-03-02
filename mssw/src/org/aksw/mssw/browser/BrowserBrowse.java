@@ -34,6 +34,7 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 	private ListView results;
 	private Button search;
 	private Button scan;
+	private Button go;
 	
 	private BrowserBrowse self;
 
@@ -56,10 +57,12 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 
 		search = (Button) findViewById(R.id.search);
 		scan = (Button) findViewById(R.id.scan_code);
+		go = (Button) findViewById(R.id.go_btn);
 		results = (ListView) this.findViewById(android.R.id.list);
 
 		search.setOnClickListener(new searchClickListener());
 		scan.setOnClickListener(new scanClickListener());
+		go.setOnClickListener(new goClickListener());
 
 		SharedPreferences sharedPreferences = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
@@ -129,6 +132,22 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 			onSearchRequested();
 		}
 	}
+	
+	class goClickListener implements OnClickListener {
+		@Override
+		public void onClick(View v) {
+			TextView input = (TextView) self.findViewById(R.id.webid_url);
+			String uri = input.getText().toString();
+
+			if (uri.length() > 7) {
+				// uri = "http://sebastian.tramp.name";
+				Intent i = new Intent(Constants.INTENT_VIEW_WEBID, Uri.parse(uri));
+				startActivity(i);
+			} else {
+				Log.v(TAG, "Error opening uri (to short): "+uri);
+			}
+		}
+	}
 
 	class scanClickListener implements OnClickListener {
 
@@ -146,14 +165,17 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 	}
 
 	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+		// TODO: fix camera result parsing
 		if (requestCode == 0) {
 			if (resultCode == RESULT_OK) {
 				String contents = intent.getStringExtra("SCAN_RESULT");
 				// String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
 				// Handle successful scan
 				if (contents != null) {
-					searchTerm = contents;
-					search();
+					TextView t = (TextView) self.findViewById(R.id.webid_url);
+					t.setText(contents);
+					//searchTerm = contents;
+					//search();
 				}
 			} else if (resultCode == RESULT_CANCELED) {
 				// Handle cancel
