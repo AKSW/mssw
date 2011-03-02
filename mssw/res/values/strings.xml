@@ -34,7 +34,7 @@
 	<string name="no_webid">There is no data for this WebIDs</string>
 	<string name="example_webid">http://people.comiles.eu/example</string>
 	<string name="my_name">My Name</string>
-	<string name="search_hint">Enter WebID</string>
+	<string name="search_hint">Enter search term</string>
 	<string name="scan_webid">Scan WebID</string>
 	<string name="install_zxing">You have to install \'zxing\' Barcode Scanner to use this feature.</string>
 	<string name="firstrun_webid_titel">Configuration of WebID</string>
