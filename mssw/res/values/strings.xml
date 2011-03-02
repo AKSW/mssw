@@ -14,6 +14,7 @@
 	<string name="profile">Profile</string>
 	<string name="contacts">Contacts</string>
 	<string name="browse">Browse</string>
+	<string name="go">Go</string>
 	<string name="search">Search</string>
 	<string name="scan">Scan a Code</string>
 	<string name="sync">Synchronize</string>

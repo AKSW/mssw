@@ -197,7 +197,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		SharedPreferences sp = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
 		Log.v(TAG, "SearchTerm changed <" + searchTerm + ">.");
-		if (searchTerm == null
+		if (searchTerm != null
 				|| !searchTerm.equals(sp.getString("searchTerm", null))) {
 			Log.v(TAG, "Writing searchTerm <" + searchTerm + "> to config.");
 			Editor spEdit = sp.edit();

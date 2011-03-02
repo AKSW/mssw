@@ -1,10 +1,8 @@
 package org.aksw.mssw.browser;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
-import org.aksw.mssw.triplestore.PersonCursor;
+import org.aksw.mssw.search.SindiceSearch;
 
 import android.app.ListActivity;
 import android.content.ActivityNotFoundException;
@@ -31,11 +29,13 @@ import android.widget.Toast;
 
 public class BrowserBrowse extends ListActivity implements OnSharedPreferenceChangeListener {
 
-	private static final String TAG = "msswBrowserMeCard";
+	private static final String TAG = "msswBrowserBrowse";
 
 	private ListView results;
 	private Button search;
 	private Button scan;
+	
+	private BrowserBrowse self;
 
 	private ResourceCursorAdapter rca;
 
@@ -45,6 +45,8 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		self = this;
 
 		setContentView(R.layout.browser_browse);
 
@@ -94,55 +96,29 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 	}
 
 	private void search() {
-
-		if (searchTerm != null && (searchTerm.startsWith("http:") || searchTerm.startsWith("https:")) ) {
+		Log.i(TAG, "Starting search for: " + searchTerm);
+		if (searchTerm.length() > 0) {
 			try {
-				//Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+				Log.i(TAG, "Trying sindice search for: " + searchTerm);
 				
-				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/tmp/"
-											+ URLEncoder.encode(searchTerm, Constants.ENC));
+				SindiceSearch sc = new SindiceSearch();
 				
-				Log.i(TAG, "Getting WebID <" + searchTerm + ">.");
+				Cursor rc = sc.findTerm(searchTerm);
 				
-				String[] projection = { Constants.PROP_rdfType };
-
-				Cursor rc = getContentResolver().query(contentUri, projection, null, null, null);
-				
-				PersonCursor pc;
-				if (rc != null) {
-					pc = new PersonCursor();
-					String webid;
-					while (rc.moveToNext()) {
-
-						webid = rc.getString(rc.getColumnIndex("subject"));
-						if (webid.equals(searchTerm)) {
-							pc.addPerson(webid, null, webid, null,
-									null);
-							break;
-						}
-					}
-				}else{
-					pc = null;
-				}
-
 				if (rc != null) {
 					String[] from = new String[] { "name", "webid" };
 					int[] to = { R.id.firstLine, R.id.secondLine };
-					rca = new SimpleCursorAdapter(getApplicationContext(),
-							R.layout.contact_row, rc, from, to);
-
+					rca = new SimpleCursorAdapter(getApplicationContext(), R.layout.contact_row, rc, from, to);
 					results.setAdapter(rca);
 				}
 
-			} catch (UnsupportedEncodingException e) {
-				Log.e(TAG,
-						"Could not encode searchterm and so couldn't get Resource from "
-								+ Constants.TRIPLE_AUTHORITY + ".", e);
-				TextView empty = (TextView) this
-						.findViewById(android.R.id.empty);
-				empty.setText("Could not encode Searchterm and so couldn't get Resource from "
-						+ Constants.TRIPLE_AUTHORITY + ".");
+			} catch (Exception e) {
+				Log.e(TAG, "Something went wrong during search.", e);
+				TextView empty = (TextView) this.findViewById(android.R.id.empty);
+				empty.setText("Error during search.");
 			}
+		}else{
+			Log.i(TAG, "Searchterm WebID <" + searchTerm + "> is not http or https or null.");
 		}
 	}
 
@@ -203,11 +179,12 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 		super.onListItemClick(l, v, position, id);
 	}
 
-	public boolean searchTermChanged(String searchTerm) {
+	public boolean searchTermChanged(String sTerm) {
+		searchTerm = sTerm;
+		
 		Log.v(TAG, "searchTermChanged: '" + searchTerm + "'");
-		this.searchTerm = searchTerm;
 
-		search();
+		self.search();
 		return false;
 	}
 

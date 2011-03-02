@@ -157,12 +157,14 @@ public class PersonCursor extends AbstractCursor {
                 if (rc != null) {
                         String predicate;
                         String name = "";
+                        String uri = "";
                         
                         /**
                          * quality is a measure of the quality of the resulting string for a name
                          * the less the better. The worst is no name in this case we will use the uri. 
                          */
                         int quality = Constants.projection.size();
+                        // get name 
                         while (rc.moveToNext()) {
                                 predicate = rc.getString(rc.getColumnIndex("predicate"));
                                 Log.v(TAG,"Got name '" + rc.getString(
@@ -178,6 +180,19 @@ public class PersonCursor extends AbstractCursor {
                         	persons.get(_num)[2] = name;
                         }else{
                         	persons.get(_num)[2] = _uri;
+                        }
+                        
+                        // get image                        
+                        quality = Constants.projectionImages.size(); 
+                        while (rc.moveToNext()) {
+                                predicate = rc.getString(rc.getColumnIndex("predicate"));
+                                if (Constants.projectionImages.indexOf(predicate) < quality) {
+                                        quality = Constants.projectionImages.indexOf(predicate);
+                                        uri = rc.getString(rc.getColumnIndex("object"));
+                                }
+                        }
+                        if (quality < Constants.projectionImages.size()) {
+                        	persons.get(_num)[4] = uri;
                         }
                 }
 			} catch (Exception e) {
