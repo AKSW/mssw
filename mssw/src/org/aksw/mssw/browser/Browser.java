@@ -57,18 +57,20 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		 * Variable me is needed to check if a webID is set, else start first-run-wizard
 		 */
 		String me = sharedPreferences.getString("me", null);
+		String meSPAQRL = sharedPreferences.getString("meSPAQRL", null);
 
 		if (me != null) {
-			selectedWebID = sharedPreferences.getString("selectedWebID",
-					null);
-			if (selectedWebID == null) {
-				selectedWebID = sharedPreferences.getString("me",
-						Constants.EXAMPLE_webId);
+			if(meSPAQRL != null){
+				selectedWebID = sharedPreferences.getString("selectedWebID", null);
+				if (selectedWebID == null) selectedWebID = me;
+			}else{
+				selectedWebID = me;
 			}
+			
 			selectionChanged();
-
+			
 			handleIntent(getIntent());
-
+			
 			Resources res = getResources(); // Resource object to get
 											// Drawables
 
@@ -161,6 +163,9 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				}
 			} else if (action.equals(Intent.ACTION_SEARCH)) {
 				data = intent.getStringExtra(SearchManager.QUERY);
+				
+				// TODO: hide keyboard
+				
 				Log.v(TAG, "Search WebId <" + data + "> Intent.");
 				if (data != null) {
 					searchTerm = data;
@@ -225,18 +230,21 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				//Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
 				String relation = Constants.PROP_knows;
 				
-				Uri contentUri;
-				contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/addTriple/"
+				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/addTriple/"
 										+ URLEncoder.encode(selectedWebID, Constants.ENC));
-
+				
+				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+				String updateEndpoint = sharedPreferences.getString("meSPAQRL", null);
+				
 				ContentValues values = new ContentValues();
 				values.put("subject", selectedWebID);
 				values.put("predicate", relation);
 				values.put("object", webid);
+				values.put("updateEndpoint", updateEndpoint);
 
 				Log.i(TAG, "Adding new friend");
 				Log.i(TAG,  "You <" + selectedWebID + "> will know <" + relation + "> a new Person <" + webid + ">.");
-
+ 
 				Uri result = getContentResolver().insert(contentUri, values);
 				
 				if (result != null) {
@@ -254,7 +262,6 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	@Override
 	public void onTabChanged(String tabId) {
 		Log.v(TAG, "onTabChange id: " + tabId);
-		// TODO Auto-generated method stub
 		// Because we're using Activities as our tab children, we trigger
 		// onWindowFocusChanged() to let them know when they're active. This may
 		// seem to duplicate the purpose of onResume(), but it's needed because

@@ -45,13 +45,11 @@ public class ContactCursor extends AbstractCursor {
 
 	@Override
 	public double getDouble(int arg0) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public float getFloat(int column) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
@@ -71,13 +69,11 @@ public class ContactCursor extends AbstractCursor {
 
 	@Override
 	public long getLong(int column) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public short getShort(int column) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 

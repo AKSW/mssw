@@ -17,7 +17,6 @@ public class MswPreferenceActivity extends PreferenceActivity {
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(org.aksw.mssw.R.xml.preferences);
 		

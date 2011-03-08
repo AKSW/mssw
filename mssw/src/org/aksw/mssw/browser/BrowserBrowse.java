@@ -6,6 +6,7 @@ import org.aksw.mssw.search.SindiceSearch;
 
 import android.app.ListActivity;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -20,6 +21,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ResourceCursorAdapter;
@@ -32,7 +34,6 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 	private static final String TAG = "msswBrowserBrowse";
 
 	private ListView results;
-	private Button search;
 	private Button scan;
 	private Button go;
 	
@@ -55,12 +56,10 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 
 		menuManager = new MenuManager();
 
-		search = (Button) findViewById(R.id.search);
 		scan = (Button) findViewById(R.id.scan_code);
 		go = (Button) findViewById(R.id.go_btn);
 		results = (ListView) this.findViewById(android.R.id.list);
 
-		search.setOnClickListener(new searchClickListener());
 		scan.setOnClickListener(new scanClickListener());
 		go.setOnClickListener(new goClickListener());
 
@@ -98,9 +97,10 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 		}
 	}
 
-	private void search() {
+	private void search() {		
 		Log.i(TAG, "Starting search for: " + searchTerm);
 		if (searchTerm.length() > 0) {
+			// TODO: put this into separate thread
 			try {
 				Log.i(TAG, "Trying sindice search for: " + searchTerm);
 				
@@ -124,20 +124,17 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 			Log.i(TAG, "Searchterm WebID <" + searchTerm + "> is not http or https or null.");
 		}
 	}
-
-	class searchClickListener implements OnClickListener {
-
-		@Override
-		public void onClick(View v) {
-			onSearchRequested();
-		}
-	}
 	
 	class goClickListener implements OnClickListener {
 		@Override
 		public void onClick(View v) {
 			TextView input = (TextView) self.findViewById(R.id.webid_url);
 			String uri = input.getText().toString();
+			
+			InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+			imm.hideSoftInputFromInputMethod(input.getWindowToken(), 0);
+			
+			input.setText("");
 
 			if (uri.length() > 7) {
 				// uri = "http://sebastian.tramp.name";
@@ -165,7 +162,6 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 	}
 
 	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-		// TODO: fix camera result parsing
 		if (requestCode == 0) {
 			if (resultCode == RESULT_OK) {
 				String contents = intent.getStringExtra("SCAN_RESULT");

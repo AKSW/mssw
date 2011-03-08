@@ -11,40 +11,40 @@ public final class R {
     public static final class attr {
     }
     public static final class drawable {
-        public static final int ic_tab_browse=0x7f020000;
-        public static final int ic_tab_contacts=0x7f020001;
-        public static final int ic_tab_mecard=0x7f020002;
-        public static final int icon=0x7f020003;
+        public static final int barcode=0x7f020000;
+        public static final int ic_tab_browse=0x7f020001;
+        public static final int ic_tab_contacts=0x7f020002;
+        public static final int ic_tab_mecard=0x7f020003;
+        public static final int icon=0x7f020004;
     }
     public static final class id {
-        public static final int LinearLayout01=0x7f080017;
-        public static final int TabHost01=0x7f080016;
+        public static final int LinearLayout01=0x7f080016;
+        public static final int TabHost01=0x7f080015;
         public static final int browser_browse_view=0x7f080000;
-        public static final int browser_mecard_view=0x7f080005;
-        public static final int error_message=0x7f08000c;
-        public static final int error_titel=0x7f08000b;
-        public static final int firstLine=0x7f080009;
+        public static final int browser_mecard_view=0x7f080004;
+        public static final int error_message=0x7f08000b;
+        public static final int error_titel=0x7f08000a;
+        public static final int firstLine=0x7f080008;
         public static final int go_btn=0x7f080002;
-        public static final int icon=0x7f080008;
-        public static final int itemAdd=0x7f08001c;
-        public static final int itemMe=0x7f08001a;
-        public static final int itemPref=0x7f08001b;
-        public static final int itemScan=0x7f080019;
-        public static final int itemSearch=0x7f080018;
-        public static final int key=0x7f080014;
-        public static final int mecard_icon=0x7f080006;
-        public static final int mecard_name=0x7f080007;
-        public static final int message=0x7f08000f;
-        public static final int next_button=0x7f080012;
-        public static final int ok_button=0x7f08000d;
-        public static final int password=0x7f080010;
-        public static final int scan_code=0x7f080004;
-        public static final int search=0x7f080003;
-        public static final int secondLine=0x7f08000a;
-        public static final int show_password=0x7f080011;
-        public static final int titel=0x7f08000e;
-        public static final int value=0x7f080015;
-        public static final int webid=0x7f080013;
+        public static final int icon=0x7f080007;
+        public static final int itemAdd=0x7f08001b;
+        public static final int itemMe=0x7f080019;
+        public static final int itemPref=0x7f08001a;
+        public static final int itemScan=0x7f080018;
+        public static final int itemSearch=0x7f080017;
+        public static final int key=0x7f080013;
+        public static final int mecard_icon=0x7f080005;
+        public static final int mecard_name=0x7f080006;
+        public static final int message=0x7f08000e;
+        public static final int next_button=0x7f080011;
+        public static final int ok_button=0x7f08000c;
+        public static final int password=0x7f08000f;
+        public static final int scan_code=0x7f080003;
+        public static final int secondLine=0x7f080009;
+        public static final int show_password=0x7f080010;
+        public static final int titel=0x7f08000d;
+        public static final int value=0x7f080014;
+        public static final int webid=0x7f080012;
         public static final int webid_url=0x7f080001;
     }
     public static final class layout {

@@ -12,6 +12,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
@@ -41,6 +42,8 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 	 * 
 	 */
 	private String selectedWebID;
+	private String meWebID;
+	private String meSPAQRL;
 
 	private TextView name;
 	private TextView empty;
@@ -88,15 +91,15 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 		 * SharedPreferences
 		 */
 
-		SharedPreferences sharedPreferences = PreferenceManager
-				.getDefaultSharedPreferences(getApplicationContext());
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+		
+		meWebID = sharedPreferences.getString("me", Constants.EXAMPLE_webId);
+		meSPAQRL = sharedPreferences.getString("meSPAQRL", null);
+		
 		if (selectedWebID == null) {
 			selectedWebID = sharedPreferences.getString("selectedWebID", null);
-			if (selectedWebID == null) {
-				selectedWebID = sharedPreferences.getString("me",
-						Constants.EXAMPLE_webId);
-			}
+			if (selectedWebID == null) selectedWebID = meWebID;
 		}
 
 		name = (TextView) this.findViewById(R.id.mecard_name);
@@ -213,6 +216,13 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 		int quality = Constants.PROPS_nameProps.length;
 		while (rc.moveToNext()) {
 			predicate = rc.getString(rc.getColumnIndex("predicate"));
+			if(predicate.equals(Constants.PROP_updateEndpoint) && selectedWebID.equals(meWebID)){
+				meSPAQRL = rc.getString(rc.getColumnIndex("object"));
+				SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+				Editor spEdit = sp.edit();
+				spEdit.putString("meSPAQRL", meSPAQRL);
+				spEdit.commit();
+			}
 			for(index = 0; index < Constants.PROPS_nameProps.length; index++) {            
                 if (Constants.PROPS_nameProps[index].equals(predicate)) {
                         Log.v(TAG, "found name: "+predicate);

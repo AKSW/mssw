@@ -1,12 +1,20 @@
 package org.aksw.mssw.triplestore;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import org.aksw.mssw.Constants;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -462,17 +470,39 @@ public class TripleProvider extends ContentProvider {
 	private Uri addTriple(String uri, ContentValues values) {
 
 		// seams to give a model from web
-		Model model = mm.getModel("http://outgoing", "local");
+		//Model model = mm.getModel("http://outgoing", "local");
 
 		// TODO: ontowiki update uri SPARQL/Update
 		try {
+			String updateEndpoint = values.getAsString("updateEndpoint");
 			String subject = values.getAsString("subject");
 			String predicate = values.getAsString("predicate");
 			String object = values.getAsString("object");
 
-			Log.v(TAG, "Adding <" + subject + ">  <" + predicate + "> <" + object + "> to outgoing model");
+			Log.v(TAG, "Adding <" + subject + ">  <" + predicate + "> <" + object + "> to ontowiki "+updateEndpoint);
 			
-			if (model.supportsTransactions()) {
+			// http://jens-lehmann.org/foaf.rdf#i  
+			String url = updateEndpoint;
+			//url += "?default-graph-uri="+URLEncoder.encode(subject);
+			url += "?query="+URLEncoder.encode("INSERT DATA INTO <"+subject+"> { <"+subject+"> <"+predicate+"> <"+object+"> . }");
+			
+			Log.v(TAG, "REQ URL: "+url);
+			
+			HttpClient hc = new DefaultHttpClient();
+    		HttpGet req = new HttpGet(url);
+    		HttpResponse resp = hc.execute(req);
+    		
+    		BufferedReader in = new BufferedReader(new InputStreamReader(resp.getEntity().getContent()));
+            StringBuffer sb = new StringBuffer("");
+            String line = "";
+            while ((line = in.readLine()) != null) {
+                sb.append(line + " ");
+            }
+            in.close();
+            String page = sb.toString();
+            Log.v(TAG, "RESPONSE: "+ page);
+    		
+			/*if (model.supportsTransactions()) {
 				model.begin();
 			}
 			Resource resource = model.getResource(subject);
@@ -487,13 +517,13 @@ public class TripleProvider extends ContentProvider {
 			if (model.supportsTransactions()) {
 				model.commit();
 			}
-			mm.commitOutgoing();
-		} catch (JenaException e) {
+			mm.commitOutgoing();*/
+		} catch (Exception e) {
 			Log.e(TAG, "Exception on adding triple to resource <" + uri
 					+ ">. (rollback)", e);
-			if (model.supportsTransactions()) {
+			/*if (model.supportsTransactions()) {
 				model.abort();
-			}
+			}*/
 		}
 
 		return Uri.parse(uri);

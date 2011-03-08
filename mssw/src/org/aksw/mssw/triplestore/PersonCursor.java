@@ -42,6 +42,13 @@ public class PersonCursor extends AbstractCursor {
 		persons.add(person);
 	}
 	
+	public void killThreads(){
+		for(int i = 0; i < MAX_THREADS; i++){
+			nameGetters[i].stop();
+			nameGetters[i] = null;
+		}
+	}
+	
 	public void requestNames(Context context, String defaultResource){
 		mm = new ModelManager(context, defaultResource);
 		
@@ -82,13 +89,11 @@ public class PersonCursor extends AbstractCursor {
 
 	@Override
 	public double getDouble(int arg0) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public float getFloat(int column) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
@@ -104,13 +109,11 @@ public class PersonCursor extends AbstractCursor {
 
 	@Override
 	public long getLong(int column) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public short getShort(int column) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
@@ -129,7 +132,6 @@ public class PersonCursor extends AbstractCursor {
 
 	@Override
 	public boolean isNull(int column) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	
