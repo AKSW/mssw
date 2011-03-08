@@ -229,6 +229,13 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 		
 		selectedWebID = webid;
 		
+		if( rca != null ){
+			try{
+				PersonCursor pc = (PersonCursor)rca.getCursor();
+				pc.killThreads();
+			}catch(Exception e){}
+		}
+		
 		webIDGetter wig = new webIDGetter();
 		wig.start();
 		

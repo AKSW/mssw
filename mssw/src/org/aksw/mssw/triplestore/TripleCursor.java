@@ -85,14 +85,12 @@ public class TripleCursor extends AbstractCursor {
 	@Override
 	public double getDouble(int column) {
 		Log.v(TAG, "getDouble.");
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public float getFloat(int column) {
 		Log.v(TAG, "getFloat.");
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
@@ -141,14 +139,12 @@ public class TripleCursor extends AbstractCursor {
 	@Override
 	public long getLong(int column) {
 		Log.v(TAG, "getLong.");
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public short getShort(int column) {
 		Log.v(TAG, "getShort.");
-		// TODO Auto-generated method stub
 		return 0;
 	}
 

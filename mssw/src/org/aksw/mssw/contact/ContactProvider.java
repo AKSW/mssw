@@ -77,7 +77,6 @@ public class ContactProvider extends ContentProvider {
 	 */
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
@@ -108,7 +107,6 @@ public class ContactProvider extends ContentProvider {
 	 */
 	@Override
 	public Uri insert(Uri uri, ContentValues values) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

@@ -43,7 +43,6 @@ public class FoafMapper {
 		Runnable rb = new Runnable() {
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
 				File ruleFile = new File(storage, fileName);
 				
 				boolean update = false;

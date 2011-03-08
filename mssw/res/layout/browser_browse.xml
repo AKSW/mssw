@@ -7,16 +7,10 @@
 		<EditText android:id="@+id/webid_url"
 			android:layout_height="wrap_content" android:layout_weight="1" android:layout_width="wrap_content"/>
 		<Button android:text="@string/go" android:id="@+id/go_btn"
-			android:layout_height="wrap_content" android:layout_width="wrap_content" android:layout_weight="0"/>
-	</LinearLayout>
-	<LinearLayout android:layout_width="fill_parent"
-	android:layout_height="wrap_content" android:orientation="horizontal">
-		<Button android:text="@string/search" android:id="@+id/search"
-			android:layout_height="wrap_content" android:layout_width="fill_parent"
-			android:layout_weight="1" />
-		<Button android:text="@string/scan" android:id="@+id/scan_code"
-			android:layout_height="wrap_content" android:layout_width="fill_parent"
-			android:layout_weight="1" />
+			android:layout_height="wrap_content" android:layout_width="70px" android:layout_weight="0"/>
+		<Button android:id="@+id/scan_code" android:drawableLeft="@drawable/barcode"
+			android:layout_height="wrap_content" android:layout_width="wrap_content"
+			android:layout_weight="0" />
 	</LinearLayout>
 	<TextView android:id="@id/android:empty" android:layout_width="fill_parent"
 		android:layout_height="fill_parent" android:text="@string/no_result" />
