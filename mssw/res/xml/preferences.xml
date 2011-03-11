@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-	<PreferenceCategory android:title="@string/your_webid">
+	<!-- <PreferenceCategory android:title="@string/your_webid">  -->
 		<EditTextPreference android:key="me"
 			android:title="@string/your_webid" android:defaultValue="@string/example_webid"
 			android:summary="@string/pref_your_webid_desc">
 		</EditTextPreference>
-	</PreferenceCategory>
+		<EditTextPreference android:key="ep_login"
+			android:title="@string/login" 
+			android:summary="@string/pref_your_login">
+		</EditTextPreference>
+		<EditTextPreference android:key="ep_pass"
+			android:title="@string/password" 
+			android:summary="@string/pref_your_pass">
+		</EditTextPreference>
+	<!--  </PreferenceCategory> -->
 	<!-- <PreferenceCategory android:title="@string/triplestore">
 		<PreferenceScreen android:title="@string/triplestore_msw"
 			android:summary="@string/pref_triplestore_msw">

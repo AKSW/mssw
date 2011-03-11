@@ -29,6 +29,8 @@
 	<string name="triplestore_msw">Mobile Semantic Web</string>
 	<string name="pref_triplestore_msw">Configure special settings for your Mobile Semantic Web Triplestore.</string>
 	<string name="pref_your_webid_desc">Insert the URI of your WebID don\'t forget the scheme e.g. \'http://\'.</string>
+	<string name="pref_your_login">Enter login for your SPARQL Endpoint .</string>
+	<string name="pref_your_pass">Enter password for your SPARQL Endpoint.</string>
 	<string name="no_contacts">This WebID has no Contacts</string>
 	<string name="no_result">No WebIDs found</string>
 	<string name="no_webid">There is no data for this WebIDs</string>
@@ -46,6 +48,8 @@
 	<string name="firstrun_ready_titel">Configuration ready</string>
 	<string name="firstrun_ready_message">You have finished the configuration, now you can use the FOAF-Browser.</string>
 	<string name="show_password">Show password</string>
+	<string name="password">Password</string>
+	<string name="login">Login</string>
 	
     <string name="foaf_ssl">FOAF+SSL</string>
     <string name="privatekey_password">Privatekey Password</string>

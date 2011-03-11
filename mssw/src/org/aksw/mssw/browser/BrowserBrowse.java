@@ -5,6 +5,7 @@ import org.aksw.mssw.R;
 import org.aksw.mssw.search.SindiceSearch;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -40,10 +42,17 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 	private BrowserBrowse self;
 
 	private ResourceCursorAdapter rca;
+	private Cursor rc;
 
 	private MenuManager menuManager;
 
 	private String searchTerm;
+	
+	// progress dialog
+	private ProgressDialog pd;
+	
+	// handler for callbacks to the UI thread
+    private final Handler mHandler = new Handler();
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -101,27 +110,55 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 		Log.i(TAG, "Starting search for: " + searchTerm);
 		if (searchTerm.length() > 0) {
 			// TODO: put this into separate thread
+			try{
+				pd = ProgressDialog.show( self , "Working..", "Searching Sindice..", true, false);
+			}catch(Exception e){
+				pd = null;
+			}
+			
+			SindiceSearcher ssearch = new SindiceSearcher();
+			ssearch.start();
+		}else{
+			Log.i(TAG, "Searchterm WebID <" + searchTerm + "> is not http or https or null.");
+		}
+	}
+	
+	// Create runnable for posting
+    final Runnable mUpdateResults = new Runnable() {
+        public void run() {
+        	updateList();
+        }
+    };
+    
+	public void updateList(){
+		String[] from = new String[] { "name", "webid" };
+		int[] to = { R.id.firstLine, R.id.secondLine };
+		
+		rca = new SimpleCursorAdapter(getApplicationContext(),R.layout.contact_row, rc, from, to);
+		results.setAdapter(rca);
+		
+		if(pd != null && pd.isShowing()){
+			pd.dismiss();
+		}
+	}
+	
+	private class SindiceSearcher extends Thread {
+		public void run() {
 			try {
 				Log.i(TAG, "Trying sindice search for: " + searchTerm);
 				
 				SindiceSearch sc = new SindiceSearch();
 				
-				Cursor rc = sc.findTerm(searchTerm);
+				rc = sc.findTerm(searchTerm);
 				
 				if (rc != null) {
-					String[] from = new String[] { "name", "webid" };
-					int[] to = { R.id.firstLine, R.id.secondLine };
-					rca = new SimpleCursorAdapter(getApplicationContext(), R.layout.contact_row, rc, from, to);
-					results.setAdapter(rca);
+					mHandler.post(mUpdateResults);
 				}
-
 			} catch (Exception e) {
 				Log.e(TAG, "Something went wrong during search.", e);
-				TextView empty = (TextView) this.findViewById(android.R.id.empty);
+				TextView empty = (TextView) self.findViewById(android.R.id.empty);
 				empty.setText("Error during search.");
 			}
-		}else{
-			Log.i(TAG, "Searchterm WebID <" + searchTerm + "> is not http or https or null.");
 		}
 	}
 	
