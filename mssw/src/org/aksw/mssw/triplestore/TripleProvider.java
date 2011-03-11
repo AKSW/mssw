@@ -2,7 +2,6 @@ package org.aksw.mssw.triplestore;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -474,21 +473,26 @@ public class TripleProvider extends ContentProvider {
 
 		// TODO: ontowiki update uri SPARQL/Update
 		try {
-			String updateEndpoint = values.getAsString("updateEndpoint");
 			String subject = values.getAsString("subject");
 			String predicate = values.getAsString("predicate");
 			String object = values.getAsString("object");
+			
+			String updateEndpoint = values.getAsString("updateEndpoint");
+			String login = values.getAsString("login");
+			String pass = values.getAsString("pass");
 
 			Log.v(TAG, "Adding <" + subject + ">  <" + predicate + "> <" + object + "> to ontowiki "+updateEndpoint);
 			
-			// http://jens-lehmann.org/foaf.rdf#i  
-			String url = updateEndpoint;
-			//url += "?default-graph-uri="+URLEncoder.encode(subject);
-			url += "?query="+URLEncoder.encode("INSERT DATA INTO <"+subject+"> { <"+subject+"> <"+predicate+"> <"+object+"> . }");
+			// add login and pass if they exist
+			if(login.length() > 1 && pass.length() > 1){
+				updateEndpoint = updateEndpoint.replace("http://", "http://"+login+":"+pass+"@");
+			}
 			
-			Log.v(TAG, "REQ URL: "+url);
+			String url = updateEndpoint+"?query="+URLEncoder.encode("INSERT DATA INTO <"+subject+"> { <"+subject+"> <"+predicate+"> <"+object+"> . }");
 			
-			HttpClient hc = new DefaultHttpClient();
+			Log.v(TAG, "REQ URL: "+url);    		
+    		
+    		HttpClient hc = new DefaultHttpClient();
     		HttpGet req = new HttpGet(url);
     		HttpResponse resp = hc.execute(req);
     		

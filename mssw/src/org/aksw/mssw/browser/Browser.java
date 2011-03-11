@@ -235,12 +235,16 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 				
 				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 				String updateEndpoint = sharedPreferences.getString("meSPAQRL", null);
+				String login = sharedPreferences.getString("ep_login", null);
+				String pass = sharedPreferences.getString("ep_pass", null);
 				
 				ContentValues values = new ContentValues();
 				values.put("subject", selectedWebID);
 				values.put("predicate", relation);
 				values.put("object", webid);
 				values.put("updateEndpoint", updateEndpoint);
+				values.put("login", login);
+				values.put("pass", pass);
 
 				Log.i(TAG, "Adding new friend");
 				Log.i(TAG,  "You <" + selectedWebID + "> will know <" + relation + "> a new Person <" + webid + ">.");
