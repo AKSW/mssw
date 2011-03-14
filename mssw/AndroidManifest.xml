@@ -78,7 +78,7 @@
 			<meta-data android:name="android.accounts.AccountAuthenticator"
 				android:resource="@xml/authenticator" />
 		</service>
-		<service android:name="contact.ContactsSyncAdapterService"
+		<service android:name=".contact.ContactsSyncAdapterService"
 			android:exported="true">
 			<intent-filter>
 				<action android:name="android.content.SyncAdapter" />
