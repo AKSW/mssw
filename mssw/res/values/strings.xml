@@ -14,6 +14,7 @@
 	<string name="profile">Profile</string>
 	<string name="contacts">Contacts</string>
 	<string name="browse">Browse</string>
+	<string name="go">Go</string>
 	<string name="search">Search</string>
 	<string name="scan">Scan a Code</string>
 	<string name="sync">Synchronize</string>
@@ -28,12 +29,14 @@
 	<string name="triplestore_msw">Mobile Semantic Web</string>
 	<string name="pref_triplestore_msw">Configure special settings for your Mobile Semantic Web Triplestore.</string>
 	<string name="pref_your_webid_desc">Insert the URI of your WebID don\'t forget the scheme e.g. \'http://\'.</string>
+	<string name="pref_your_login">Enter login for your SPARQL Endpoint .</string>
+	<string name="pref_your_pass">Enter password for your SPARQL Endpoint.</string>
 	<string name="no_contacts">This WebID has no Contacts</string>
 	<string name="no_result">No WebIDs found</string>
 	<string name="no_webid">There is no data for this WebIDs</string>
 	<string name="example_webid">http://people.comiles.eu/example</string>
 	<string name="my_name">My Name</string>
-	<string name="search_hint">Enter WebID</string>
+	<string name="search_hint">Enter search term</string>
 	<string name="scan_webid">Scan WebID</string>
 	<string name="install_zxing">You have to install \'zxing\' Barcode Scanner to use this feature.</string>
 	<string name="firstrun_webid_titel">Configuration of WebID</string>
@@ -42,5 +45,18 @@
 	<string name="firstrun_cert_message">Please enter the password for the certificate file:</string>
 	<string name="firstrun_nocert_titel">Configuration of certificate</string>
 	<string name="firstrun_nocert_message">There is no certificate file installed on your SD-Card. You can install one, by putting it into the folder \'/Android/data/org.aksw.msw/files/\' its name should be \'privatekey.p12\'. You can enter the password in \'Preferences > Mobile Semantic Web > Privatekey Password\'.</string>
+	<string name="firstrun_ready_titel">Configuration ready</string>
+	<string name="firstrun_ready_message">You have finished the configuration, now you can use the FOAF-Browser.</string>
 	<string name="show_password">Show password</string>
+	<string name="password">Password</string>
+	<string name="login">Login</string>
+	
+    <string name="foaf_ssl">FOAF+SSL</string>
+    <string name="privatekey_password">Privatekey Password</string>
+	<string name="update">Update Resources</string>
+    <string name="pref_privatekey_password">Enter the password for your private Key, which is on the SD-Card in \'/Android/org.aksw.msw/files/certs/privatekey.p12\'.</string>
+	<string name="pref_update_desc">Click this to update all resources from the web.</string>
+	<string name="syncing_toast">Synchronizing Resources from Web (one-way, from web to device).</string>
+	<string name="syncing_toast_success">Synchronizing Resources from Web. Done successfully!</string>
+	<string name="syncing_toast_failed">Synchronizing Resources from Web. Failed!</string>
 </resources>

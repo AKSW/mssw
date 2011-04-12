@@ -48,12 +48,19 @@ public class FirstRun extends Activity {
 		if (intent == null && poke < 3) {
 			Log.v(TAG, "No Intent, starting first run wizard.");
 			intent = new Intent(Constants.INTENT_FIRSTRUN);
+			intent.putExtra("sender", "poke");
 			setIntent(intent);
 			poke++;
 			go();
 		} else {
 			String action = intent.getAction();
-			Log.v(TAG, "Intent with action " + action + " found.");
+			String sender = null;
+			if (intent.getStringExtra("sender") != null ) {
+				sender = intent.getStringExtra("sender");
+			} else {
+				sender = "<unknown>";
+			}
+			Log.v(TAG, "Intent with action " + action + " found, from " + sender + ".");
 			if (action != null && action.equals(Constants.INTENT_ERROR)) {
 				String titel = intent.getStringExtra("error_titel");
 				String message = intent.getStringExtra("error_message");
@@ -135,9 +142,19 @@ public class FirstRun extends Activity {
 					}
 				} else {
 					// ready
-					Intent i = new Intent(getApplicationContext(),
-							org.aksw.mssw.browser.Browser.class);
-					startActivity(i);
+
+					setContentView(R.layout.firstrun_ready);
+					
+					// fire this intend on button press
+
+					Button okButton = (Button) findViewById(R.id.next_button);
+					if (okButton != null) {
+						okButton.setOnClickListener(new OkClickListener(
+								progress + 1, "ready", null));
+					} else {
+						Log.e(TAG, "Couldn't find 'next' button in view.");
+					}
+
 				}
 
 			} else if (poke < 3) {
@@ -161,7 +178,6 @@ public class FirstRun extends Activity {
 		@Override
 		public void onCheckedChanged(CompoundButton buttonView,
 				boolean isChecked) {
-			// TODO Auto-generated method stub
 			if (isChecked) {
 				passwordInput
 						.setTransformationMethod(android.text.method.SingleLineTransformationMethod
@@ -194,8 +210,17 @@ public class FirstRun extends Activity {
 		public void onClick(View v) {
 			boolean goOn = true;
 			if (key == null) {
+				Log.v(TAG, "no key");
 
+			} else if (key.equals("ready")) {
+				Log.v(TAG, "FirstRun ready.");
+				goOn = false;
+				Intent i = new Intent(getApplicationContext(),
+						org.aksw.mssw.browser.Browser.class);
+				startActivity(i);
+				finish();
 			} else {
+				Log.v(TAG, "key = " + key);
 				String valueText = value.getText().toString();
 				
 				if (key.equals("password")) {
@@ -240,6 +265,7 @@ public class FirstRun extends Activity {
 			if (goOn) {
 				Intent i = new Intent(Constants.INTENT_FIRSTRUN);
 				i.putExtra("progress", progress);
+				i.putExtra("sender", "goOn");
 				startActivity(i);
 			}
 		}

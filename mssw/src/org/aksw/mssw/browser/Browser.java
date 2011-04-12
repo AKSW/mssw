@@ -1,6 +1,8 @@
 package org.aksw.mssw.browser;
 
-import org.aksw.mssw.CommonMethods;
+import java.net.URLEncoder;
+import java.util.Stack;
+
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
 
@@ -13,10 +15,12 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 
@@ -32,6 +36,8 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	protected String searchTerm;
 	protected int selectedTab = 0;
 
+	private Stack<String> historyStack = new Stack<String>(); //  && !historyStack.empty()
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -44,73 +50,67 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		tabHost = getTabHost();
 		tabHost.setOnTabChangedListener(this);
 
-		if (CommonMethods.checkForTripleProvider(getContentResolver())) {
+		SharedPreferences sharedPreferences = PreferenceManager
+				.getDefaultSharedPreferences(getApplicationContext());
 
-			SharedPreferences sharedPreferences = PreferenceManager
-					.getDefaultSharedPreferences(getApplicationContext());
+		/**
+		 * Variable me is needed to check if a webID is set, else start first-run-wizard
+		 */
+		String me = sharedPreferences.getString("me", null);
+		String meSPAQRL = sharedPreferences.getString("meSPAQRL", null);
 
-			String me = sharedPreferences.getString("me", null);
-
-			if (me != null) {
-				selectedWebID = sharedPreferences.getString("selectedWebID",
-						null);
-				if (selectedWebID == null) {
-					selectedWebID = sharedPreferences.getString("me",
-							Constants.EXAMPLE_webId);
-				}
-
-				handleIntent(getIntent());
-
-				Resources res = getResources(); // Resource object to get
-												// Drawables
-				TabHost.TabSpec spec; // Reusable TabSpec for each tab
-				Intent intent; // Reusable Intent for each tab
-
-				/* This is bad, because I repeat very similar code three times */
-				intent = new Intent().setClass(this, BrowserMeCard.class);
-				// intent.setData(Uri.parse(selectedWebID));
-				spec = tabHost.newTabSpec("meCard");
-				spec.setIndicator(getString(R.string.profile),
-						res.getDrawable(R.drawable.ic_tab_mecard));
-				spec.setContent(intent);
-				tabHost.addTab(spec);
-
-				/* This is bad, because I repeat very similar code three times */
-				intent = new Intent().setClass(this, BrowserContacts.class);
-				// intent.setData(Uri.parse(selectedWebID));
-				spec = tabHost.newTabSpec("Contacts");
-				spec.setIndicator(getString(R.string.contacts),
-						res.getDrawable(R.drawable.ic_tab_contacts));
-				spec.setContent(intent);
-				tabHost.addTab(spec);
-
-				/* This is bad, because I repeat very similar code three times */
-				intent = new Intent().setClass(this, BrowserBrowse.class);
-				if (searchTerm != null) {
-					// intent.setData(Uri.parse(searchTerm));
-				}
-				spec = tabHost.newTabSpec("Browser");
-				spec.setIndicator(getString(R.string.browse),
-						res.getDrawable(R.drawable.ic_tab_browse));
-				spec.setContent(intent);
-				tabHost.addTab(spec);
-
-				tabHost.setCurrentTab(selectedTab);
-			} else {
-				// Start first run wizard
-				Intent intent = new Intent(Constants.INTENT_FIRSTRUN);
-				intent.putExtra("progress", 0);
-				startActivity(intent);
-				finish();
+		if (me != null) {
+			if(meSPAQRL != null){
+				selectedWebID = sharedPreferences.getString("selectedWebID", null);
+				if (selectedWebID == null) selectedWebID = me;
+			}else{
+				selectedWebID = me;
 			}
+			
+			selectionChanged();
+			
+			handleIntent(getIntent());
+			
+			Resources res = getResources(); // Resource object to get
+											// Drawables
+
+			/* add meCard tab */
+			addTab(
+					new Intent().setClass(this, BrowserMeCard.class), 
+					getString(R.string.profile), 
+					res.getDrawable(R.drawable.ic_tab_mecard)
+			);
+
+			/* add contacts tab */
+			addTab(
+					new Intent().setClass(this, BrowserContacts.class),
+					getString(R.string.contacts),
+					res.getDrawable(R.drawable.ic_tab_contacts)
+			);
+
+			/* add browse tab */
+			addTab(
+					new Intent().setClass(this, BrowserBrowse.class),
+					getString(R.string.browse),
+					res.getDrawable(R.drawable.ic_tab_browse)
+			);
+			
+			tabHost.setCurrentTab(selectedTab);
 		} else {
-			Intent intent = new Intent(Constants.INTENT_ERROR);
-			intent.putExtra("error_titel", getString(R.string.no_core_titel));
-			intent.putExtra("error_message",
-					getString(R.string.no_core_message));
+			// Start first run wizard
+			Intent intent = new Intent(Constants.INTENT_FIRSTRUN);
+			intent.putExtra("sender", "browser.onCreate");
+			intent.putExtra("progress", 0);
 			startActivity(intent);
 			finish();
 		}
+	}
+	
+	private void addTab(Intent intent, String tabName, Drawable icon){
+		TabHost.TabSpec spec = tabHost.newTabSpec(tabName);
+		spec.setIndicator(tabName,icon);
+		spec.setContent(intent);
+		tabHost.addTab(spec);
 	}
 
 	@Override
@@ -147,8 +147,25 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 					selectedTab = 0;
 					selectionChanged();
 				}
+			} else if (action.equals(Constants.INTENT_BACK)) {
+				if (historyStack.size() > 1) {
+					historyStack.pop(); // removing the last WebID
+					selectedWebID = historyStack.pop(); // setting the new WebID 
+					selectedTab = 0;
+					Log.v(TAG, "Go back in History to WebId <" + selectedWebID + "> Intent.");
+					selectionChanged();
+				} else {
+					Log.v(TAG, "History is empty, giving back call to super.");
+					// TODO handle the case that nothing is on the stack
+					// maybe call some system function to go back in stack
+					super.onKeyDown(intent.getIntExtra("keyCode", 0), (KeyEvent)intent.getParcelableExtra("event"));
+					super.onBackPressed();
+				}
 			} else if (action.equals(Intent.ACTION_SEARCH)) {
 				data = intent.getStringExtra(SearchManager.QUERY);
+				
+				// TODO: hide keyboard
+				
 				Log.v(TAG, "Search WebId <" + data + "> Intent.");
 				if (data != null) {
 					searchTerm = data;
@@ -170,13 +187,14 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		SharedPreferences sp = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
 		Log.v(TAG, "Selection changed <" + selectedWebID + ">.");
-		if (selectedWebID != null
-				|| !selectedWebID.equals(sp.getString("selectedWebID", null))) {
+		// selectedWebID != null || 
+		if (!selectedWebID.equals(sp.getString("selectedWebID", null))) {
 			Log.v(TAG, "Writing selectedWebID <" + selectedWebID
 					+ "> to config.");
 			Editor spEdit = sp.edit();
 			spEdit.putString("selectedWebID", selectedWebID);
 			spEdit.commit();
+			historyStack.push(selectedWebID);
 		}
 	}
 
@@ -184,7 +202,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 		SharedPreferences sp = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
 		Log.v(TAG, "SearchTerm changed <" + searchTerm + ">.");
-		if (searchTerm == null
+		if (searchTerm != null
 				|| !searchTerm.equals(sp.getString("searchTerm", null))) {
 			Log.v(TAG, "Writing searchTerm <" + searchTerm + "> to config.");
 			Editor spEdit = sp.edit();
@@ -209,16 +227,30 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 		public void run() {
 			try {
-				Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI
-						+ "/me/friend/add");
-
-				Log.v(TAG, "Starting Query with uri: <" + contentUri.toString()
-						+ ">.");
-
+				//Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+				String relation = Constants.PROP_knows;
+				
+				Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/addTriple/"
+										+ URLEncoder.encode(selectedWebID, Constants.ENC));
+				
+				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+				String updateEndpoint = sharedPreferences.getString("meSPAQRL", null);
+				String login = sharedPreferences.getString("ep_login", null);
+				String pass = sharedPreferences.getString("ep_pass", null);
+				
 				ContentValues values = new ContentValues();
-				values.put("webid", webid);
+				values.put("subject", selectedWebID);
+				values.put("predicate", relation);
+				values.put("object", webid);
+				values.put("updateEndpoint", updateEndpoint);
+				values.put("login", login);
+				values.put("pass", pass);
 
+				Log.i(TAG, "Adding new friend");
+				Log.i(TAG,  "You <" + selectedWebID + "> will know <" + relation + "> a new Person <" + webid + ">.");
+ 
 				Uri result = getContentResolver().insert(contentUri, values);
+				
 				if (result != null) {
 					// return true;
 				} else {
@@ -234,7 +266,6 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	@Override
 	public void onTabChanged(String tabId) {
 		Log.v(TAG, "onTabChange id: " + tabId);
-		// TODO Auto-generated method stub
 		// Because we're using Activities as our tab children, we trigger
 		// onWindowFocusChanged() to let them know when they're active. This may
 		// seem to duplicate the purpose of onResume(), but it's needed because
