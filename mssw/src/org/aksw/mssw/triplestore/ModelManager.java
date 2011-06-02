@@ -72,15 +72,38 @@ public class ModelManager {
 
 	private Context context;
 	private SharedPreferences sharedPreferences;
+
+	/**
+	 * What for is this property?
+	 */
 	private String defaultResourceUri;
 
+	/**
+	 * The FoafMapper is responsible for mapping the FOAF vocabularies
+	 * properties to a vocabulary which can be mapped 1:1 to the android
+	 * contacts scheme
+	 */
 	private FoafMapper fm;
 
+	/**
+	 * This method should be used to retrieve a singleton instance of
+	 * ModelManager.
+	 * 
+	 * @return null, will be an instance of ModelManager in the future
+	 */
 	public static ModelManager getInstance() {
 		// TODO: what should we do with the arguments? context and so on
 		return INSTANCE;
 	}
 
+	/**
+	 * 
+	 * @param contextIn
+	 *            the Application context which is needed to read the mapping
+	 *            rules
+	 * @param defaultResourceIn
+	 *            an URI, but I don't know what for it is.
+	 */
 	public ModelManager(Context contextIn, String defaultResourceIn) {
 		context = contextIn;
 		if (defaultResourceIn == null) {
