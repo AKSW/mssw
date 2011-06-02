@@ -37,7 +37,7 @@
 				android:resource="@xml/searchable" />
 
 		</activity>
-		<activity android:name=".FirstRun" android:label="First Run Wizard">
+		<activity android:name=".FirstRun" android:label="First Run Wizard" android:windowSoftInputMode="adjustResize">
 			<intent-filter>
 				<action android:name="org.aksw.mssw.ERROR" />
 				<category android:name="android.intent.category.DEFAULT" />

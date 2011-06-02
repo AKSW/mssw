@@ -25,7 +25,6 @@ public class FirstRun extends Activity {
 	public void onCreate() {
 		Log.v(TAG, "create");
 		go();
-
 	}
 
 	@Override
