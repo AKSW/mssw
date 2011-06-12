@@ -111,11 +111,11 @@ public class BrowserMeCard extends ListActivity implements OnSharedPreferenceCha
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		super.onCreateOptionsMenu(menu);
 		MenuInflater inflater = getMenuInflater();
 		// don't show addWebId if the actualy selecte WebId is already a friend
 		// don't show the me button of you show my WenId
 		inflater.inflate(R.menu.mecard, menu);
+		//super.onCreateOptionsMenu(menu);
 		return true;
 	}
 
