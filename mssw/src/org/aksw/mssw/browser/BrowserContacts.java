@@ -87,6 +87,7 @@ public class BrowserContacts extends ListActivity implements OnSharedPreferenceC
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
+		Log.d(TAG, "Options menu created");
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.contacts, menu);
 		//super.onCreateOptionsMenu(menu);

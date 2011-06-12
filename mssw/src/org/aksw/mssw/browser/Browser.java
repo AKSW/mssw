@@ -21,6 +21,8 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 
@@ -105,6 +107,16 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 			finish();
 		}
 	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		Log.d(TAG, "Options menu created ----------- in Tabhost");
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.browse, menu);
+		//super.onCreateOptionsMenu(menu);
+		return true;
+	}
+
 	
 	private void addTab(Intent intent, String tabName, Drawable icon){
 		TabHost.TabSpec spec = tabHost.newTabSpec(tabName);

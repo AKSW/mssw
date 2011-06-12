@@ -89,6 +89,7 @@ public class BrowserBrowse extends ListActivity implements OnSharedPreferenceCha
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
+		Log.d(TAG, "Options menu created");
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.browse, menu);
 		//super.onCreateOptionsMenu(menu);
