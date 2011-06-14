@@ -8,8 +8,10 @@ import org.aksw.mssw.browser.BrowserContacts.refreshCallback;
 import com.hp.hpl.jena.rdf.model.Resource;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.AbstractCursor;
 import android.database.Cursor;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class PersonCursor extends AbstractCursor {
@@ -50,7 +52,14 @@ public class PersonCursor extends AbstractCursor {
 	}
 	
 	public void requestNames(Context context, String defaultResource){
-		mm = new ModelManager(context, defaultResource);
+
+		if (context == null) {
+			Log.v(TAG, "Context is null");
+		}
+		SharedPreferences pref = PreferenceManager
+				.getDefaultSharedPreferences(context);
+		String pwd = pref.getString("privatekey_password", "");
+		mm = new ModelManager(context, defaultResource, pwd);
 		
 		done = false;
 		offset = 0;

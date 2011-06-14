@@ -24,7 +24,6 @@ public class FoafMapper {
 
 		if (ruleFile.exists()) {
 			rules = Rule.rulesFromURL(ruleFile.getAbsolutePath());
-			reasoner = new GenericRuleReasoner(rules);
 		} else {
 			Log.e(TAG, "There is no rules-file (" + ruleFile.getAbsolutePath()
 					+ "), maybe the update checker failed.");
@@ -33,6 +32,7 @@ public class FoafMapper {
 
 	public Model map(Model model) {
 		if (reasoner != null) {
+			reasoner = new GenericRuleReasoner(rules);
 			InfModel infmodel = ModelFactory.createInfModel(reasoner, model);
 			infmodel.prepare();
 
