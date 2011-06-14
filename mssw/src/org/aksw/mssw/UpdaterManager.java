@@ -29,8 +29,4 @@ public class UpdaterManager {
 	public void update() {
 		
 	}
-	
-	private void _updateRules() {
-		
-	}
 }

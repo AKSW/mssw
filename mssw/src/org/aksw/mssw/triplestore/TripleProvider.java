@@ -115,7 +115,7 @@ public class TripleProvider extends ContentProvider {
 	public boolean onCreate() {
 		String defaultResource = getConfiguration().getString("defaultResource", null);
 		String pwd = getConfiguration().getString("privatekey_password", "");
-		mm = new ModelManager(getContext(), defaultResource, pwd);
+		mm = new ModelManager(defaultResource, pwd);
 		return true;
 	}
 
