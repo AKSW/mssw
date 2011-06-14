@@ -59,7 +59,7 @@ public class PersonCursor extends AbstractCursor {
 		SharedPreferences pref = PreferenceManager
 				.getDefaultSharedPreferences(context);
 		String pwd = pref.getString("privatekey_password", "");
-		mm = new ModelManager(context, defaultResource, pwd);
+		mm = new ModelManager(defaultResource, pwd);
 		
 		done = false;
 		offset = 0;

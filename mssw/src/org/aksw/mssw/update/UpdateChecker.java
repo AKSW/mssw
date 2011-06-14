@@ -9,6 +9,7 @@ import android.util.Log;
 /**
  * should be singleton, but how to manage the context?
  * @author natanael
+ * TODO: should be merged with UpdateManager
  *
  */
 public class UpdateChecker {

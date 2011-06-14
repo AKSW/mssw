@@ -100,8 +100,7 @@ public class ModelManager {
 	 * @param defaultResourceIn
 	 *            an URI, but I don't know what for it is.
 	 */
-	public ModelManager(Context contextIn, String defaultResourceIn, String privateKeyPasswordIn) {
-		context = contextIn;
+	public ModelManager(String defaultResourceIn, String privateKeyPasswordIn) {
 		if (privateKeyPasswordIn != null) {
 			privateKeyPassword = privateKeyPasswordIn;
 		}
@@ -334,14 +333,6 @@ public class ModelManager {
 				Log.v(TAG, "webModelMaker knows model without name.");
 			}
 		}
-	}
-	
-	/**
-	 * TODO: I think this way of handling a password is not secure
-	 * @param password
-	 */
-	public void setPrivateKeyPassword(String password) {
-		privateKeyPassword = password;
 	}
 
 	public void updateResource(String uri) {
