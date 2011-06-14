@@ -25,7 +25,6 @@ public class FirstRun extends Activity {
 	public void onCreate() {
 		Log.v(TAG, "create");
 		go();
-
 	}
 
 	@Override
@@ -178,7 +177,6 @@ public class FirstRun extends Activity {
 		@Override
 		public void onCheckedChanged(CompoundButton buttonView,
 				boolean isChecked) {
-			// TODO Auto-generated method stub
 			if (isChecked) {
 				passwordInput
 						.setTransformationMethod(android.text.method.SingleLineTransformationMethod

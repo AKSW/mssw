@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent" android:layout_height="wrap_content">
+	<Button android:id="@+id/next_button" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:text="@string/android:ok"
+		android:layout_alignParentBottom="true" />
 	<TextView android:id="@+id/titel" android:layout_width="fill_parent"
 		android:layout_height="wrap_content" android:text="@string/firstrun_webid_titel"
 		android:textStyle="bold" android:gravity="center"
@@ -12,7 +15,4 @@
 		android:layout_width="fill_parent" android:layout_height="wrap_content"
 		android:layout_below="@+id/message" android:inputType="textUri"
 		android:singleLine="true" />
-	<Button android:id="@+id/next_button" android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:text="@string/android:ok"
-		android:layout_alignParentBottom="true" />
 </RelativeLayout>
