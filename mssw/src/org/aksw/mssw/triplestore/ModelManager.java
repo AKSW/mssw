@@ -41,9 +41,22 @@ import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
 import com.hp.hpl.jena.shared.DoesNotExistException;
 import com.hp.hpl.jena.shared.JenaException;
 
+/**
+ * The ModelManager manages the models in this system in four different folders,
+ * web, inf, local and cache on the external storage. See Bachelor thesis
+ * section 5.2.4 and 6.2.1.
+ * 
+ * @author natanael
+ * 
+ */
 public class ModelManager {
 
 	private static final String TAG = "MswModelManager";
+
+	private static final String INDEX = "http://ns.aksw.org/Android/SysOnt/index";
+	private static final String MODEL = "http://ns.aksw.org/Android/SysOnt/Model";
+	private static final String CONTAINS = "http://ns.aksw.org/Android/SysOnt/contains";
+	private static final String RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 
 	private static ModelManager INSTANCE;
 
@@ -55,15 +68,39 @@ public class ModelManager {
 	private static HashMap<String, ModelMaker> modelMakers;
 
 	private static String privateKeyPassword = "";
+
+	/**
+	 * What for is this property?
+	 */
 	private String defaultResourceUri;
+	/**
+	 * The FoafMapper is responsible for mapping the FOAF vocabularies
+	 * properties to a vocabulary which can be mapped 1:1 to the android
+	 * contacts scheme
+	 */
 	private FoafMapper fm;
 
+	/**
+	 * This method should be used to retrieve a singleton instance of
+	 * ModelManager.
+	 * 
+	 * @return null, will be an instance of ModelManager in the future
+	 */
 	public static ModelManager getInstance() {
 		// TODO: what should we do with the arguments? context and so on
 		return INSTANCE;
 	}
 
-	public ModelManager(String defaultResourceIn) {
+	/**
+	 * 
+	 * @param contextIn
+	 *            the Application context which is needed to read the mapping
+	 *            rules
+	 * @param defaultResourceIn
+	 *            an URI, but I don't know what for it is.
+	 */
+	public ModelManager(Context contextIn, String defaultResourceIn) {
+		context = contextIn;
 		if (defaultResourceIn == null) {
 			this.defaultResourceUri = "http://10.0.2.2/~natanael/ontowiki/natanael";
 		} else {
@@ -76,6 +113,7 @@ public class ModelManager {
 		if (Environment.MEDIA_MOUNTED.equals(state)
 				|| Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
 			fm = new FoafMapper(storage, Constants.RULE_FILE);
+			fm = new FoafMapper(storage, Constants.RULE_FILE, context);
 		} else {
 			Log.v(TAG,
 					"Can not get ruleset file, because external storrage is not mounted.");
@@ -95,7 +133,7 @@ public class ModelManager {
 
 	private boolean initModelMakers() {
 		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
+		if (state.equals(Environment.MEDIA_MOUNTED)) {
 			// read and write access
 			webModelsFiles.mkdirs();
 			infModelsFiles.mkdirs();
@@ -111,7 +149,7 @@ public class ModelManager {
 			modelMakers.put("cache", ModelFactory.createMemModelMaker());
 
 			return true;
-		} else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+		} else if (state.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
 			// We can only read the media
 			return false;
 		} else {
@@ -136,10 +174,13 @@ public class ModelManager {
 	public Model getModel(String uri, String makerKey) {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
+		if (state.equals(Environment.MEDIA_MOUNTED) && uri != null) {
+			Log.v(TAG, "getting model from " + makerKey);
 			if (modelExists(uri, makerKey)) {
+				Log.v(TAG, "model is in cache");
 				model = modelMakers.get(makerKey).openModel(uri);
 			} else {
+				Log.v(TAG, "creating new model");
 				model = createModel(uri, makerKey);
 				if (model != null && makerKey.equals("web")) {
 					readSSL(uri, model);
@@ -158,12 +199,14 @@ public class ModelManager {
 	public Model getModel(String uri, boolean persistant, boolean inferenced) {
 		Model model = null;
 		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state) && uri != null) {
+		if (state.equals(Environment.MEDIA_MOUNTED) && uri != null) {
 			// read and write access
 			if (persistant) {
 				if (modelExists(uri, "web")) {
+					Log.v(TAG, "got model from web cache");
 					model = modelMakers.get("web").openModel(uri);
 				} else {
+					Log.v(TAG, "created new model in web cache");
 					model = createModel(uri, "web");
 					if (model != null) {
 						readSSL(uri, model);
@@ -171,8 +214,10 @@ public class ModelManager {
 				}
 			} else {
 				if (modelExists(uri, "cache")) {
+					Log.v(TAG, "got model from mem cache");
 					model = modelMakers.get("cache").openModel(uri);
 				} else {
+					Log.v(TAG, "created new model in mem cache");
 					model = modelMakers.get("cache").openModel(uri);
 					model = readSSL(uri, null);
 				}
@@ -189,8 +234,10 @@ public class ModelManager {
 				Model infModel;
 				if (modelExists(uri, "inf")
 						&& !modelMakers.get("inf").openModel(uri).isEmpty()) {
+					Log.v(TAG, "get model from inf cache");
 					infModel = modelMakers.get("inf").openModel(uri);
 				} else {
+					Log.v(TAG, "created new model in inf cache");
 					infModel = createModel(uri, "inf");
 					// TODO have to check if infModel != null
 					// TODO move the model mapping out to just add ist
@@ -227,6 +274,7 @@ public class ModelManager {
 	}
 
 	public void updateResources() {
+		Log.v(TAG, "updating resources");
 
 		// should check if a internet connection is possible before
 
@@ -415,27 +463,27 @@ public class ModelManager {
 						int lenth = conn.getContentLength();
 						String type = conn.getContentType();
 						Log.v(TAG, "Content lenth: " + lenth + " type: " + type);
-						
-						// reading doesn't work
-						//if (lenth > 0) {
-						//	String line;
-						//	line = conn.getContentType();
-						//	// doing Input
-						//	Log.v(TAG,
-						//			"Start reading from the connection, contentType: "
-						//					+ line);
-						//	DataInputStream input = new DataInputStream(
-						//			conn.getInputStream());
 
-							// BufferedReader input = new BufferedReader();
-						//	while ((line = input.readLine()) != null) {
-						//		line = input.readLine();
-						//		Log.v(TAG, "Output of SPARQL-Endoint: " + line);
-						//	}
-						//	Log.v(TAG,
-						//			"Ready reading from the connection and closing input");
-						//	input.close();
-						//}
+						// reading doesn't work
+						// if (lenth > 0) {
+						// String line;
+						// line = conn.getContentType();
+						// // doing Input
+						// Log.v(TAG,
+						// "Start reading from the connection, contentType: "
+						// + line);
+						// DataInputStream input = new DataInputStream(
+						// conn.getInputStream());
+
+						// BufferedReader input = new BufferedReader();
+						// while ((line = input.readLine()) != null) {
+						// line = input.readLine();
+						// Log.v(TAG, "Output of SPARQL-Endoint: " + line);
+						// }
+						// Log.v(TAG,
+						// "Ready reading from the connection and closing input");
+						// input.close();
+						// }
 					}
 
 					if (error) {
@@ -476,13 +524,14 @@ public class ModelManager {
 	}
 
 	protected Model readSSL(String url, Model model) {
+		Log.v(TAG, "reading ssl");
 
 		String state = Environment.getExternalStorageState();
 
 		if (model == null) {
 			model = modelMakers.get("cache").createDefaultModel();
 		}
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
+		if (state.equals(Environment.MEDIA_MOUNTED)) {
 			try {
 				// We can read and write the media
 				File storage = Environment.getExternalStorageDirectory();
@@ -493,13 +542,14 @@ public class ModelManager {
 
 					SSLSocketFactory socketFactory = TrustManagerFactory
 							.getFactory(keyFile, privateKeyPassword);
+							.getFactory(keyFile,
+									prefs.getString("privatekey_password", ""));
 
 					HostnameVerifier hostNameVerifier = TrustManagerFactory
 							.getVerifier();
 
 					if (socketFactory != null) {
 						try {
-
 							HttpsURLConnection
 									.setDefaultSSLSocketFactory(socketFactory);
 							HttpsURLConnection
@@ -564,17 +614,22 @@ public class ModelManager {
 	}
 
 	private Model read(String uri, Model model, InputStream inputstream) {
+		Log.v(TAG, "reading regular");
 
 		if (model == null) {
 			model = modelMakers.get("cache").openModel(uri);
 		}
 		Model tmp = modelMakers.get("cache").createFreshModel();
+		Log.v(TAG, "created tmp model");
 		try {
 			if (inputstream == null) {
+				Log.v(TAG, "reading from uri");
 				tmp.read(uri);
 			} else {
+				Log.v(TAG, "reading from inputstream");
 				tmp.read(inputstream, uri);
 			}
+			Log.v(TAG, "done reading");
 		} catch (DoesNotExistException e) {
 			Log.e(TAG, "Could not get <" + uri + "> into temp model,"
 					+ "check the existence with your webbrowser.", e);
@@ -584,23 +639,33 @@ public class ModelManager {
 
 		// TODO should include also all blanknodes in the connected graph
 		Resource subj = new ResourceImpl(uri);
+		Log.v(TAG, "got resource");
 		SimpleSelector selector = new SimpleSelector(subj, (Property) null,
 				(RDFNode) null);
+		Log.v(TAG, "created selector");
 		
 		//String queryString = "";
 		
 		//Query query = QueryFactory.create(queryString);
 		//query.addDescribeNode(subj);
 
+		// String queryString = "";
+
+		// Query query = QueryFactory.create(queryString);
+		// query.addDescribeNode(subj);
+
 		synchronized (this) {
 			try {
 				if (model.supportsTransactions()) {
 					// model.abort();
 					model.begin();
+					Log.v(TAG, "began transaction");
 				}
 				model.add(tmp.query(selector));
+				Log.v(TAG, "added data from tmp");
 				if (model.supportsTransactions()) {
 					model.commit();
+					Log.v(TAG, "commited transaction");
 				}
 
 			} catch (JenaException e) {
@@ -615,11 +680,6 @@ public class ModelManager {
 
 		return model;
 	}
-
-	private static final String INDEX = "http://ns.aksw.org/Android/SysOnt/index";
-	private static final String MODEL = "http://ns.aksw.org/Android/SysOnt/Model";
-	private static final String CONTAINS = "http://ns.aksw.org/Android/SysOnt/contains";
-	private static final String RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 
 	private ArrayList<String> listModels(String makerKey) {
 
@@ -672,14 +732,12 @@ public class ModelManager {
 	}
 
 	private boolean modelExists(String uri, String makerKey) {
-
 		return listModels(makerKey).contains(uri);
-
 	}
 
 	private Model createModel(String uri, String makerKey) {
 		if (modelMakers.get(makerKey) != null) {
-			if (makerKey == "cache" || modelExists(uri, makerKey)) {
+			if (makerKey.equals("cache") || modelExists(uri, makerKey)) {
 				return modelMakers.get(makerKey).openModel(uri);
 			} else {
 				Model indexMod = modelMakers.get(makerKey).openModel("index");
@@ -708,5 +766,16 @@ public class ModelManager {
 		} else {
 			return null;
 		}
+	}
+
+	private SharedPreferences getConfiguration() {
+
+		if (context == null) {
+			Log.v(TAG, "Context is null");
+		}
+		sharedPreferences = PreferenceManager
+				.getDefaultSharedPreferences(context);
+
+		return sharedPreferences;
 	}
 }

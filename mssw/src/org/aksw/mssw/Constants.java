@@ -2,11 +2,14 @@ package org.aksw.mssw;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import android.net.Uri;
 
 public final class Constants {
 	public static final String ENC = "UTF-8";
+	
+	public static final String CONTENT_THREAD = "ContentAccessThread";
 
 	public static final String FILES_PATH = "Android" + File.separator + "data"
 			+ File.separator + "org.aksw.mssw" + File.separator + "files";
@@ -45,13 +48,6 @@ public final class Constants {
 	public static final String PROP_updateEndpoint = "http://ns.aksw.org/update/queryEndpoint";
 
 	public static final String EXAMPLE_webId = "http://people.comiles.eu/example";
-
-	/**
-	 * Static values for querying the FoafProvider
-	 */
-	public static final String FOAF_AUTHORITY = "org.aksw.mssw.content.foafprovider";
-	public static final Uri FOAF_CONTENT_URI = Uri.parse("content://"
-			+ FOAF_AUTHORITY);
 
 	/**
 	 * Static values for querying the Mssw-ContactProvider
@@ -124,9 +120,11 @@ public final class Constants {
 			"http://purl.org/vocab/relationship/wouldLikeToKnow" };
 
 	public static String[] PROPS_nameProps = { "http://xmlns.com/foaf/0.1/name",
+			"http://rdfs.org/sioc/ns#name",
 			"http://xmlns.com/foaf/0.1/givenName",
 			"http://xmlns.com/foaf/0.1/familyName",
-			"http://xmlns.com/foaf/0.1/nick" };
+			"http://xmlns.com/foaf/0.1/nick",
+			"http://xmlns.com/foaf/0.1/surname" };
 
 	public static String[] PROPS_pictureProps = { "http://xmlns.com/foaf/0.1/depiction" };
 	
@@ -204,5 +202,27 @@ public final class Constants {
 				COMMON_DATA_KINDS_PREFIX + "StructuredPostal");
 		MIME_TYPES.put("vnd.android.cursor.item/website",
 				COMMON_DATA_KINDS_PREFIX + "Website");
+	}
+	
+	/**
+	 * Properties for name lookup
+	 */
+	public static LinkedList<String> projection;
+	static {
+        projection = new LinkedList<String>();
+        projection.add("http://xmlns.com/foaf/0.1/name");
+        projection.add("http://rdfs.org/sioc/ns#name");
+        projection.add("http://www.w3.org/2000/01/rdf-schema#label");
+        projection.add("http://xmlns.com/foaf/0.1/nick");
+        projection.add("http://xmlns.com/foaf/0.1/surname");
+	}
+	
+	/**
+	 * Properties for name lookup
+	 */
+	public static LinkedList<String> projectionImages;
+	static {
+		projectionImages = new LinkedList<String>();
+		projectionImages.add("http://xmlns.com/foaf/0.1/depiction");
 	}
 }

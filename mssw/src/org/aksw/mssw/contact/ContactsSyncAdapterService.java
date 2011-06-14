@@ -12,6 +12,7 @@ import java.util.Stack;
 
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.tools.Base64;
+import org.aksw.mssw.triplestore.PersonCursor;
 
 import android.accounts.Account;
 import android.accounts.OperationCanceledException;
@@ -23,11 +24,13 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
@@ -66,9 +69,53 @@ public class ContactsSyncAdapterService extends Service {
 		// maybe should also tell Foaf/TripleProvider to pull the latest
 		// versions from the Web
 		// get the friend list from FoafProvider
-		Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/me/friends/");
-		Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
-		Cursor rc = content.query(contentUri, null, null, null, null);
+		//Uri contentUri = Uri.parse(Constants.FOAF_CONTENT_URI + "/me/friends/");
+		//Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+		//Cursor rc = content.query(contentUri, null, null, null, null);
+		
+		Cursor rc;
+		
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+		String uri = sharedPreferences.getString("me", null);;
+		
+		try{			
+			Uri contentUri = Uri.parse(Constants.TRIPLE_CONTENT_URI + "/resource/" + 
+					URLEncoder.encode(uri, Constants.ENC));
+	
+			Log.v(TAG, "Starting Query with uri: <" + contentUri.toString() + ">.");
+	
+			rc = context.getContentResolver().query(contentUri, Constants.PROPS_relations, null, null, null);
+			PersonCursor pc;
+			
+			if (rc != null) {
+				String relation;
+				String relationReadable;
+				pc = new PersonCursor();
+				while (rc.moveToNext()) {
+					int objectType = Integer.parseInt(rc.getString(rc.getColumnIndex("objectType"))); 
+					Log.v(TAG, "foaf:knows objectType: "+objectType);
+					switch(objectType){
+						case 0: // if it's literal url 
+							uri = rc.getString(rc.getColumnIndex("object"));
+							Log.v(TAG, "foaf:knows object: "+uri);
+							relation = rc.getString(rc.getColumnIndex("predicate"));
+							relationReadable = rc.getString(rc
+									.getColumnIndex("predicateReadable"));
+							pc.addPerson(uri, relation, uri,
+									relationReadable, null);
+							break;
+						case 1: // if it's blank node
+							// TODO parse blank nodes
+							break;
+					}
+				}
+			} else {
+				pc = null;
+			}
+			rc = pc;
+		}catch(Exception e){
+			rc = null;
+		}
 
 		// get the contact list from contacts data table
 		Uri rawContactUri = RawContacts.CONTENT_URI.buildUpon()
@@ -87,7 +134,6 @@ public class ContactsSyncAdapterService extends Service {
 		// diff-bitmap (see Bernhard Schandl mobisem)
 		// find out, which persons are missing and which are common (Person
 		// Diff) [1]
-		String uri;
 		while (rc.moveToNext()) {
 			uri = rc.getString(rc.getColumnIndex("webid"));
 			if (localContacts.get(uri) == null) {

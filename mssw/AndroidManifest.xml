@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="org.aksw.mssw" android:versionName="0.9.5-unstable-8" android:versionCode="8">
+	package="org.aksw.mssw" android:versionName="0.9.5-unstable-11" android:versionCode="11">
 	<application android:icon="@drawable/icon" android:label="@string/app_name" android:name="SemanticWebCore">
 		<meta-data android:name="android.app.default_searchable"
 			android:value=".browser.Browser" />
@@ -37,7 +37,7 @@
 				android:resource="@xml/searchable" />
 
 		</activity>
-		<activity android:name=".FirstRun" android:label="First Run Wizard">
+		<activity android:name=".FirstRun" android:label="First Run Wizard" android:windowSoftInputMode="adjustResize">
 			<intent-filter>
 				<action android:name="org.aksw.mssw.ERROR" />
 				<category android:name="android.intent.category.DEFAULT" />
@@ -78,7 +78,7 @@
 			<meta-data android:name="android.accounts.AccountAuthenticator"
 				android:resource="@xml/authenticator" />
 		</service>
-		<service android:name="contact.ContactsSyncAdapterService"
+		<service android:name=".contact.ContactsSyncAdapterService"
 			android:exported="true">
 			<intent-filter>
 				<action android:name="android.content.SyncAdapter" />
@@ -88,8 +88,6 @@
 		</service>
 		<provider android:authorities="org.aksw.mssw.triplestore.tripleprovider"
 			android:name=".triplestore.TripleProvider" />
-		<provider android:authorities="org.aksw.mssw.content.foafprovider"
-			android:name=".content.FoafProvider" />
 		<provider android:authorities="org.aksw.mssw.contact.contactprovider"
 			android:name=".contact.ContactProvider" />
 	</application>
