@@ -68,6 +68,7 @@ public final class Constants {
 	public static final String INTENT_BACK = "org.aksw.mssw.BACK";
 	public static final String INTENT_ERROR = "org.aksw.mssw.ERROR";
 	public static final String INTENT_FIRSTRUN = "org.aksw.mssw.FIRSTRUN";
+	public static final String INTENT_UPDATE = "org.aksw.mssw.UPDATE";
 	
 	public static final int TIME_SHORT = 1000;
 	public static final int TIME_MIDDLE = 5000;

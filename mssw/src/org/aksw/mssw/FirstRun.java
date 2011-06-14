@@ -141,7 +141,6 @@ public class FirstRun extends Activity {
 					}
 				} else {
 					// ready
-
 					setContentView(R.layout.firstrun_ready);
 					
 					// fire this intend on button press

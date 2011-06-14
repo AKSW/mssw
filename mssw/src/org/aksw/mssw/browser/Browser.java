@@ -5,6 +5,7 @@ import java.util.Stack;
 
 import org.aksw.mssw.Constants;
 import org.aksw.mssw.R;
+import org.aksw.mssw.UpdaterManager;
 
 import android.app.Activity;
 import android.app.SearchManager;
@@ -41,7 +42,7 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Log.v(TAG, "================ onCreate Browser =====================");
+		Log.v(TAG, "================== onCreate Browser ==================");
 		// important!! don't set the content because else no tab-content would
 		// be displayed.
 
@@ -52,6 +53,12 @@ public class Browser extends TabActivity implements OnTabChangeListener,
 
 		SharedPreferences sharedPreferences = PreferenceManager
 				.getDefaultSharedPreferences(getApplicationContext());
+
+		
+		UpdaterManager updater = new UpdaterManager(getApplicationContext());
+		if (updater.needUpdate()) {
+			updater.update();
+		}
 
 		/**
 		 * Variable me is needed to check if a webID is set, else start first-run-wizard
