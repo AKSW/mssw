@@ -61,7 +61,7 @@ public class RulesCheck extends UpdateCheck {
 	public boolean isConsistent() {
 		if (!RulesCheck.fileChecked) {
 			// check file
-			this.checkUpdateŃeccessarity();
+			this.checkUpdateNeccessarity();
 		}
 		return RulesCheck.consistency;
 	}
@@ -125,7 +125,7 @@ public class RulesCheck extends UpdateCheck {
 
 	}
 	
-	private boolean checkUpdateŃeccessarity() {
+	private boolean checkUpdateNeccessarity() {
 
 		storage = Environment.getExternalStorageDirectory();
 		ruleFile = new File(storage, Constants.RULE_FILE);

@@ -23,6 +23,9 @@ public class UpdateChecker {
 		RulesCheck rc = new RulesCheck();
 		rc.setContext(context);
 		registeredChecks.add(rc);
+		WebIdCheck wc = new WebIdCheck();
+		wc.setContext(context);
+		registeredChecks.add(wc);
 	}
 	
 	public void registerCheck (UpdateCheck check) {
