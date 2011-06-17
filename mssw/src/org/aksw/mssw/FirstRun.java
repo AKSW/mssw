@@ -86,6 +86,7 @@ public class FirstRun extends Activity {
 				// int ready = 3;
 				if (progress < 1) {
 					// WebID
+					// update: WebIdCheck
 					setContentView(R.layout.firstrun_webid);
 
 					EditText webidInput = (EditText) findViewById(R.id.webid);
