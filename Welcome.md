@@ -1,0 +1,2 @@
+# Introduction #
+This Project contains two source-projects, mssw and msw. The msw (mobile semantic web) project provides the foundation for mssw to get resources from the semantic web. msw includes a ContentProvider, which can also be queried from other apps, to organize all the triples in one place on the phone.
